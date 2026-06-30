@@ -1,6 +1,6 @@
 # Wireframes
 
-Bare-bones wireframes for the main pages of the LLM Fine Tuner & Agent Tester app. Layout and structure only, no color or styling. These guide the build; visual design comes later.
+Bare-bones wireframes for the main pages of the LLM Fine Tuner & Agent Tester app. Layout and structure. Guides to the build.
 
 Every signed-in page shares a left sidebar: Dashboard, Datasets, Train, Models, Chat, with the account and log out pinned at the bottom.
 
