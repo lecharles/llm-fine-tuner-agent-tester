@@ -6,7 +6,7 @@ Fine-tune a small open-weights LLM as easily as tuning a guitar, then test it si
 
 This app takes the hard parts of fine-tuning a language model and hides them behind a simple UI. Pick a small model, build or generate a question-answer dataset for your use case, train a QLoRA adapter on your own Mac, export the result, and compare its answers against two other models in a three-way chat.
 
-It is a deliberately simplified take on the local fine-tuning workflow: one model family, one method, one dataset format, done well.
+It is a deliberately simplified take on the local fine-tuning workflow: one model family, one fine-tuning method, one dataset format.
 
 ## Core features (MVP)
 
@@ -43,7 +43,7 @@ It is a deliberately simplified take on the local fine-tuning workflow: one mode
 - React Native build for iOS and Android from the same core.
 - Native macOS app.
 - Additional small model families beyond Llama.
-- In-app guides that explain fine-tuning, dataset design, hyperparameters, export, and testing.
+- In-app guides that explain large language models, fine-tuning, dataset design, hyperparameters, export, and testing.
 
 ## About
 
