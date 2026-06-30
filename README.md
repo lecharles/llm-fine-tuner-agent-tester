@@ -32,7 +32,7 @@ It is a deliberately simplified take on the local fine-tuning workflow: one mode
 - **GGUF**: a model file format that packages a model's weights so local tools can load and run it efficiently.
 - **Ollama**: a tool for downloading and running open-weights language models locally on your own machine.
 
-## Planning materials
+## Planning
 
 - [User stories](docs/USER_STORIES.md)
 - [Entity relationship diagram](docs/ERD.md)
@@ -47,4 +47,4 @@ It is a deliberately simplified take on the local fine-tuning workflow: one mode
 
 ## About
 
-A project built to go deeper on React, dive on TypeScript, and FastAPI, for product engineering work on AI developer tooling.
+A project built to go deeper on React, dive into TypeScript, and FastAPI, for product engineering work on AI developer tooling.
