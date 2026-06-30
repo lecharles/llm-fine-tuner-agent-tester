@@ -1,6 +1,6 @@
 # User Stories
 
-User stories for the LLM Fine Tuner & Agent Tester app, written as: As a [role], I want [feature], so that [reason]. Status column tracks completion: adding x.
+User stories for the LLM Fine Tuner & Agent Tester app, written as: As a [role], I want [feature], so that I can [reason].
 
 ## MVP
 
