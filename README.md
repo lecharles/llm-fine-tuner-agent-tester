@@ -22,8 +22,15 @@ It is a deliberately simplified take on the local fine-tuning workflow: one mode
 - Frontend: React, TypeScript, Vite
 - Backend: FastAPI, Python
 - Auth: JWT
-- Fine-tuning: MLX and mlx-lm
-- Local model runtime: Ollama and GGUF
+- Fine-tuning: MLX and mlx-lm with QLoRA
+- Local model format and runtime: GGUF, run with Ollama
+
+### Key terms
+
+- **QLoRA**: a fine-tuning technique that trains a small set of add-on weights on top of a compressed (quantized) base model, so you can customize a large model using far less memory.
+- **MLX**: Apple's open-source machine learning framework that runs training and inference natively on Apple Silicon using the Mac's unified memory.
+- **GGUF**: a model file format that packages a model's weights so local tools can load and run it efficiently.
+- **Ollama**: a tool for downloading and running open-weights language models locally on your own machine.
 
 ## Planning materials
 
