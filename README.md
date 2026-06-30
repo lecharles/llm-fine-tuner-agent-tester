@@ -47,4 +47,4 @@ It is a deliberately simplified take on the local fine-tuning workflow: one mode
 
 ## About
 
-A home-lab project built to go deep on React, TypeScript, and FastAPI, and to serve as a portfolio piece for product engineering work on AI developer tooling.
+A project built to go deeper on React, dive on TypeScript, and FastAPI, for product engineering work on AI developer tooling.
