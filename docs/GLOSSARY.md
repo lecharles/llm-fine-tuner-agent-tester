@@ -36,6 +36,12 @@ Stack, dependencies, new concepts.
 - **JWT (JSON Web Token)**: a signed token issued at login and sent with later requests to prove who you are, without re-sending your password.
 - **ORM (Object-Relational Mapping)**: a way to read and write database rows as regular objects in code; SQLAlchemy is our ORM.
 - **Background job**: work started by the API that runs separately so a slow task (like training) does not block the web request.
+- **Migration**: a versioned change to the database schema, generated from the models and applied in order so the database structure is reproducible.
+- **Primary key**: the column that uniquely identifies each row in a table (our id columns).
+- **Foreign key**: a column that points to a row in another table, enforcing a valid link (for example, a dataset's user_id must point to a real user).
+- **Pydantic schema**: a definition of the shape of data going into or out of the API, used for validation and to auto-generate the docs. Separate from the database models.
+- **Dependency injection**: FastAPI supplying a route with what it needs (like a database session or the current user) by calling a helper before the route runs.
+
 
 ## Models and runtime
 
