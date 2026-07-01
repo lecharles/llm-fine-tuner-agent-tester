@@ -94,3 +94,12 @@ Starts once the API exposes real endpoints, overlapping Phases 2 and 3.
 - [ ] Accessibility: WCAG AA contrast, alt text on images, link-based navigation
 - [ ] Deploy the web shell online
 - [ ] README screenshots and deployed link
+
+## Presentation prep (before Tuesday)
+
+- [ ] Pre-stage demo data and tokens for a flawless live run
+- [ ] Rehearse the demo path end to end
+- [ ] FastAPI pitch, three bullets
+- [ ] React and TypeScript pitch, three bullets
+- [ ] Aha moments from the learning journal
+- [ ] Five-minute presentation flow
