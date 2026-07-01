@@ -1,2 +1,8 @@
 .DS_Store
 _internal/
+
+# Python
+__pycache__/
+*.pyc
+.env
+.venv/
