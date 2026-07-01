@@ -10,11 +10,32 @@ The token is sensitive, do not paste it into shared docs or screenshots.
 
 ## Health
 
-(to be added: health-check route)
+    curl -s http://localhost:8000/health | jq
+
+Expected: {"status": "ok"}
 
 ## Auth
 
-(to be added: sign up, log in, capture token)
+Sign up:
+
+    curl -s -X POST http://localhost:8000/api/auth/signup \
+      -H "Content-Type: application/json" \
+      -d '{"email": "carlos@example.com", "password": "testpass123", "display_name": "Carlos"}' | jq
+
+Expected: 201, the new user (id, email, display_name, created_at), no password field. A duplicate email returns 400 "Email already registered".
+
+Log in and capture the token:
+
+    TOKEN=$(curl -s -X POST http://localhost:8000/api/auth/login \
+      -d "username=carlos@example.com&password=testpass123" | jq -r .access_token)
+
+Note: login uses form fields (username, password), not JSON.
+
+Current user, a protected route that proves the guard:
+
+    curl -s http://localhost:8000/api/auth/me -H "Authorization: Bearer $TOKEN" | jq
+
+Without the token the same route returns 401. With it, returns the logged-in user.
 
 ## Datasets
 
