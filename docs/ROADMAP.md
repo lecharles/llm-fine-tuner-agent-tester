@@ -101,3 +101,11 @@ This repo is the flagship. Later, extract dedicated showcase repos.
 
 - [ ] In-app guides explaining fine-tuning, dataset design, hyperparameters, export, and testing
 - [ ] Additional small model families beyond Llama
+
+### Sharing and visibility
+
+- [ ] Owner can mark a dataset public or private (is_public flag on datasets)
+- [ ] Owner can mark a fine-tuned model public or private (is_public flag on fine_tuned_models)
+- [ ] Read and list queries include public items from other users; writes stay owner-only
+- [ ] Authorization rule: read if owner OR public; create, update, delete if owner only
+- [ ] Supports the open-source, shareable spirit of the project
