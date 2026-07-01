@@ -64,6 +64,15 @@ Working plan: where we are, what is next, and what is parked.
 - [ ] Consume the documented API
 - [ ] Starts once the API exposes real endpoints, overlapping Phases 2 and 3
 
+### Presentation and demo prep (before Tuesday)
+
+- [ ] Pre-stage demo data and tokens for a flawless live run
+- [ ] Rehearse the demo path end to end
+- [ ] FastAPI pitch in three bullets
+- [ ] React and TypeScript pitch in three bullets
+- [ ] Aha moments to highlight (from the learning journal)
+- [ ] Five-minute presentation flow
+
 ## Backlog and parking lot
 
 Ideas captured so they are not forgotten. Not scheduled for MVP.
