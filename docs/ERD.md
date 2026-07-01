@@ -1,6 +1,6 @@
 # Entity Relationship Diagram
 
-Data model for the LLM Fine Tuner & Agent Tester app. Rendered in dbdiagram.io.
+Data model for the LLM Fine Tuner & Agent Tester app.
 
 ![ERD for the LLM Fine Tuner & Agent Tester app](ERD.png)
 
