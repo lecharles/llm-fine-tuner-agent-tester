@@ -30,3 +30,19 @@ Stack, dependencies, new concepts.
 - **virtualenv**: an isolated Python environment so one project's packages do not clash with another's.
 - **pycache**: a folder Python auto-creates to store compiled bytecode; safe to ignore in git.
 - **env file**: a file holding environment variables (secrets, config); kept out of git.
+
+## Core concepts
+
+- **JWT (JSON Web Token)**: a signed token issued at login and sent with later requests to prove who you are, without re-sending your password.
+- **ORM (Object-Relational Mapping)**: a way to read and write database rows as regular objects in code; SQLAlchemy is our ORM.
+- **Background job**: work started by the API that runs separately so a slow task (like training) does not block the web request.
+
+## Models and runtime
+
+- **Ollama**: a tool for downloading and running open-weights language models locally on your own machine.
+- **GGUF**: a model file format that packages a model's weights so local tools can load and run it efficiently.
+- **mlx-lm**: the library, built on Apple's MLX framework, that runs model fine-tuning and inference natively on Apple Silicon.
+
+## Docs and diagrams
+
+- **Mermaid**: a text-based syntax for diagrams (flowcharts, sequence diagrams) that GitHub renders as visuals directly from markdown.
