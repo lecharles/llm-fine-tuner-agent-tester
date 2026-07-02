@@ -13,9 +13,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from database import SessionLocal
+from models.fine_tuned_model import FineTunedModel
 from models.qa_pair import QAPair
 from models.training_run import TrainingRun
 from training.data import build_training_files
+from training.export import export_gguf
+
 
 BATCH_SIZE = 4
 TRAINING_ROOT = Path(__file__).resolve().parent.parent / "_training_runs"
@@ -81,6 +84,20 @@ def run_training(run_id: int) -> None:
         )
         if result.returncode != 0:
             raise RuntimeError(f"mlx_lm.lora exited with code {result.returncode}")
+        
+        fused_dir = workspace / "fused_model"
+        export_result = export_gguf(run.base_model, adapter_dir, fused_dir)
+
+        model = FineTunedModel(
+            user_id=run.user_id,
+            training_run_id=run.id,
+            name=f"{run.base_model.split('/')[-1]}-ft-{run.id}",
+            base_model=run.base_model,
+            gguf_path=export_result["gguf_path"],
+            size_mb=export_result["size_mb"],
+            status="ready",
+        )
+        db.add(model)
 
         run.status = "completed"
         run.completed_at = datetime.now(timezone.utc)
