@@ -7,52 +7,53 @@ More detailed than the roadmap: day-to-day working list.
 
 ### Setup
 
-- [ ] Create /backend folder and a Python virtual environment (pipenv)
-- [ ] Install FastAPI, Uvicorn, SQLAlchemy, Alembic, psycopg, Pydantic Settings, python-jose, passlib
-- [ ] App entry point with a health-check route
-- [ ] Confirm Swagger UI at /docs and ReDoc at /redoc
-- [ ] Environment config for database URL and JWT secret
-- [ ] Python .gitignore (virtualenv, pycache, env file)
+- [x] Create /backend folder and a Python virtual environment (pipenv)
+- [x] Install FastAPI, Uvicorn, SQLAlchemy, Alembic, psycopg, Pydantic Settings, python-jose, passlib
+- [x] App entry point with a health-check route
+- [x] Confirm Swagger UI at /docs and ReDoc at /redoc
+- [x] Environment config for database URL and JWT secret
+- [x] Python .gitignore (virtualenv, pycache, env file)
 
 ### Database
 
-- [ ] Create the Postgres database locally
-- [ ] SQLAlchemy engine and session setup
-- [ ] Alembic initialized and pointed at the database
-- [ ] Base model and a get_db dependency
+- [x] Create the Postgres database locally
+- [x] SQLAlchemy engine and session setup
+- [x] Alembic initialized and pointed at the database
+- [x] Base model and a get_db dependency
 
 ### Models (seven entities)
 
-- [ ] User
-- [ ] Dataset
-- [ ] QAPair
-- [ ] TrainingRun
-- [ ] FineTunedModel
-- [ ] ChatSession
-- [ ] ChatMessage
-- [ ] First migration generated and applied
+- [x] User
+- [x] Dataset
+- [x] QAPair
+- [x] TrainingRun
+- [x] FineTunedModel
+- [x] ChatSession
+- [x] ChatMessage
+- [x] First migration generated and applied
 
 ### Auth
 
-- [ ] Password hashing
-- [ ] Sign up endpoint
-- [ ] Log in endpoint issuing a JWT
-- [ ] Current-user dependency that verifies the token
-- [ ] Guests blocked from all write actions
+- [x] Password hashing
+- [x] Sign up endpoint
+- [x] Log in endpoint issuing a JWT
+- [x] Current-user dependency that verifies the token
+- [x] Guests blocked from all write actions
 
 ### CRUD (schemas plus routes per resource)
 
-- [ ] Datasets: schemas and CRUD routes
-- [ ] QAPairs: schemas and CRUD routes, nested under dataset
-- [ ] TrainingRuns: schemas and CRUD routes
-- [ ] FineTunedModels: schemas and read/delete routes
-- [ ] ChatSessions: schemas and CRUD routes
-- [ ] ChatMessages: schemas and create/list routes
-- [ ] Ownership enforced on every owned resource (write-time user override, read/edit/delete restricted to owner)
+- [x] Datasets: schemas and CRUD routes
+- [x] QAPairs: schemas and CRUD routes, nested under dataset
+- [ ] TrainingRuns: created by the training feature in Phase 2, not generic CRUD
+- [ ] FineTunedModels: created by the training feature in Phase 2, not generic CRUD
+- [ ] ChatSessions: created by the compare-chat feature in Phase 4, not generic CRUD
+- [ ] ChatMessages: created by the compare-chat feature in Phase 4, not generic CRUD
+- [x] Ownership enforced on every owned resource (write-time user override, read/edit/delete restricted to owner)
 
 ## Phase 2: Training (backend)
 
-- [ ] Research spike: mlx-lm training API surface and how to invoke it
+- [x] Research spike: mlx-lm training API surface and how to invoke it
+- [ ] Validate the train to fuse to GGUF to Ollama chain on-device before wiring endpoints
 - [ ] Convert a dataset's Q/A pairs to mlx-lm training format (JSONL)
 - [ ] Background job to run QLoRA training via mlx-lm
 - [ ] Move training_runs.status through its lifecycle (queued, running, completed, failed)
