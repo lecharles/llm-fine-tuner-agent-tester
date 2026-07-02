@@ -13,7 +13,7 @@ class TrainingRun(Base):
     dataset_id = Column(Integer, ForeignKey("datasets.id"), nullable=False)
     base_model = Column(String, nullable=False)
     method = Column(String, nullable=False, default="qlora")
-    epochs = Column(Integer, nullable=False, default=3)
+    iters = Column(Integer, nullable=False, default=300)
     learning_rate = Column(Numeric)
     status = Column(String, nullable=False, default="queued")
     created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -6,3 +6,6 @@ __pycache__/
 *.pyc
 .env
 .venv/
+
+# Training artifacts (adapters, GGUFs, JSONL, logs)
+backend/_training_runs/
