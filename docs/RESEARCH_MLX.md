@@ -299,6 +299,7 @@ Run these by hand once, in order, before writing any Phase 2 code. Each is a go 
   a demo-safe fallback if conversion still fails. Resolve this first.
 - Version drift. Several of the export bugs above are version-specific, some fixed and some open.
   Pin a known-good mlx-lm and llama.cpp once the chain works, and do not upgrade mid-week.
-- epochs vs iters. Decide whether the UI exposes epochs (converted to iters) or iters directly.
+- epochs vs iters. Decided: the UI exposes epochs (the roadmap default flow), converted to
+  mlx-lm iters at launch via iters = epochs * ceil(train_examples / batch_size).
 - Model download size and first-run latency. The base model downloads from Hugging Face on first
   use and is then cached. Pre-pull it before the demo so nothing fetches on stage.

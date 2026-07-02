@@ -81,10 +81,17 @@ Ideas captured so they are not forgotten. Not scheduled for MVP.
 
 Expose the full hyperparameter surface behind an Advanced panel, stored in an advanced_config JSON column on training_runs.
 
-- [ ] Learning rate, context length
-- [ ] LoRA rank, alpha, dropout, target modules
-- [ ] RS-LoRA, LoftQ, and other options mlx-lm exposes
-- [ ] Keep the default flow to epochs only as per "easy as a guitar tuner" value prop
+- [ ] Training method selection: QLoRA 4-bit (default), LoRA 16-bit, full fine-tune, continued pretraining, mapped to what mlx-lm supports (4-bit base, fp16 base, --fine-tune-type full, text-format data)
+- [ ] Learning rate, context length (max sequence length)
+- [ ] LoRA rank, alpha (scale), dropout, target modules, number of layers
+- [ ] Batch size, gradient accumulation, gradient checkpointing (memory levers, matter more for the 3B)
+- [ ] RS-LoRA and LoftQ: verify mlx-lm support first, these may be out of scope for the mlx-lm engine
+- [ ] Keep the default flow to epochs only as per "easy as a guitar tuner" value prop; convert epochs to mlx-lm iters under the hood
+
+### Training run visibility
+
+- [ ] A clear, simple overview of training runs and their status (queued, running, completed, failed), easy to scan at a glance
+- [ ] Live status and loss for the current run, plus a history view of past runs (match Current Run and History tabs in the reference UI)
 
 ### Repo strategy
 
