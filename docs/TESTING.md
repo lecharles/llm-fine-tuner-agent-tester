@@ -143,6 +143,22 @@ If a run fails, read the logs (training first, then fuse):
 
     cat _training_runs/$RUN_ID/fused_model/fuse.log
 
+## Disk and cleanup
+
+Fine-tuning artifacts are large and local (gitignored under _training_runs/). Handy for watching disk and resetting before a demo. Run from the backend/ folder.
+
+See per-run sizes plus the shared model cache:
+
+    du -sh _training_runs/* ~/.cache/huggingface/hub
+
+Delete one run's artifacts (reclaims about 2.3GB; keep the run you want for the demo):
+
+    rm -rf _training_runs/<run_id>
+
+Reset all runs before a fresh demo (keeps the model cache, so no re-download):
+
+    rm -rf _training_runs/*
+
 ## Fine-tuned models
 
 (to be added)
