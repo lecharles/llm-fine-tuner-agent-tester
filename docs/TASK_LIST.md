@@ -53,13 +53,13 @@ More detailed than the roadmap: day-to-day working list.
 ## Phase 2: Training (backend)
 
 - [x] Research spike: mlx-lm training API surface and how to invoke it
-- [ ] Validate the train to fuse to GGUF to Ollama chain on-device before wiring endpoints
-- [ ] Convert a dataset's Q/A pairs to mlx-lm training format (JSONL)
-- [ ] Background job to run QLoRA training via mlx-lm
-- [ ] Move training_runs.status through its lifecycle (queued, running, completed, failed)
-- [ ] Fuse adapter and export to GGUF, write path to fine_tuned_models
-- [ ] Endpoint to start training
-- [ ] Endpoint to poll training status
+- [x] Validate the training pipeline on-device (train + fuse); GGUF/Ollama serving moved to Phase 4
+- [x] Convert a dataset's Q/A pairs to mlx-lm training format (JSONL)
+- [x] Background job to run QLoRA training via mlx-lm
+- [x] Move training_runs.status through its lifecycle (queued, running, completed, failed)
+- [x] Fuse adapter (GGUF export deferred to Phase 4; fuse-only for now), write path to fine_tuned_models
+- [x] Endpoint to start training
+- [x] Endpoint to poll training status
 
 ## Phase 3: Dataset generation (backend)
 

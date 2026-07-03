@@ -97,7 +97,51 @@ Expected: 404 "Dataset not found" (note: "Dataset not found", not "QA pair not f
 
 ## Training runs
 
-(to be added)
+Drives the fine-tuning pipeline: convert QA pairs to JSONL, train via mlx-lm, fuse the adapter onto the bf16 base. Assumes $TOKEN is set (see Auth) and mlx-lm is installed (pipenv install "mlx-lm[train]"). Training requires Apple Silicon. Commands run from the backend/ folder.
+
+Create a dataset for the run and capture its id:
+
+    DATASET_ID=$(curl -s -X POST http://localhost:8000/api/datasets -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"name": "Fine-tune smoke test", "source": "manual", "use_case_prompt": "A terse assistant that answers in one sentence"}' | jq -r .id)
+
+Seed a handful of QA pairs (training needs at least a batch worth; the batch size is 4):
+
+    for p in \
+      '{"question":"What is the capital of France?","answer":"Paris."}' \
+      '{"question":"How many continents are there?","answer":"Seven."}' \
+      '{"question":"What language is spoken in Brazil?","answer":"Portuguese."}' \
+      '{"question":"Who wrote Romeo and Juliet?","answer":"William Shakespeare."}' \
+      '{"question":"What is the largest planet in our solar system?","answer":"Jupiter."}' \
+      '{"question":"What is the boiling point of water in Celsius?","answer":"One hundred degrees."}'; do
+      curl -s -X POST "http://localhost:8000/api/datasets/$DATASET_ID/qa-pairs" -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d "$p" > /dev/null
+    done
+
+Start a training run with a small iters for a fast pass, capture its id:
+
+    RUN_ID=$(curl -s -X POST http://localhost:8000/api/training-runs -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d "{\"dataset_id\": $DATASET_ID, \"iters\": 50}" | jq -r .id)
+
+Expected: 201, a run with status "queued". A dataset with no pairs returns 400; a dataset that is not yours returns 404.
+
+Poll status (re-run until it settles); the first run is slow because it downloads models:
+
+    curl -s http://localhost:8000/api/training-runs/$RUN_ID -H "Authorization: Bearer $TOKEN" | jq
+
+Expected: status moves queued -> running -> completed, with completed_at set at the end.
+
+List your runs (newest first):
+
+    curl -s http://localhost:8000/api/training-runs -H "Authorization: Bearer $TOKEN" | jq
+
+Confirm the fused model is on disk:
+
+    ls -lh _training_runs/$RUN_ID/fused_model/
+
+Expected: model.safetensors plus config and tokenizer files. The run workspace also holds data/ (the JSONL), adapters/ (the trained adapter), and train.log.
+
+If a run fails, read the logs (training first, then fuse):
+
+    cat _training_runs/$RUN_ID/train.log
+
+    cat _training_runs/$RUN_ID/fused_model/fuse.log
 
 ## Fine-tuned models
 

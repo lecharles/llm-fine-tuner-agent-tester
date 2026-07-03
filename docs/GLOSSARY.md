@@ -41,6 +41,7 @@ Stack, dependencies, new concepts.
 - **Foreign key**: a column that points to a row in another table, enforcing a valid link (for example, a dataset's user_id must point to a real user).
 - **Pydantic schema**: a definition of the shape of data going into or out of the API, used for validation and to auto-generate the docs. Separate from the database models.
 - **Dependency injection**: FastAPI supplying a route with what it needs (like a database session or the current user) by calling a helper before the route runs.
+- **OAuth2 / bearer token**: the standard scheme where a client sends its token in an `Authorization: Bearer <token>` header; our login uses the OAuth2 password flow, which is what powers Swagger's Authorize button.
 
 
 ## Models and runtime
@@ -48,6 +49,25 @@ Stack, dependencies, new concepts.
 - **Ollama**: a tool for downloading and running open-weights language models locally on your own machine.
 - **GGUF**: a model file format that packages a model's weights so local tools can load and run it efficiently.
 - **mlx-lm**: the library, built on Apple's MLX framework, that runs model fine-tuning and inference natively on Apple Silicon.
+- **mlx_lm.server**: a lightweight, OpenAI-compatible local server shipped with mlx-lm that serves an MLX model for inference.
+- **Modelfile**: Ollama's small config file that points at a model file (like a GGUF) to import it into Ollama.
+
+## Fine-tuning concepts
+
+- **LoRA (Low-Rank Adaptation)**: a fine-tuning method that freezes the base model and trains small add-on matrices, so only a tiny fraction of the weights change.
+- **QLoRA**: LoRA on top of a quantized (4-bit) base model; in mlx-lm you get it automatically by pointing at a 4-bit model.
+- **Adapter**: the small set of trained LoRA weights (the diff), saved separately from the base model.
+- **Fuse**: merging an adapter back into its base model to produce one standalone fine-tuned model.
+- **Quantization**: storing model weights at lower precision (like 4-bit) to use less memory and run faster, at a small accuracy cost.
+- **iters (iterations)**: the number of training steps mlx-lm runs; one step processes one batch. Our single training knob (we do not expose epochs).
+- **Batch size**: how many training examples are processed together in one step.
+- **Learning rate**: how big a step the optimizer takes on each update; too high overshoots, too low learns slowly.
+- **Rank**: the size of the LoRA add-on matrices; higher rank means more capacity and more trained parameters.
+- **Alpha (scale)**: a multiplier on the LoRA update that controls how strongly the adapter shifts the base model.
+- **Dropout**: randomly ignoring some connections during training to reduce overfitting.
+- **Target modules**: which weight matrices in the model LoRA is applied to (the attention and MLP projections).
+- **Prompt masking (--mask-prompt)**: computing the training loss only on the answer, so the model learns to respond rather than repeat the question.
+- **Context length**: the maximum number of tokens allowed in a single training example.
 
 ## Docs and diagrams
 

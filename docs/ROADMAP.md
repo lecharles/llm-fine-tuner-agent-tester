@@ -6,8 +6,8 @@ Working plan: where we are, what is next, and what is parked.
 ## Status
 
 - [x] Phase 0: Planning
-- [ ] Phase 1: Backend foundation
-- [ ] Phase 2: Training
+- [x] Phase 1: Backend foundation
+- [x] Phase 2: Training
 - [ ] Phase 3: Dataset generation
 - [ ] Phase 4: Compare chat
 - [ ] Phase 5: Polish and deploy
@@ -23,20 +23,20 @@ Working plan: where we are, what is next, and what is parked.
 
 ### Phase 1: Backend foundation
 
-- [ ] FastAPI skeleton, running locally
-- [ ] Swagger UI auto-generated at /docs, ReDoc at /redoc
-- [ ] PostgreSQL wired via SQLAlchemy
-- [ ] Migrations via Alembic
-- [ ] The seven entities from the ERD
-- [ ] JWT authentication
-- [ ] Full CRUD on owned entities
-- [ ] Ownership-based authorization
+- [x] FastAPI skeleton, running locally
+- [x] Swagger UI auto-generated at /docs, ReDoc at /redoc
+- [x] PostgreSQL wired via SQLAlchemy
+- [x] Migrations via Alembic
+- [x] The seven entities from the ERD
+- [x] JWT authentication
+- [x] Full CRUD on owned entities (datasets and qa-pairs; other entities via feature behavior)
+- [x] Ownership-based authorization
 
 ### Phase 2: Training (hero feature)
 
-- [ ] Fine-tuning via mlx-lm on Apple Silicon, QLoRA by default
-- [ ] Background job started from the API, status tracked on training_runs
-- [ ] Llama 3.2 1B default, 3B optional
+- [x] Fine-tuning via mlx-lm on Apple Silicon, QLoRA by default
+- [x] Background job started from the API, status tracked on training_runs
+- [x] Llama 3.2 1B default, 3B optional
 
 ### Phase 3: Dataset generation
 
@@ -86,7 +86,7 @@ Expose the full hyperparameter surface behind an Advanced panel, stored in an ad
 - [ ] LoRA rank, alpha (scale), dropout, target modules, number of layers
 - [ ] Batch size, gradient accumulation, gradient checkpointing (memory levers, matter more for the 3B)
 - [ ] RS-LoRA and LoftQ: verify mlx-lm support first, these may be out of scope for the mlx-lm engine
-- [ ] Keep the default flow to epochs only as per "easy as a guitar tuner" value prop; convert epochs to mlx-lm iters under the hood
+- [ ] Keep the default flow simple, iters as the single training knob, per the "easy as a guitar tuner" value prop
 
 ### Training run visibility
 
