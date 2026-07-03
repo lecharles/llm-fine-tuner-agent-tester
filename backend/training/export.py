@@ -22,21 +22,21 @@ def fuse_base_for(base_model: str) -> str:
 
 
 def build_fuse_command(fuse_base: str, adapter_dir: Path, fused_dir: Path) -> list[str]:
-    """mlx_lm.fuse merges the adapter into the base; --export-gguf also writes a
-    Llama-style fp16 GGUF into the save path, which Ollama can import."""
+    """mlx_lm.fuse merges the adapter into the base and writes a fused model (safetensors)
+    to the save path. We deliberately skip --export-gguf: that flag hits an mlx-lm
+    serialization bug (see docs/RESEARCH_MLX.md), and GGUF conversion moves to Phase 4."""
     return [
         "mlx_lm.fuse",
         "--model", fuse_base,
         "--adapter-path", str(adapter_dir),
         "--save-path", str(fused_dir),
-        "--export-gguf",
     ]
 
 
 def export_gguf(base_model: str, adapter_dir: Path, fused_dir: Path) -> dict:
-    """Fuse the adapter onto the full-precision base and export a GGUF. Returns the
-    gguf path and size in MB for the fine_tuned_models row. Raises on failure so the
-    caller can mark the run failed."""
+    """Fuse the adapter onto the full-precision base into a fused model directory. Returns
+    its path and size in MB for the fine_tuned_models row (stored in gguf_path for now; real
+    GGUF conversion is Phase 4). Raises on failure so the caller marks the run failed."""
     fused_dir = Path(fused_dir)
     fused_dir.mkdir(parents=True, exist_ok=True)
 
@@ -48,10 +48,9 @@ def export_gguf(base_model: str, adapter_dir: Path, fused_dir: Path) -> dict:
     if result.returncode != 0:
         raise RuntimeError(f"mlx_lm.fuse exited with code {result.returncode}")
 
-    gguf_files = sorted(fused_dir.glob("*.gguf"))
-    if not gguf_files:
-        raise RuntimeError(f"No GGUF was produced in {fused_dir}")
+    weights = sorted(fused_dir.glob("*.safetensors"))
+    if not weights:
+        raise RuntimeError(f"No fused model weights in {fused_dir}")
 
-    gguf_path = gguf_files[0]
-    size_mb = int(gguf_path.stat().st_size / (1024 * 1024))
-    return {"gguf_path": str(gguf_path), "size_mb": size_mb}
+    size_mb = int(sum(w.stat().st_size for w in weights) / (1024 * 1024))
+    return {"gguf_path": str(fused_dir), "size_mb": size_mb}
