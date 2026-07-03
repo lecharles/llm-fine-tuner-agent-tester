@@ -69,6 +69,41 @@ its base clearly does not know. We can pick one during the build.
 License is the gating factor. For a project that may host and monetize later, prefer Apache 2.0 and
 CC-BY; treat CC-BY-NC (non-commercial) and unclear licenses as demo-only or skip.
 
+## Locked preset lineup (Phase 3)
+
+After the July 3 pass, here is the lineup and how each domain is served. The split is clean: the
+well-covered "serious" domains have real permissive datasets to import, and the fun and niche
+domains do not, so they are generator targets. The two-pronged design paying off.
+
+Import presets (a real dataset exists; pull 50-100 rows and map fields):
+
+- General: databricks/databricks-dolly-15k (CC BY-SA 3.0), instruction -> question, response ->
+  answer. Or OpenAssistant/oasst1 (Apache 2.0) with turn extraction.
+- Medical: medalpaca/medical_meadow_medqa or fedml/PubMedQA_instruction; question -> question, the
+  long answer -> answer. Confirm the exact license on the chosen one.
+- Finance: Josephgflowers/Finance-Instruct-500k (Apache 2.0); user -> question, assistant -> answer.
+- Legal: asm3515/legal-clause-instruction-Tunning (Apache 2.0) or AdaptLLM/law-LLM.
+- Scriptwriting and thrillers: Atum09/screenplay-dataset (MIT, commercial OK). Chat format with
+  genres including psychological horror; user -> question, assistant -> answer. Screenplays run
+  long, so pull the shorter examples or cap answer length for the small model.
+
+Generator targets (no clean text import found; use the generate endpoint, the LLM knows these well):
+
+- Music theory and harmony: HF music datasets are audio-based (Music-Instruct, Music Flamingo) or
+  small MCQ (MusicTheoryBench), none a clean text Q/A import. Generate instead.
+- Insurance: no permissive insurance Q/A dataset surfaced. Generate instead.
+- The pinned niche domains (Canada tax, Dominican Republic law): same, generate.
+
+Latest / newest (the "teach the base model something new" angle): a browse-by-recency feature, not
+a fixed dataset. The Hub list API sorts by recency
+(list_datasets(sort="lastModified", direction=-1, filter="task_categories:question-answering")),
+so at demo time we pick a genuinely recent Q/A dataset covering knowledge the 2024-era base Llama
+does not have. That contrast, vanilla cannot answer and fine-tuned can, is the strongest compare demo.
+
+Field mapping is per dataset, so each import preset carries its dataset id plus which field is the
+question and which is the answer (the config approach in section 2). Ship 4-6 presets for the demo:
+general, medical, finance, legal, scriptwriting, plus the latest-dataset browse.
+
 ## 2. Hugging Face integration (import and browse)
 
 Loading a dataset. The datasets library does the work:
