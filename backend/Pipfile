@@ -18,6 +18,7 @@ python-multipart = "*"
 bcrypt = "==4.0.1"
 mlx-lm = {extras = ["train"], version = "*"}
 anthropic = "*"
+datasets = "*"
 
 [dev-packages]
 
