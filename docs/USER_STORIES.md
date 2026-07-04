@@ -28,7 +28,7 @@ User stories for the LLM Fine Tuner & Agent Tester app, written as: As a [role],
 
 | Done | # | As a | I want to | So that I can |
 |------|---|------|-----------|---------------|
-|  | 11 | user | choose a base model, method, and number of epochs | control how my model is fine-tuned |
+|  | 11 | user | choose a base model, method, and number of iterations | control how my model is fine-tuned |
 |  | 12 | user | start a training run on a chosen dataset | fine-tune a model for my use case |
 |  | 13 | user | see the status of a training run | know when my model is ready |
 
@@ -44,8 +44,8 @@ User stories for the LLM Fine Tuner & Agent Tester app, written as: As a [role],
 
 | Done | # | As a | I want to | So that I can |
 |------|---|------|-----------|---------------|
-|  | 17 | user | start a compare chat with my fine-tuned model and two other models | see how fine-tuning changed the output |
-|  | 18 | user | send a prompt and see all three answers side by side | compare them directly |
+|  | 17 | user | start a compare chat with my fine-tuned model, its base model, and two hosted models | see how fine-tuning changed the output |
+|  | 18 | user | send a prompt and see all four answers side by side | compare them directly |
 |  | 19 | user | revisit my past chat sessions | review earlier comparisons |
 
 ### Ownership and access

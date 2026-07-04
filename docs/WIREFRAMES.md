@@ -95,7 +95,7 @@ Every signed-in page shares a left sidebar: Dashboard, Datasets, Train, Models, 
 | > Train        |                                  |
 |   Models       |  Method    [ QLoRA        v ]    |
 |   Chat         |  Dataset   [ select...    v ]    |
-|                |  Epochs    [ 3 ]                 |
+|                |  Iters     [ 3 ]                 |
 | [user]         |                                  |
 | [ Log out ]    |         [ Start training ]       |
 |                |                                  |
@@ -126,14 +126,14 @@ Every signed-in page shares a left sidebar: Dashboard, Datasets, Train, Models, 
 ```
 +----------------+----------------------------------+
 | LLM Tuner      |  Compare chat                    |
-|                |  Mine: faq-1b                    |
-|   Dashboard    |  vs [ compare A v ] [ compare B v]|
+|                |  Tuned: faq-1b   Base: Llama 1B  |
+|   Dashboard    |  OpenAI [ 5.5 v ]  Claude [ v ]  |
 |   Datasets     |                                  |
-|   Train        |  +--------+--------+----------+  |
-|   Models       |  | Mine   | A      | B        |  |
-| > Chat         |  |        |        |          |  |
-|                |  | resp   | resp   | resp     |  |
-| [user]         |  +--------+--------+----------+  |
+|   Train        |  +------+------+------+-------+  |
+|   Models       |  |Tuned |Base  |OpenAI|Claude |  |
+| > Chat         |  |      |      |      |       |  |
+|                |  |resp  |resp  |resp  |resp   |  |
+| [user]         |  +------+------+------+-------+  |
 | [ Log out ]    |                                  |
 |                |  [ Type a prompt...     ][ Send ]|
 +----------------+----------------------------------+

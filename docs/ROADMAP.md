@@ -47,7 +47,7 @@ Working plan: where we are, what is next, and what is parked.
 
 ### Phase 4: Compare chat
 
-- [ ] Three-way chat: fine-tuned model plus two comparison models
+- [ ] Four-way chat: fine-tuned model, its base model, and two hosted comparison models
 - [ ] Fine-tuned model served locally (GGUF via Ollama)
 - [ ] Comparison models via hosted APIs
 

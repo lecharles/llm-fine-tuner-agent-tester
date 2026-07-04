@@ -73,7 +73,7 @@ More detailed than the roadmap: day-to-day working list.
 
 - [ ] Serve the fine-tuned model locally via Ollama and call it
 - [ ] Integrate two hosted comparison models
-- [ ] Endpoint: send a prompt, fan out to three models, persist the user message plus three replies
+- [ ] Endpoint: send a prompt, fan out to four models, persist the user message plus four replies
 - [ ] Endpoints: list chat sessions and their messages
 
 ## Frontend (React, TypeScript, Vite)
@@ -86,7 +86,7 @@ Starts once the API exposes real endpoints, overlapping Phases 2 and 3.
 - [ ] Datasets: list, detail, create, generate, edit pairs
 - [ ] Train: config form, start, live status
 - [ ] Models: list, export, delete
-- [ ] Compare chat: three-column layout, send prompt
+- [ ] Compare chat: four-column layout, send prompt
 - [ ] Light and dark theme
 
 ## Phase 5: Polish and deploy

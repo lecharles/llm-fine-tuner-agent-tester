@@ -51,23 +51,26 @@ sequenceDiagram
 
 ## Compare chat flow
 
-How one prompt fans out to three models. (Sequence diagram added when we build Phase 4.)
+How one prompt fans out to four models. (Sequence diagram added when we build Phase 4.)
 
 ````mermaid
 sequenceDiagram
     participant U as User
     participant API as FastAPI
-    participant FT as Fine-tuned model (Ollama)
-    participant A as Compare model A
-    participant B as Compare model B
+    participant FT as Fine-tuned Llama (Ollama)
+    participant VB as Vanilla Llama (Ollama)
+    participant OAI as OpenAI model
+    participant ANT as Anthropic model
     U->>API: Send prompt
     API->>FT: Prompt
-    API->>A: Prompt
-    API->>B: Prompt
+    API->>VB: Prompt
+    API->>OAI: Prompt
+    API->>ANT: Prompt
     FT-->>API: Reply
-    A-->>API: Reply
-    B-->>API: Reply
-    API-->>U: Three replies, persisted
+    VB-->>API: Reply
+    OAI-->>API: Reply
+    ANT-->>API: Reply
+    API-->>U: Four replies, persisted
 ````
 
 ## Data model

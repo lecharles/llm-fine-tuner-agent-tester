@@ -9,10 +9,10 @@ Data model for the LLM Fine Tuner & Agent Tester app.
 - **User**: an account. Owns datasets, training runs, fine-tuned models, and chat sessions.
 - **Dataset**: a named collection of question-answer pairs for one use case. Created manually, imported from Hugging Face, or generated from a plain-English description.
 - **QAPair**: a single question-and-answer row inside a dataset.
-- **TrainingRun**: one fine-tuning job. References the dataset it trains on and stores the chosen base model, method, epochs, and status.
+- **TrainingRun**: one fine-tuning job. References the dataset it trains on and stores the chosen base model, method, iters, and status.
 - **FineTunedModel**: the artifact produced by a completed training run. Holds the exported file path and format, and is the model you chat with.
-- **ChatSession**: a three-way compare conversation pinned to one fine-tuned model plus two comparison models.
-- **ChatMessage**: a single message in a chat session. Each user prompt produces three assistant replies, one per model, tagged by model label.
+- **ChatSession**: a four-way compare conversation pinned to one fine-tuned model, its base model, and two hosted comparison models.
+- **ChatMessage**: a single message in a chat session. Each user prompt produces four assistant replies, one per model, tagged by model label.
 
 ## Relationships
 
