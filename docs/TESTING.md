@@ -183,6 +183,33 @@ Swagger: both live in the generation group as POST /api/datasets/{dataset_id}/ge
 Authorize first (the padlock must show locked), put the dataset id in the path box, body as above.
 A 401 "Not authenticated" means the Swagger token expired; re-Authorize.
 
+## Compare-chat client (chat/client.py)
+
+Library-level checks for chat_completion, the single function behind all four compare
+columns. Not HTTP endpoint tests: these import the function and call the real provider
+APIs directly, run from the backend/ folder. Keys are read from settings (never hardcoded)
+and each command prints only the model reply, so they are safe to keep here.
+
+Import and SDK check (confirms openai is installed and the module imports):
+
+    pipenv run python -c "from chat.client import chat_completion; print('import ok')"
+
+Expected: import ok
+
+OpenAI column, live (proves key, SDK, endpoint, and response parsing end to end):
+
+    pipenv run python -c "from chat.client import chat_completion; from config import settings; print(chat_completion('https://api.openai.com/v1', settings.openai_api_key, 'gpt-4o-mini', [{'role':'user','content':'Reply with exactly: pipeline works'}]))"
+
+Expected: pipeline works
+
+Anthropic column, live, via the OpenAI-compat endpoint (same function, Anthropic base URL and a Claude model):
+
+    pipenv run python -c "from chat.client import chat_completion; from config import settings; print(chat_completion('https://api.anthropic.com/v1/', settings.anthropic_api_key, 'claude-opus-4-8', [{'role':'user','content':'Reply with exactly: pipeline works'}]))"
+
+Expected: the model echoes the exact instruction back. Note: the base URL needs the trailing
+slash, and the compat layer does not require max_tokens (the raw Anthropic API does), so
+chat_completion serves Anthropic unchanged.
+
 ## Fine-tuned models
 
 (to be added)
