@@ -19,6 +19,7 @@ bcrypt = "==4.0.1"
 mlx-lm = {extras = ["train"], version = "*"}
 anthropic = "*"
 datasets = "*"
+openai = "*"
 
 [dev-packages]
 
