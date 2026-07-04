@@ -210,6 +210,19 @@ Expected: the model echoes the exact instruction back. Note: the base URL needs 
 slash, and the compat layer does not require max_tokens (the raw Anthropic API does), so
 chat_completion serves Anthropic unchanged.
 
+## Compare fan-out (chat/compare.py)
+
+fan_out sends one prompt to a list of Backend configs through chat_completion and returns a
+labeled Reply per column, isolating a failure to its own column. Two hosted columns for now;
+the Llama columns append to the list later. Run from the backend/ folder.
+
+Two-way fan-out, live (both hosted columns answer the same prompt):
+
+    pipenv run python -c "from chat.compare import hosted_backends, fan_out; from pprint import pprint; pprint(fan_out(hosted_backends('gpt-4o-mini', 'claude-opus-4-8'), [{'role':'user','content':'In one word, what is the capital of France?'}]))"
+
+Expected: two Reply objects, label 'openai' and 'anthropic', each with content set and error None.
+A bad key or unreachable provider shows up as error on that one column, the other still returns.
+
 ## Fine-tuned models
 
 (to be added)
