@@ -8,7 +8,7 @@ Working plan: where we are, what is next, and what is parked.
 - [x] Phase 0: Planning
 - [x] Phase 1: Backend foundation
 - [x] Phase 2: Training
-- [ ] Phase 3: Dataset generation
+- [x] Phase 3: Dataset generation
 - [ ] Phase 4: Compare chat
 - [ ] Phase 5: Polish and deploy
 
@@ -40,10 +40,10 @@ Working plan: where we are, what is next, and what is parked.
 
 ### Phase 3: Dataset generation
 
-- [ ] Generate question-answer pairs from a plain-English use case description via an LLM API
-- [ ] Optional Hugging Face dataset import
-- [ ] Research spike: dataset selection
-- [ ] Research spike: prompt strategy for Q/A generation
+- [x] Generate question-answer pairs from a plain-English use case description via an LLM API
+- [x] Optional Hugging Face dataset import
+- [x] Research spike: dataset selection
+- [x] Research spike: prompt strategy for Q/A generation
 
 ### Phase 4: Compare chat
 

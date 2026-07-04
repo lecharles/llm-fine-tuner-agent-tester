@@ -159,6 +159,30 @@ Reset all runs before a fresh demo (keeps the model cache, so no re-download):
 
     rm -rf _training_runs/*
 
+## Generation and import
+
+Two ways to fill a dataset with QA pairs: generate from a use-case description (LLM, billed) or
+import from a Hugging Face preset (free, network). Both are owner-checked and append to the dataset.
+Assumes $TOKEN is set (see Auth) and ANTHROPIC_API_KEY is in backend/.env for generation.
+
+Generate pairs from the dataset's use_case_prompt (a few cents, a few seconds):
+
+    curl -s -X POST http://localhost:8000/api/datasets/3/generate -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"count": 5}' | jq
+
+Expected: 201 and an array of new pairs. A dataset with no use_case_prompt returns 400; a provider
+failure returns 502.
+
+Import pairs from a preset (free; the first import of a preset downloads and caches it):
+
+    curl -s -X POST http://localhost:8000/api/datasets/3/import -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"preset": "general", "count": 10}' | jq
+
+Expected: 201 and an array of pairs from the dataset. An unknown preset returns 400 with the valid
+list; a load failure or zero mapped pairs returns 502. Presets so far: general (Dolly), finance.
+
+Swagger: both live in the generation group as POST /api/datasets/{dataset_id}/generate and /import.
+Authorize first (the padlock must show locked), put the dataset id in the path box, body as above.
+A 401 "Not authenticated" means the Swagger token expired; re-Authorize.
+
 ## Fine-tuned models
 
 (to be added)

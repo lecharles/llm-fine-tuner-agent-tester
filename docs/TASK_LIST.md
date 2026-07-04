@@ -63,11 +63,11 @@ More detailed than the roadmap: day-to-day working list.
 
 ## Phase 3: Dataset generation (backend)
 
-- [ ] Research spike: pick a Hugging Face Q/A dataset for the preset option
-- [ ] Research spike: prompt strategy for generating Q/A pairs from a use-case description
-- [ ] LLM API integration for generation
-- [ ] Endpoint: generate N pairs from a description, persist to a dataset
-- [ ] Endpoint: import a dataset from Hugging Face
+- [x] Research spike: pick a Hugging Face Q/A dataset for the preset option
+- [x] Research spike: prompt strategy for generating Q/A pairs from a use-case description
+- [x] LLM API integration for generation (Anthropic Fable -> Opus 4.8 -> Sonnet 5 ladder)
+- [x] Endpoint: generate N pairs from a description, persist to a dataset
+- [x] Endpoint: import a dataset from Hugging Face
 
 ## Phase 4: Compare chat (backend)
 

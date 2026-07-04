@@ -69,6 +69,19 @@ Stack, dependencies, new concepts.
 - **Prompt masking (--mask-prompt)**: computing the training loss only on the answer, so the model learns to respond rather than repeat the question.
 - **Context length**: the maximum number of tokens allowed in a single training example.
 
+## Generation and import
+
+- **Structured output (forced tool)**: making a model return valid JSON by giving it a tool whose
+  input schema is the shape you want and requiring it to "call" that tool, instead of parsing prose.
+- **Fallback ladder**: trying models in order (Fable, then Opus 4.8, then Sonnet 5) and using the
+  first that succeeds, so one model being down or refusing does not break generation.
+- **Deduplication (dedup)**: dropping near-identical items; here, normalizing a question (lowercase,
+  collapse whitespace) and skipping ones already seen.
+- **Streaming dataset load**: reading a Hugging Face dataset row by row without downloading the whole
+  thing, so only the N rows we need are pulled from a large dataset.
+- **Import preset**: a curated Hugging Face dataset entry (its id, split, and which fields map to our
+  question and answer) offered as a one-click import.
+
 ## Docs and diagrams
 
 - **Mermaid**: a text-based syntax for diagrams (flowcharts, sequence diagrams) that GitHub renders as visuals directly from markdown.
