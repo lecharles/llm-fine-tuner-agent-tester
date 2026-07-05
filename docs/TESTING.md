@@ -252,4 +252,33 @@ still return (per-column isolation).
 
 ## Chat sessions and messages
 
-(to be added)
+The compare chat. A session pins one fine-tuned model and two hosted compare models; posting a
+message fans the prompt to all four columns (the fine-tuned and vanilla Llamas served locally, plus
+the two hosted models), persists the user turn and each reply, and returns them. Assumes $TOKEN is
+set (see Auth), and for the two local columns both mlx_lm.server processes running (see the four-way
+fan-out section for how to start them).
+
+Find a fine-tuned model to pin (its own id, not the run number):
+
+    pipenv run python -c "from database import SessionLocal; from models.fine_tuned_model import FineTunedModel; db=SessionLocal(); [print('id=', m.id, 'run=', m.training_run_id, 'base=', m.base_model) for m in db.query(FineTunedModel).all()]; db.close()"
+
+Create a session pinning that model (swap the id); the two hosted models default but can be set:
+
+    SESSION_ID=$(curl -s -X POST http://localhost:8000/api/chat-sessions -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"fine_tuned_model_id": 3, "title": "compare demo"}' | jq -r .id)
+
+Expected: 201, a session with compare_model_a "gpt-4o-mini" and compare_model_b "claude-opus-4-8". A
+fine_tuned_model_id that is not yours returns 404.
+
+Send a prompt, fan out to all four, persist and return (a few seconds for four model calls):
+
+    curl -s -X POST http://localhost:8000/api/chat-sessions/$SESSION_ID/messages -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"content": "In two words, what is the capital of the Dominican Republic?"}' | jq
+
+Expected: five messages, a user turn then assistant turns tagged fine_tuned, vanilla, openai,
+anthropic. A column whose server is down errors in isolation and is skipped; the rest still land.
+
+List the messages back (confirms persistence):
+
+    curl -s http://localhost:8000/api/chat-sessions/$SESSION_ID/messages -H "Authorization: Bearer $TOKEN" | jq
+
+Swagger: the chat group exposes all five endpoints. Authorize, POST /api/chat-sessions with a body,
+then POST /api/chat-sessions/{session_id}/messages with the session id and a prompt.
