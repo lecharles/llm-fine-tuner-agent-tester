@@ -9,7 +9,7 @@ Working plan: where we are, what is next, and what is parked.
 - [x] Phase 1: Backend foundation
 - [x] Phase 2: Training
 - [x] Phase 3: Dataset generation
-- [ ] Phase 4: Compare chat
+- [x] Phase 4: Compare chat
 - [ ] Phase 5: Polish and deploy
 
 ## Phases
@@ -47,9 +47,9 @@ Working plan: where we are, what is next, and what is parked.
 
 ### Phase 4: Compare chat
 
-- [ ] Four-way chat: fine-tuned model, its base model, and two hosted comparison models
-- [ ] Fine-tuned model served locally (GGUF via Ollama)
-- [ ] Comparison models via hosted APIs
+- [x] Four-way chat: fine-tuned model, its base model, and two hosted comparison models
+- [x] Fine-tuned model served locally (mlx_lm.server; Ollama/GGUF is the long-term runtime)
+- [x] Comparison models via hosted APIs
 
 ### Phase 5: Polish and deploy
 
@@ -67,6 +67,7 @@ Working plan: where we are, what is next, and what is parked.
 ### Presentation and demo prep (before Tuesday)
 
 - [ ] Pre-stage demo data and tokens for a flawless live run
+- [ ] Generate a geography dataset and fine-tune on it, to demo the fine-tuned vs untuned divergence live (la Ville Rose / Dominican Republic capital)
 - [ ] Rehearse the demo path end to end
 - [ ] FastAPI pitch in three bullets
 - [ ] React and TypeScript pitch in three bullets
@@ -117,6 +118,15 @@ This repo is the flagship. Later, extract dedicated showcase repos.
 
 - [ ] In-app guides explaining fine-tuning, dataset design, hyperparameters, export, and testing
 - [ ] Additional small model families beyond Llama
+
+### Compare chat depth
+
+Enhancements to the test-agent chat, captured post-MVP.
+
+- [ ] Multi-turn conversation: thread history per column and manage the context window, so the compare chat is a real chat rather than one-shot prompts. Top post-MVP enhancement.
+- [ ] Surface per-column errors in the response and UI instead of silently skipping a failed column (needs an error or status field on chat_messages)
+- [ ] Per-session model choice surfaced in the UI (compare_model_a and compare_model_b are already stored on the session)
+- [ ] Parallelize the fan-out: call the four backends concurrently instead of sequentially, to cut response latency
 
 ### Sharing and visibility
 

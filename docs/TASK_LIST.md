@@ -46,8 +46,8 @@ More detailed than the roadmap: day-to-day working list.
 - [x] QAPairs: schemas and CRUD routes, nested under dataset
 - [ ] TrainingRuns: created by the training feature in Phase 2, not generic CRUD
 - [ ] FineTunedModels: created by the training feature in Phase 2, not generic CRUD
-- [ ] ChatSessions: created by the compare-chat feature in Phase 4, not generic CRUD
-- [ ] ChatMessages: created by the compare-chat feature in Phase 4, not generic CRUD
+- [x] ChatSessions: created by the compare-chat feature in Phase 4, not generic CRUD
+- [x] ChatMessages: created by the compare-chat feature in Phase 4, not generic CRUD
 - [x] Ownership enforced on every owned resource (write-time user override, read/edit/delete restricted to owner)
 
 ## Phase 2: Training (backend)
@@ -71,10 +71,10 @@ More detailed than the roadmap: day-to-day working list.
 
 ## Phase 4: Compare chat (backend)
 
-- [ ] Serve the fine-tuned model locally via Ollama and call it
-- [ ] Integrate two hosted comparison models
-- [ ] Endpoint: send a prompt, fan out to four models, persist the user message plus four replies
-- [ ] Endpoints: list chat sessions and their messages
+- [x] Serve the fine-tuned model locally (mlx_lm.server; Ollama/GGUF deferred) and call it
+- [x] Integrate two hosted comparison models
+- [x] Endpoint: send a prompt, fan out to four models, persist the user message plus four replies
+- [x] Endpoints: list chat sessions and their messages
 
 ## Frontend (React, TypeScript, Vite)
 
