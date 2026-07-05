@@ -16,10 +16,13 @@ from dataclasses import dataclass
 from chat.client import chat_completion
 from config import settings
 
-# Fixed endpoints for the hosted providers. The Llama columns will add their own
-# Ollama base URL here once local serving is wired.
+# Fixed endpoints per column. Two hosted providers, plus the two local Llama
+# columns served by mlx_lm.server (one process per model, one port each). The
+# long-term local runtime is Ollama, which would just swap these two local URLs.
 OPENAI_BASE_URL = "https://api.openai.com/v1"
 ANTHROPIC_BASE_URL = "https://api.anthropic.com/v1/"
+FINE_TUNED_BASE_URL = "http://localhost:8081/v1"
+VANILLA_BASE_URL = "http://localhost:8082/v1"
 
 
 @dataclass
@@ -44,11 +47,22 @@ class Reply:
 
 def hosted_backends(openai_model: str, anthropic_model: str) -> list[Backend]:
     """Build the two hosted columns from settings plus the caller's model choices.
-    The fine-tuned and vanilla Llama columns get appended to this list once Ollama
-    serving is in place."""
+    The two local Llama columns are built by local_backends and concatenated with
+    these to form the full four-way list."""
     return [
         Backend("openai", OPENAI_BASE_URL, settings.openai_api_key, openai_model),
         Backend("anthropic", ANTHROPIC_BASE_URL, settings.anthropic_api_key, anthropic_model),
+    ]
+
+
+def local_backends(fine_tuned_model: str, base_model: str) -> list[Backend]:
+    """Build the two local Llama columns served by mlx_lm.server: the fused
+    fine-tuned model and its untuned base. The key is a placeholder since the
+    local server ignores it. base_model is the fine-tuned model's own base, so
+    the two columns show exactly what fine-tuning changed."""
+    return [
+        Backend("fine_tuned", FINE_TUNED_BASE_URL, "local", fine_tuned_model),
+        Backend("vanilla", VANILLA_BASE_URL, "local", base_model),
     ]
 
 
