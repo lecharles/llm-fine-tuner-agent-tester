@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { login } from "../auth";
+import { signup } from "../auth";
 
-// Login form. Controlled inputs (React owns the values via state), submit calls
-// the real backend through apiFetch, stores the token, and routes to /datasets.
-export default function Login() {
+// Signup form. Creates the account, then auth.ts logs in automatically, so the
+// user lands authenticated on /datasets rather than back at a login form.
+export default function Signup() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState<string | null>(null);
@@ -12,14 +12,14 @@ export default function Login() {
     const navigate = useNavigate();
 
     async function handleSubmit(e: React.FormEvent) {
-        e.preventDefault(); // stop the browser's default full-page form reload
+        e.preventDefault();
         setError(null);
         setBusy(true);
         try {
-            await login(email, password);
-            navigate("/datasets"); // token is stored; the guard will now let us in
+            await signup(email, password);
+            navigate("/datasets");
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Login failed");
+            setError(err instanceof Error ? err.message : "Signup failed");
         } finally {
             setBusy(false);
         }
@@ -27,7 +27,7 @@ export default function Login() {
 
     return (
         <div>
-            <h1>Login</h1>
+            <h1>Sign up</h1>
             <form onSubmit={handleSubmit}>
                 <div>
                     <label>
@@ -52,12 +52,12 @@ export default function Login() {
                     </label>
                 </div>
                 <button type="submit" disabled={busy}>
-                    {busy ? "Logging in..." : "Log in"}
+                    {busy ? "Creating..." : "Sign up"}
                 </button>
             </form>
             {error && <p>Error: {error}</p>}
             <p>
-                No account? <a href="/signup">Sign up</a>
+                Have an account? <a href="/login">Log in</a>
             </p>
         </div>
     );

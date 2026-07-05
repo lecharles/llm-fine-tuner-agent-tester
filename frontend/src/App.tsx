@@ -6,6 +6,7 @@ import Datasets from "./pages/Datasets";
 import Train from "./pages/Train";
 import Models from "./pages/Models";
 import Compare from "./pages/Compare";
+import Signup from "./pages/Signup";
 
 // App skeleton: the nav is always on screen; the routes below swap by URL.
 // Protected pages are wrapped in ProtectedRoute, which bounces guests to /login.
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="/train" element={<ProtectedRoute><Train /></ProtectedRoute>} />
         <Route path="/models" element={<ProtectedRoute><Models /></ProtectedRoute>} />
         <Route path="/compare" element={<ProtectedRoute><Compare /></ProtectedRoute>} />
+        <Route path="/signup" element={<Signup />} />
       </Routes>
     </>
   );
