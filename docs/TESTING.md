@@ -223,6 +223,29 @@ Two-way fan-out, live (both hosted columns answer the same prompt):
 Expected: two Reply objects, label 'openai' and 'anthropic', each with content set and error None.
 A bad key or unreachable provider shows up as error on that one column, the other still returns.
 
+## Compare fan-out, four-way (local Llama columns)
+
+Adds the two local columns to the two hosted ones. The fine-tuned and vanilla Llama models are
+each served by their own mlx_lm.server process (one model per process, one port each), then added
+to the backend list so fan_out returns all four labeled replies. Run from the backend/ folder.
+
+Serve the fine-tuned model (a run with a fused_model/ on disk), in its own terminal:
+
+    pipenv run mlx_lm.server --model _training_runs/4/fused_model --port 8081
+
+Serve its untuned base (the base the run was fused from; check /v1/models on 8081 to find it), in
+a second terminal:
+
+    pipenv run mlx_lm.server --model mlx-community/Llama-3.2-1B-Instruct-bf16 --port 8082
+
+With both servers up, fan one prompt to all four:
+
+    pipenv run python -c "from chat.compare import hosted_backends, local_backends, fan_out; from pprint import pprint; pprint(fan_out(local_backends('_training_runs/4/fused_model', 'mlx-community/Llama-3.2-1B-Instruct-bf16') + hosted_backends('gpt-4o-mini', 'claude-opus-4-8'), [{'role':'user','content':'In one word, what is the capital of France?'}]))"
+
+Expected: four Reply objects, labels fine_tuned, vanilla, openai, anthropic, each with content and
+error None. If a local column errors, that server tab is down or still loading; the other three
+still return (per-column isolation).
+
 ## Fine-tuned models
 
 (to be added)
