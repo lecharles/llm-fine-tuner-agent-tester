@@ -16,6 +16,12 @@ export default function Datasets() {
     const [source, setSource] = useState("manual");
     const [creating, setCreating] = useState(false);
 
+    // Edit state: which row is being edited, and the draft values in its form.
+    // editingId === null means no row is in edit mode.
+    const [editingId, setEditingId] = useState<number | null>(null);
+    const [editName, setEditName] = useState("");
+    const [editDescription, setEditDescription] = useState("");
+
     const navigate = useNavigate();
 
     // useEffect with an empty dependency array [] runs once, after first render.
@@ -65,6 +71,33 @@ export default function Datasets() {
         }
     }
 
+    // Enter edit mode for a row: pre-fill the draft fields with its current values.
+    function startEdit(d: Dataset) {
+        setEditingId(d.id);
+        setEditName(d.name);
+        setEditDescription(d.description ?? "");
+        setError(null);
+    }
+
+    function cancelEdit() {
+        setEditingId(null);
+    }
+
+    async function handleSave(id: number) {
+        setError(null);
+        try {
+            const updated = await apiFetch<Dataset>(`/datasets/${id}`, {
+                method: "PUT",
+                body: { name: editName, description: editDescription || null },
+            });
+            // Swap the updated dataset into state in place, keeping list order.
+            setDatasets((prev) => prev.map((d) => (d.id === id ? updated : d)));
+            setEditingId(null);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Update failed");
+        }
+    }
+
     return (
         <div>
             <div>
@@ -103,8 +136,26 @@ export default function Datasets() {
                 <ul>
                     {datasets.map((d) => (
                         <li key={d.id}>
-                            {d.name} — {d.description ?? "no description"} ({d.source}){" "}
-                            <button onClick={() => handleDelete(d.id)}>Delete</button>
+                            {editingId === d.id ? (
+                                <>
+                                    <input
+                                        value={editName}
+                                        onChange={(e) => setEditName(e.target.value)}
+                                    />
+                                    <input
+                                        value={editDescription}
+                                        onChange={(e) => setEditDescription(e.target.value)}
+                                    />
+                                    <button onClick={() => handleSave(d.id)}>Save</button>
+                                    <button onClick={cancelEdit}>Cancel</button>
+                                </>
+                            ) : (
+                                <>
+                                    {d.name} — {d.description ?? "no description"} ({d.source}){" "}
+                                    <button onClick={() => startEdit(d)}>Edit</button>{" "}
+                                    <button onClick={() => handleDelete(d.id)}>Delete</button>
+                                </>
+                            )}
                         </li>
                     ))}
                 </ul>
