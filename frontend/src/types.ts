@@ -11,3 +11,16 @@ export type Dataset = {
     created_at: string; // JSON has no Date type; ISO string over the wire
     updated_at: string | null;
 };
+
+export type TrainingRun = {
+    id: number;
+    user_id: number;
+    dataset_id: number;
+    base_model: string;
+    method: string;
+    iters: number;
+    learning_rate: number | null;
+    status: string; // queued | running | completed | failed
+    created_at: string;
+    completed_at: string | null;
+};
