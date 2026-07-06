@@ -52,11 +52,11 @@ export default function Train() {
             });
     }
 
-    // Begin polling a run every 2s (and immediately once, so the UI updates fast).
+    // Begin polling a run every 4s (and immediately once, so the UI updates fast).
     function startPolling(id: number) {
         stopPolling();
         pollOnce(id);
-        pollRef.current = window.setInterval(() => pollOnce(id), 2000);
+        pollRef.current = window.setInterval(() => pollOnce(id), 4000);
     }
 
     async function handleStart(e: React.FormEvent) {
@@ -131,7 +131,7 @@ export default function Train() {
                     <p>Base model: {run.base_model}</p>
                     <p>Iters: {run.iters}</p>
                     {run.completed_at && <p>Completed at: {run.completed_at}</p>}
-                    {!TERMINAL.includes(run.status) && <p>Polling every 2s...</p>}
+                    {!TERMINAL.includes(run.status) && <p>Polling every 4s...</p>}
                 </div>
             )}
         </div>
