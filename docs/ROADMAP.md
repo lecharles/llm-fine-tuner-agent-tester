@@ -57,12 +57,23 @@ Working plan: where we are, what is next, and what is parked.
 - [ ] Accessibility pass (WCAG AA)
 - [ ] Link-based navigation
 - [ ] Deploy the web shell online (training stays local, Apple Silicon requirement)
+- [ ] Apply theme.css (the parked design system) over the finished, working app
+- [ ] Styled components built in this pass: ConfirmDialog (replaces the temporary no-confirm delete), a Thinking / VU-meter loading indicator (guitar-tuner needle, used wherever there is a wait), a nicer iters number input, cleaner status labels
+- [ ] Logged-in-user display: show the current user in the nav via GET /api/auth/me, logout in a small user menu (Linear-style)
+- [ ] README screenshots and the deployed-app link
 
-### Frontend (React, TypeScript, Vite)
+### Frontend (React, TypeScript, Vite) — DONE (unstyled golden path)
 
-- [ ] Scaffold Vite plus React plus TypeScript
-- [ ] Consume the documented API
-- [ ] Starts once the API exposes real endpoints, overlapping Phases 2 and 3
+- [x] Scaffold Vite plus React plus TypeScript
+- [x] API client (fetch wrapper, JWT attach, 401 handling) plus a Vite dev proxy
+- [x] App shell: React Router, nav, protected routes
+- [x] Auth: login and signup, real token round-trip
+- [x] Datasets: full CRUD in the UI (create, read, edit pre-filled, delete)
+- [x] Train: config form, start a run, live status polling
+- [x] Models: read-only list of fused models
+- [x] Compare: four-column screen, lazy session, model picker, fan-out replies
+- [x] Backend addition: read-only fine-tuned-models endpoint (list plus get), needed for Models and Compare
+- [ ] Styling pass: apply the theme over the finished app (see Phase 5 and Brand and design)
 
 ### Presentation and demo prep (before Tuesday)
 
@@ -127,6 +138,13 @@ Enhancements to the test-agent chat, captured post-MVP.
 - [ ] Surface per-column errors in the response and UI instead of silently skipping a failed column (needs an error or status field on chat_messages)
 - [ ] Per-session model choice surfaced in the UI (compare_model_a and compare_model_b are already stored on the session)
 - [ ] Parallelize the fan-out: call the four backends concurrently instead of sequentially, to cut response latency
+
+### Training error explainer
+
+When a training or fuse run fails, feed the backend log to an LLM and return a plain-language
+explanation of what went wrong and how to fix it, shown in the UI instead of a raw traceback. Fits
+the product's whole thesis: it abstracts something brutally technical, so it should explain failures,
+not dump them. New backend endpoint plus an LLM call plus UI. A post-MVP differentiator.
 
 ### Sharing and visibility
 

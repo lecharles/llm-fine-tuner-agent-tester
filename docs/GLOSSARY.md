@@ -90,6 +90,26 @@ Stack, dependencies, new concepts.
 - **OpenAI SDK compatibility (Anthropic)**: Anthropic's endpoint that accepts OpenAI-SDK calls, letting the Anthropic column use the same client as the rest. Intended for testing and comparison; the native Anthropic SDK is used in generation where structured output matters.
 - **Model label**: the tag stored on each assistant chat message marking which column produced it (fine_tuned, vanilla, openai, anthropic).
 
+## Frontend
+
+- **.ts vs .tsx**: .tsx files contain JSX (components that return markup); .ts files are plain TypeScript logic with no markup (the API client, the type definitions).
+- **Generic <T>**: a type placeholder filled in per call, so one function serves many shapes. apiFetch<Dataset[]> and apiFetch<TrainingRun> reuse one fetch wrapper while each caller gets the right typed result.
+- **Controlled input**: React state IS the input's value; onChange updates it on every keystroke, so the component always knows what is typed. Every form field works this way.
+- **preventDefault**: stops the browser's native "submit reloads the page" behavior, so a JavaScript handler runs the submit instead.
+- **useState**: a hook holding a piece of component state; changing it re-renders the component. The functional form setX(prev => ...) safely derives the next value from the previous one.
+- **useEffect(fn, [])**: runs fn once after first render (empty dependency array = no re-runs). Where a screen fetches its data. The function it returns runs on unmount (cleanup), e.g. clearing an interval.
+- **.map() with key**: turning an array into a list of JSX elements; each needs a unique key so React can track items across re-renders.
+- **Nullish coalescing (??)**: use the left value unless it is null or undefined, then the right. Cleanly handles optional fields.
+- **StrictMode double-invoke**: in development React runs effects twice on purpose, to surface effects that are not safe to re-run. It disappears in production; explains duplicate fetches in the Network tab.
+- **useRef**: a mutable box that survives re-renders without causing them. Right for a timer id or a session id read synchronously inside a handler.
+- **Polling**: repeatedly calling an endpoint on a timer (setInterval) to watch server-side state change, because the browser cannot be pushed to (that would be WebSockets). Stop once the state is terminal.
+- **Lazy resource creation**: create a resource on first real use, not on intent. The compare session is created on the first Send, not on model pick, avoiding throwaway sessions.
+- **Fetch wrapper**: one module (api.ts) every data call goes through; sets the base path, attaches the JWT, sets JSON headers, and handles a 401 by clearing the token and redirecting to login.
+- **JWT in localStorage**: the token is stored in the browser so the session survives a refresh; it is attached as an Authorization Bearer header on every request.
+- **Dev proxy vs CORS**: in dev the browser only talks to Vite, which forwards /api to the backend, so it is same-origin and CORS never applies. In production the frontend calls the backend directly, where CORS middleware matters.
+- **Protected route**: a wrapper that checks for a token, renders the page if present, else redirects to login; the guard for the authenticated screens.
+- **Per-column isolation (frontend)**: because the backend isolates each compare column, a column with no reply renders empty rather than breaking the others.
+
 ## Docs and diagrams
 
 - **Mermaid**: a text-based syntax for diagrams (flowcharts, sequence diagrams) that GitHub renders as visuals directly from markdown.
