@@ -296,3 +296,40 @@ List the messages back (confirms persistence):
 
 Swagger: the chat group exposes all five endpoints. Authorize, POST /api/chat-sessions with a body,
 then POST /api/chat-sessions/{session_id}/messages with the session id and a prompt.
+
+## Frontend (browser + DevTools)
+
+The frontend was verified through the browser, not curl: for each screen, drive the UI and confirm
+the Network calls and the resulting state in Chrome DevTools (Network tab for /api calls, Application
+-> Local Storage for the token, Console for errors). Backend on :8000, frontend on :5173.
+
+Auth:
+- Log in at /login with carlos@example.com / testpass123. Network: POST /api/auth/login -> 200 with an
+  access_token. Application -> Local Storage: a token row appears. Page redirects to /datasets. Hard
+  refresh: still logged in (token persisted). Log out: token row disappears, bounce to /login.
+- The guard: visit /datasets with no token -> redirect to /login. (Set/clear a dummy token in the
+  Console with localStorage.setItem/removeItem to see both paths.)
+
+Datasets (full CRUD, no page reloads):
+- Create: fill the form, Create -> POST /api/datasets -> 201, the row appears at the top instantly.
+- Edit: Edit a row -> inputs pre-filled with current values -> change -> Save -> PUT /api/datasets/{id}
+  -> 200, the row updates in place. Cancel reverts with no network call.
+- Delete: Delete -> DELETE /api/datasets/{id} -> 204, the row vanishes. (No native confirm dialog yet;
+  a styled ConfirmDialog comes in the styling pass.)
+
+Train (polling):
+- Pick a dataset with QA pairs, set iters, Start -> POST /api/training-runs -> 201, status "queued".
+  Network then shows GET /api/training-runs/{id} every 4s; status walks queued -> running ->
+  completed (or failed). Polling stops on the terminal state. A dataset with no pairs -> 400, surfaced
+  as an error in the UI.
+
+Models:
+- Visit /models -> GET /api/fine-tuned-models -> 200; the list shows one model per completed run.
+
+Compare (the four-way, the finale):
+- Pick a fine-tuned model, type a prompt, Send. Network: POST /api/chat-sessions -> 201 (the lazy
+  session, created on first Send), then POST /api/chat-sessions/{id}/messages -> 201 (a few seconds).
+  Four labeled columns render: fine-tuned, vanilla, openai, anthropic. A second Send with the same
+  model reuses the session (only the messages POST fires, no new session).
+- Both local columns need their mlx_lm.server up (8081, 8082); the hosted two need the API keys loaded
+  in the RUNNING backend (restart uvicorn if it started before .env had the keys).
