@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { apiFetch, clearToken } from "../api";
 import type { Dataset } from "../types";
 
@@ -151,7 +151,7 @@ export default function Datasets() {
                                 </>
                             ) : (
                                 <>
-                                    {d.name} — {d.description ?? "no description"} ({d.source}){" "}
+                                    <Link to={`/datasets/${d.id}`}>{d.name}</Link> — {d.description ?? "no description"} ({d.source}){" "}
                                     <button onClick={() => startEdit(d)}>Edit</button>{" "}
                                     <button onClick={() => handleDelete(d.id)}>Delete</button>
                                 </>

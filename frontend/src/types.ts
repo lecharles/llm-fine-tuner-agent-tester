@@ -56,3 +56,11 @@ export type ChatMessage = {
     content: string;
     created_at: string;
 };
+
+export type QAPair = {
+    id: number;
+    dataset_id: number;
+    question: string;
+    answer: string;
+    created_at: string;
+};
