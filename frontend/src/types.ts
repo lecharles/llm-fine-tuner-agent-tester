@@ -37,3 +37,22 @@ export type FineTunedModel = {
     status: string;
     created_at: string;
 };
+
+export type ChatSession = {
+    id: number;
+    user_id: number;
+    fine_tuned_model_id: number;
+    title: string | null;
+    compare_model_a: string | null;
+    compare_model_b: string | null;
+    created_at: string;
+};
+
+export type ChatMessage = {
+    id: number;
+    chat_session_id: number;
+    role: string;
+    model_label: string | null; // fine_tuned | vanilla | openai | anthropic (null for user)
+    content: string;
+    created_at: string;
+};
