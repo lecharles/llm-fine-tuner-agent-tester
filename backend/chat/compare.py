@@ -69,13 +69,16 @@ def local_backends(fine_tuned_model: str, base_model: str) -> list[Backend]:
 def fan_out(backends: list[Backend], messages: list[dict]) -> list[Reply]:
     """Send the same messages to every backend and collect labeled replies.
 
-    Sequential for now (one call after another). A single backend raising is
-    caught and returned as an error on that column instead of aborting the run,
-    so the compare always shows whatever did come back. Catching broad Exception
-    is deliberate here: any provider or network error should degrade one column,
-    not the whole response."""
+    Each column is an independent conversation: it sees the shared user turns plus
+    only its own prior replies, so histories is keyed by column label. Sequential
+    for now (one call after another). A single backend raising is caught and
+    returned as an error on that column instead of aborting the run, so the compare
+    always shows whatever did come back. Catching broad Exception is deliberate
+    here: any provider or network error should degrade one column, not the whole
+    response."""
     replies = []
     for backend in backends:
+        messages = histories[backend.label]
         try:
             content = chat_completion(
                 backend.base_url, backend.api_key, backend.model, messages

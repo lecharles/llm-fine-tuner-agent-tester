@@ -108,10 +108,26 @@ def send_message(
         f"_training_runs/{ft.training_run_id}/fused_model", ft.base_model
     ) + hosted_backends(session.compare_model_a, session.compare_model_b)
 
-    # Single turn for now: the prompt is sent to every column on its own, with no
-    # prior history. Multi-turn (threading history per column) is a roadmap item.
-    messages = [{"role": "user", "content": body.content}]
-    replies = fan_out(backends, messages)
+    # Multi-turn: rebuild each column's own conversation from the stored messages,
+    # then append the new user turn. Each column sees the shared user turns plus
+    # only its own prior replies, so the four conversations stay independent.
+    prior = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.chat_session_id == session.id)
+        .order_by(ChatMessage.id)
+        .all()
+    )
+    histories = {}
+    for backend in backends:
+        history = []
+        for msg in prior:
+            if msg.role == "user":
+                history.append({"role": "user", "content": msg.content})
+            elif msg.model_label == backend.label:
+                history.append({"role": "assistant", "content": msg.content})
+        history.append({"role": "user", "content": body.content})
+        histories[backend.label] = history
+    replies = fan_out(backends, histories)
 
     # Persist the user turn, then each column's reply. fan_out isolates failures,
     # so a column that errored has no content and is skipped here while the others
