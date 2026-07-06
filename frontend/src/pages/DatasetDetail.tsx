@@ -19,6 +19,12 @@ export default function DatasetDetail() {
     const [editQuestion, setEditQuestion] = useState("");
     const [editAnswer, setEditAnswer] = useState("");
 
+    // A2: use-case prompt editor + generate-from-prompt controls.
+    const [prompt, setPrompt] = useState("");
+    const [savingPrompt, setSavingPrompt] = useState(false);
+    const [genCount, setGenCount] = useState(20);
+    const [generating, setGenerating] = useState(false);
+
     useEffect(() => {
         Promise.all([
             apiFetch<Dataset>(`/datasets/${datasetId}`),
@@ -27,6 +33,7 @@ export default function DatasetDetail() {
             .then(([d, p]) => {
                 setDataset(d);
                 setPairs(p);
+                setPrompt(d.use_case_prompt ?? "");
             })
             .catch((err) => setError(err instanceof Error ? err.message : "Failed to load"))
             .finally(() => setLoading(false));
@@ -82,6 +89,39 @@ export default function DatasetDetail() {
         }
     }
 
+    // A2: save the dataset's use_case_prompt, then generate pairs from it.
+    async function handleSavePrompt() {
+        setSavingPrompt(true);
+        setError(null);
+        try {
+            const updated = await apiFetch<Dataset>(`/datasets/${datasetId}`, {
+                method: "PUT",
+                body: { use_case_prompt: prompt },
+            });
+            setDataset(updated);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Save failed");
+        } finally {
+            setSavingPrompt(false);
+        }
+    }
+
+    async function handleGenerate() {
+        setGenerating(true);
+        setError(null);
+        try {
+            const created = await apiFetch<QAPair[]>(`/datasets/${datasetId}/generate`, {
+                method: "POST",
+                body: { count: genCount },
+            });
+            setPairs((prev) => [...prev, ...created]);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Generate failed");
+        } finally {
+            setGenerating(false);
+        }
+    }
+
     return (
         <div>
             <p><Link to="/datasets">← Datasets</Link></p>
@@ -93,7 +133,17 @@ export default function DatasetDetail() {
                 <>
                     <h1>{dataset.name}</h1>
                     <p>{dataset.description ?? "no description"} ({dataset.source})</p>
-                    {dataset.use_case_prompt && <p>Use-case prompt: {dataset.use_case_prompt}</p>}
+                    <div>
+                        <p>Use-case prompt (generation uses this):</p>
+                        <textarea
+                            placeholder="e.g. A terse assistant that answers in one sentence"
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                        />
+                        <button onClick={handleSavePrompt} disabled={savingPrompt}>
+                            {savingPrompt ? "Saving..." : "Save prompt"}
+                        </button>
+                    </div>
 
                     <h2>QA pairs ({pairs.length})</h2>
 
@@ -114,6 +164,24 @@ export default function DatasetDetail() {
                             {creating ? "Adding..." : "Add pair"}
                         </button>
                     </form>
+
+                    <div>
+                        <p>Generate pairs from the prompt:</p>
+                        <input
+                            type="number"
+                            min={1}
+                            max={100}
+                            value={genCount}
+                            onChange={(e) => setGenCount(Number(e.target.value))}
+                        />
+                        <button
+                            onClick={handleGenerate}
+                            disabled={generating || genCount < 1 || !dataset.use_case_prompt}
+                        >
+                            {generating ? "Generating..." : "Generate"}
+                        </button>
+                        {!dataset.use_case_prompt && <span> Save a use-case prompt first.</span>}
+                    </div>
 
                     {pairs.length === 0 && <p>No QA pairs yet.</p>}
 
@@ -139,3 +207,6 @@ export default function DatasetDetail() {
                     </ul>
                 </>
             )}
+        </div>
+    );
+}
