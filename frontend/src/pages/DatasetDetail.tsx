@@ -25,6 +25,11 @@ export default function DatasetDetail() {
     const [genCount, setGenCount] = useState(20);
     const [generating, setGenerating] = useState(false);
 
+    // A3: import-from-preset controls.
+    const [preset, setPreset] = useState("general");
+    const [impCount, setImpCount] = useState(50);
+    const [importing, setImporting] = useState(false);
+
     useEffect(() => {
         Promise.all([
             apiFetch<Dataset>(`/datasets/${datasetId}`),
@@ -122,6 +127,22 @@ export default function DatasetDetail() {
         }
     }
 
+    async function handleImport() {
+        setImporting(true);
+        setError(null);
+        try {
+            const created = await apiFetch<QAPair[]>(`/datasets/${datasetId}/import`, {
+                method: "POST",
+                body: { preset, count: impCount },
+            });
+            setPairs((prev) => [...prev, ...created]);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Import failed");
+        } finally {
+            setImporting(false);
+        }
+    }
+
     return (
         <div>
             <p><Link to="/datasets">← Datasets</Link></p>
@@ -181,6 +202,24 @@ export default function DatasetDetail() {
                             {generating ? "Generating..." : "Generate"}
                         </button>
                         {!dataset.use_case_prompt && <span> Save a use-case prompt first.</span>}
+                    </div>
+
+                    <div>
+                        <p>Import pairs from a preset dataset:</p>
+                        <select value={preset} onChange={(e) => setPreset(e.target.value)}>
+                            <option value="general">General instructions (Dolly)</option>
+                            <option value="finance">Finance Q&A</option>
+                        </select>
+                        <input
+                            type="number"
+                            min={1}
+                            max={500}
+                            value={impCount}
+                            onChange={(e) => setImpCount(Number(e.target.value))}
+                        />
+                        <button onClick={handleImport} disabled={importing || impCount < 1}>
+                            {importing ? "Importing..." : "Import"}
+                        </button>
                     </div>
 
                     {pairs.length === 0 && <p>No QA pairs yet.</p>}
