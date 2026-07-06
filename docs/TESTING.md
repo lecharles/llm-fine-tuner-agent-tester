@@ -248,7 +248,21 @@ still return (per-column isolation).
 
 ## Fine-tuned models
 
-(to be added)
+Read-only. Models are created by the training runner, not by CRUD; this lists and reads them,
+owner-scoped. Assumes $TOKEN is set (see Auth).
+
+List your fine-tuned models:
+
+    curl -s http://localhost:8000/api/fine-tuned-models -H "Authorization: Bearer $TOKEN" | jq
+
+Expected: an array of models, one per completed training run, each with name, base_model, status
+"ready", size_mb, and training_run_id (the run that produced it). A user who owns none gets [].
+
+Read one by id:
+
+    curl -s http://localhost:8000/api/fine-tuned-models/4 -H "Authorization: Bearer $TOKEN" | jq
+
+Expected: that model, or 404 "Fine-tuned model not found" if it is not yours.
 
 ## Chat sessions and messages
 
