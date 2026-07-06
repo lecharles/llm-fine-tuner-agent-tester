@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers import auth, dataset, qa_pair, training_run, generation, chat
+from routers import auth, dataset, qa_pair, training_run, generation, chat, fine_tuned_model
 
 app = FastAPI(title="LLM Fine Tuner & Agent Tester API")
 
@@ -9,6 +9,7 @@ app.include_router(qa_pair.router)
 app.include_router(training_run.router)
 app.include_router(generation.router)
 app.include_router(chat.router)
+app.include_router(fine_tuned_model.router)
 
 
 @app.get("/health")
