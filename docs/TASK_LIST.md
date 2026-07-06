@@ -80,13 +80,13 @@ More detailed than the roadmap: day-to-day working list.
 
 Starts once the API exposes real endpoints, overlapping Phases 2 and 3.
 
-- [ ] Scaffold Vite plus React plus TypeScript
-- [ ] App shell with sidebar navigation and routing
-- [ ] Auth pages (login, signup) and token handling
-- [ ] Datasets: list, detail, create, generate, edit pairs
-- [ ] Train: config form, start, live status
-- [ ] Models: list, export, delete
-- [ ] Compare chat: four-column layout, send prompt
+- [x] Scaffold Vite plus React plus TypeScript
+- [x] App shell with link-based navigation and routing
+- [x] Auth pages (login, signup) and token handling
+- [x] Datasets: list, detail, create, generate, import, edit pairs
+- [x] Train: config form, start, live status
+- [x] Models: list (export and delete deferred to roadmap)
+- [x] Compare chat: four-column layout, send prompt, multi-turn conversation
 - [ ] Light and dark theme
 
 ## Phase 5: Polish and deploy

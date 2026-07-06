@@ -85,7 +85,8 @@ Stack, dependencies, new concepts.
 ## Compare chat
 
 - **Four-way compare**: the test-agent feature. One prompt is answered side by side by four models: the fine-tuned Llama, its untuned base, and two hosted models (an OpenAI and an Anthropic model).
-- **Fan-out**: sending the same prompt to every compare backend and collecting one labeled reply per column, with each call isolated so a single backend failing does not sink the others.
+- **Fan-out**: sending each compare backend its own message history and collecting one labeled reply per column, with each call isolated so a single backend failing does not sink the others.
+- **Multi-turn compare**: each column is an independent conversation. Every model sees the shared user turns interleaved with only its own prior replies, so the four columns stay fair and comparable across a real back-and-forth.
 - **OpenAI-compatible endpoint**: an API that speaks the OpenAI /v1/chat/completions shape, so one client talks to many backends by swapping only the base URL, key, and model. Here it covers all four columns: the two local Llamas via mlx_lm.server, the hosted OpenAI model, and the Anthropic model via its compatibility layer.
 - **OpenAI SDK compatibility (Anthropic)**: Anthropic's endpoint that accepts OpenAI-SDK calls, letting the Anthropic column use the same client as the rest. Intended for testing and comparison; the native Anthropic SDK is used in generation where structured output matters.
 - **Model label**: the tag stored on each assistant chat message marking which column produced it (fine_tuned, vanilla, openai, anthropic).

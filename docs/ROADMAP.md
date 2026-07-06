@@ -69,9 +69,10 @@ Working plan: where we are, what is next, and what is parked.
 - [x] App shell: React Router, nav, protected routes
 - [x] Auth: login and signup, real token round-trip
 - [x] Datasets: full CRUD in the UI (create, read, edit pre-filled, delete)
+- [x] Dataset detail: browse and edit QA pairs, edit the use-case prompt, generate pairs, import from a preset
 - [x] Train: config form, start a run, live status polling
 - [x] Models: read-only list of fused models
-- [x] Compare: four-column screen, lazy session, model picker, fan-out replies
+- [x] Compare: four-column screen, lazy session, model picker, fan-out replies, multi-turn transcript
 - [x] Backend addition: read-only fine-tuned-models endpoint (list plus get), needed for Models and Compare
 - [ ] Styling pass: apply the theme over the finished app (see Phase 5 and Brand and design)
 
@@ -138,7 +139,7 @@ This repo is the flagship. Later, extract dedicated showcase repos.
 
 Enhancements to the test-agent chat, captured post-MVP.
 
-- [ ] Multi-turn conversation: thread history per column and manage the context window, so the compare chat is a real chat rather than one-shot prompts. Top post-MVP enhancement.
+- [x] Multi-turn conversation: each column threads its own history (shared user turns plus only its own replies) so the compare is a real chat, not one-shot prompts. DONE; context-window management is the remaining refinement.
 - [ ] Surface per-column errors in the response and UI instead of silently skipping a failed column (needs an error or status field on chat_messages)
 - [ ] Per-session model choice surfaced in the UI (compare_model_a and compare_model_b are already stored on the session)
 - [ ] Parallelize the fan-out: call the four backends concurrently instead of sequentially, to cut response latency
