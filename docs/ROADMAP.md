@@ -130,6 +130,10 @@ This repo is the flagship. Later, extract dedicated showcase repos.
 - [ ] In-app guides explaining fine-tuning, dataset design, hyperparameters, export, and testing
 - [ ] Additional small model families beyond Llama
 
+### Generation and dataset UX
+
+- [ ] Auto-fill the use-case prompt from the dataset name and description: when the prompt is empty, pre-populate the generation prompt editor with a draft built from the dataset's name and description, so a well-described dataset is ready to generate from with little or no typing (the description often already reads as a usable prompt). Editable and non-destructive before saving
+
 ### Compare chat depth
 
 Enhancements to the test-agent chat, captured post-MVP.
