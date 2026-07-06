@@ -66,8 +66,8 @@ def local_backends(fine_tuned_model: str, base_model: str) -> list[Backend]:
     ]
 
 
-def fan_out(backends: list[Backend], messages: list[dict]) -> list[Reply]:
-    """Send the same messages to every backend and collect labeled replies.
+def fan_out(backends: list[Backend], histories: dict[str, list[dict]]) -> list[Reply]:
+    """Send each backend its own message history and collect labeled replies.
 
     Each column is an independent conversation: it sees the shared user turns plus
     only its own prior replies, so histories is keyed by column label. Sequential

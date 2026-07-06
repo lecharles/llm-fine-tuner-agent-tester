@@ -16,7 +16,7 @@ export default function Compare() {
     const [models, setModels] = useState<FineTunedModel[]>([]);
     const [modelId, setModelId] = useState<number | "">("");
     const [prompt, setPrompt] = useState("");
-    const [replies, setReplies] = useState<ChatMessage[]>([]);
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [sending, setSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -45,6 +45,7 @@ export default function Compare() {
         });
         sessionRef.current = session.id;
         sessionModelRef.current = modelId as number;
+        setMessages([]); // a new session (first use or model change) starts a fresh transcript
         return session.id;
     }
 
@@ -55,14 +56,15 @@ export default function Compare() {
         setError(null);
         try {
             const sessionId = await ensureSession(); // create-on-first-use
-            // POST the prompt; backend fans out to all four and returns the user
-            // turn plus the four assistant replies (each tagged by model_label).
-            const messages = await apiFetch<ChatMessage[]>(
+            // POST the prompt; backend threads each column's history, fans out to
+            // all four, and returns this turn's user message plus the four replies.
+            const turn = await apiFetch<ChatMessage[]>(
                 `/chat-sessions/${sessionId}/messages`,
                 { method: "POST", body: { content: prompt } }
             );
-            // Keep only the assistant replies for the columns (drop the user turn).
-            setReplies(messages.filter((m) => m.role === "assistant"));
+            // Append the whole turn to the running transcript, then clear the box.
+            setMessages((prev) => [...prev, ...turn]);
+            setPrompt("");
         } catch (err) {
             setError(err instanceof Error ? err.message : "Send failed");
         } finally {
@@ -70,10 +72,17 @@ export default function Compare() {
         }
     }
 
-    // Find the reply for a given column, if it came back (a column can be absent
-    // if its backend call errored — per-column isolation).
-    function replyFor(label: string): ChatMessage | undefined {
-        return replies.find((m) => m.model_label === label);
+    // Group the flat message list into turns: each user message starts a turn and
+    // the assistant replies that follow attach to it. This is what lets us render
+    // the conversation as prompt -> four answers, repeated down the page.
+    type Turn = { id: number; prompt: string; replies: ChatMessage[] };
+    const turns: Turn[] = [];
+    for (const m of messages) {
+        if (m.role === "user") {
+            turns.push({ id: m.id, prompt: m.content, replies: [] });
+        } else if (turns.length > 0) {
+            turns[turns.length - 1].replies.push(m);
+        }
     }
 
     return (
@@ -106,21 +115,28 @@ export default function Compare() {
 
             {error && <p>Error: {error}</p>}
 
-            {/* Four columns. Unstyled: four labeled blocks. The grid layout is a
-          styling-phase concern; the four labeled replies are all here. */}
-            <div>
-                {COLUMNS.map((label) => {
-                    const reply = replyFor(label);
-                    return (
-                        <div key={label}>
-                            <h3>{COLUMN_LABEL[label]}</h3>
-                            {sending && <p>...</p>}
-                            {!sending && reply && <p>{reply.content}</p>}
-                            {!sending && !reply && replies.length > 0 && <p>(no reply)</p>}
-                        </div>
-                    );
-                })}
-            </div>
+            {messages.length === 0 && !sending && <p>Pick a model and ask all four something.</p>}
+
+            {/* The transcript: each turn is the prompt, then the four columns'
+          answers for that turn. Unstyled; the grid is a styling-phase concern. */}
+            {turns.map((turn) => (
+                <div key={turn.id}>
+                    <p><strong>You:</strong> {turn.prompt}</p>
+                    <div>
+                        {COLUMNS.map((label) => {
+                            const reply = turn.replies.find((r) => r.model_label === label);
+                            return (
+                                <div key={label}>
+                                    <h3>{COLUMN_LABEL[label]}</h3>
+                                    {reply ? <p>{reply.content}</p> : <p>(no reply)</p>}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            ))}
+
+            {sending && <p>Asking all four...</p>}
         </div>
     );
 }
