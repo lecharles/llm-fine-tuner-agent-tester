@@ -21,6 +21,7 @@
   --danger: #F2646F;         /* failed, destructive */
   --info: #55A6F2;           /* neutral information */
   --hosted: #F0885C;         /* coral: any third-party hosted model (OpenAI, Anthropic, Gemini, ...) */
+  --accent-guide: #2DD4BF;   /* teal: the Get Started / guide accent */
 
   /* Compare column identity: your models vs the baseline vs the field */
   --col-finetuned: var(--primary);   /* your fine-tuned model */
@@ -64,6 +65,7 @@
   --danger: #D53A44;
   --info: #2569C4;
   --hosted: #D5583B;
+  --accent-guide: #0D9488;
 
   --primary-tint: #EEEDFB;
   --success-tint: #E6F4EC;
@@ -1065,4 +1067,308 @@ button {
 
 .compare-input .input {
   flex: 1;
+}
+
+/* ---------- Get Started (three-slide carousel) ---------- */
+.gs {
+  max-width: 620px;
+}
+
+/* Role colors for slide-1 bands and slide-3 steps, via a --role custom property */
+.gs-danger {
+  --role: var(--danger);
+  --role-tint: var(--danger-tint);
+}
+
+.gs-info {
+  --role: var(--info);
+  --role-tint: var(--info-tint);
+}
+
+.gs-success {
+  --role: var(--success);
+  --role-tint: var(--success-tint);
+}
+
+.gs-step-datasets {
+  --role: var(--info);
+  --role-tint: var(--info-tint);
+}
+
+.gs-step-train {
+  --role: var(--warning);
+  --role-tint: var(--warning-tint);
+}
+
+.gs-step-models {
+  --role: var(--success);
+  --role-tint: var(--success-tint);
+}
+
+.gs-step-compare {
+  --role: var(--primary);
+  --role-tint: var(--primary-tint);
+}
+
+.gs-band {
+  background: var(--role-tint);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 12px 14px;
+}
+
+.gs-band-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--role);
+  font-size: 12.5px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.gs-points {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.gs-points li {
+  position: relative;
+  padding-left: 15px;
+  margin-bottom: 3px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.gs-points li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 8px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--role);
+}
+
+.gs-connect {
+  display: flex;
+  justify-content: center;
+  padding: 4px 0;
+  color: #44474E;
+}
+
+/* Slide 2: setup card */
+.gs-setup {
+  margin-top: 6px;
+}
+
+.gs-setup-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.gs-setup-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gs-setup-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  background: rgba(45, 212, 191, 0.14);
+  color: var(--accent-guide);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gs-setup-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.gs-setup-tag {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.gs-setup-blurb {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin: 8px 0 12px;
+}
+
+.gs-checklist {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 13px;
+}
+
+.gs-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 11.5px;
+  color: var(--text);
+}
+
+.gs-check svg {
+  color: var(--success);
+  flex-shrink: 0;
+}
+
+.gs-bar {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--border);
+  overflow: hidden;
+  margin-bottom: 9px;
+}
+
+.gs-bar-fill {
+  width: 100%;
+  height: 100%;
+  background: var(--success);
+}
+
+.gs-setup-done {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.gs-setup-done svg {
+  color: var(--success);
+}
+
+.gs-setup-done b {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.gs-teaser {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 14px;
+}
+
+/* Slide 3: workflow steps */
+.gs-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--role-tint);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 12px 14px;
+}
+
+.gs-step-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  background: var(--surface);
+  color: var(--role);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gs-step-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.gs-step-name {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--role);
+}
+
+.gs-step-num {
+  font-size: 9.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.gs-step-blurb {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+/* Carousel nav */
+.gs-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  margin-top: 20px;
+}
+
+.gs-chevron {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+}
+
+.gs-chevron:hover:not(:disabled) {
+  color: var(--text);
+}
+
+.gs-chevron:disabled {
+  color: var(--border);
+  cursor: default;
+}
+
+.gs-dots {
+  display: flex;
+  gap: 7px;
+}
+
+.gs-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  border: none;
+  padding: 0;
+}
+
+.gs-dot.active {
+  background: var(--accent-guide);
 }
