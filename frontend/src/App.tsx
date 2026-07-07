@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import Nav from "./components/Nav";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Layout from "./components/Layout";
+import GetStarted from "./pages/GetStarted";
 import Login from "./pages/Login";
 import Datasets from "./pages/Datasets";
 import Train from "./pages/Train";
@@ -9,22 +10,27 @@ import Compare from "./pages/Compare";
 import Signup from "./pages/Signup";
 import DatasetDetail from "./pages/DatasetDetail";
 
-// App skeleton: the nav is always on screen; the routes below swap by URL.
-// Protected pages are wrapped in ProtectedRoute, which bounces guests to /login.
+// App skeleton: login and signup render bare; every authenticated page is
+// guarded by ProtectedRoute and rendered inside the sidebar shell (Layout),
+// swapping by URL via the shell's Outlet.
 export default function App() {
   return (
-    <>
-      <Nav />
-      <Routes>
-        <Route path="/" element={<Navigate to="/datasets" replace />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/datasets" element={<ProtectedRoute><Datasets /></ProtectedRoute>} />
-        <Route path="/datasets/:datasetId" element={<ProtectedRoute><DatasetDetail /></ProtectedRoute>} />
-        <Route path="/train" element={<ProtectedRoute><Train /></ProtectedRoute>} />
-        <Route path="/models" element={<ProtectedRoute><Models /></ProtectedRoute>} />
-        <Route path="/compare" element={<ProtectedRoute><Compare /></ProtectedRoute>} />
-        <Route path="/signup" element={<Signup />} />
-      </Routes>
-    </>
+    <Routes>
+      {/* Public: no shell. */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+
+      {/* Authenticated: guarded, then rendered inside the sidebar shell.
+          ProtectedRoute bounces guests; Layout provides the sidebar + Outlet. */}
+      <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+        <Route path="/" element={<Navigate to="/get-started" replace />} />
+        <Route path="/get-started" element={<GetStarted />} />
+        <Route path="/datasets" element={<Datasets />} />
+        <Route path="/datasets/:datasetId" element={<DatasetDetail />} />
+        <Route path="/train" element={<Train />} />
+        <Route path="/models" element={<Models />} />
+        <Route path="/compare" element={<Compare />} />
+      </Route>
+    </Routes>
   );
 }
