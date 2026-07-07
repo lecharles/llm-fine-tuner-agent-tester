@@ -1372,3 +1372,78 @@ button {
 .gs-dot.active {
   background: var(--accent-guide);
 }
+
+/* ---------- Auth (login / signup) ---------- */
+.auth {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 360px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 28px 26px;
+}
+
+.auth-brand {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.auth-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+  margin-bottom: 14px;
+  background: var(--primary-tint);
+  color: var(--primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.auth-tagline {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin-top: 5px;
+}
+
+.auth-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-submit {
+  width: 100%;
+  justify-content: center;
+  height: 38px;
+  margin-top: 4px;
+}
+
+.auth-alt {
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin-top: 18px;
+}
+
+.auth-alt a {
+  color: var(--primary);
+}
+
+.auth-alt a:hover {
+  text-decoration: underline;
+}

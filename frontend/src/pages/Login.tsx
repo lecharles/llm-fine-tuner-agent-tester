@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { SlidersHorizontal } from "lucide-react";
 import { login } from "../auth";
 
-// Login form. Controlled inputs (React owns the values via state), submit calls
-// the real backend through apiFetch, stores the token, and routes to /datasets.
+// Login form. Controlled inputs (React owns the values via state); submit calls
+// the real backend through apiFetch, stores the token, and routes to /get-started.
 export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -26,39 +27,44 @@ export default function Login() {
     }
 
     return (
-        <div>
-            <h1>Login</h1>
-            <form onSubmit={handleSubmit}>
-                <div>
-                    <label>
-                        Email
+        <div className="auth">
+            <div className="auth-card">
+                <div className="auth-brand">
+                    <span className="auth-mark"><SlidersHorizontal size={22} /></span>
+                    <div className="auth-title">LLM Tuner</div>
+                    <div className="auth-tagline">Fine-tune an LLM as easily as tuning a guitar.</div>
+                </div>
+                <form onSubmit={handleSubmit}>
+                    <div className="field">
+                        <label className="label">Email</label>
                         <input
+                            className="input"
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
+                            autoFocus
                         />
-                    </label>
-                </div>
-                <div>
-                    <label>
-                        Password
+                    </div>
+                    <div className="field">
+                        <label className="label">Password</label>
                         <input
+                            className="input"
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
                         />
-                    </label>
+                    </div>
+                    {error && <p className="form-error">{error}</p>}
+                    <button type="submit" className="btn btn-primary auth-submit" disabled={busy}>
+                        {busy ? "Logging in…" : "Log in"}
+                    </button>
+                </form>
+                <div className="auth-alt">
+                    No account? <Link to="/signup">Sign up</Link>
                 </div>
-                <button type="submit" disabled={busy}>
-                    {busy ? "Logging in..." : "Log in"}
-                </button>
-            </form>
-            {error && <p>Error: {error}</p>}
-            <p>
-                No account? <a href="/signup">Sign up</a>
-            </p>
+            </div>
         </div>
     );
 }

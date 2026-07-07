@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { SlidersHorizontal } from "lucide-react";
 import { signup } from "../auth";
 
 // Signup form. Creates the account, then auth.ts logs in automatically, so the
-// user lands authenticated on /datasets rather than back at a login form.
+// user lands authenticated on /get-started rather than back at a login form.
 export default function Signup() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -17,7 +18,7 @@ export default function Signup() {
         setBusy(true);
         try {
             await signup(email, password);
-            navigate("/datasets");
+            navigate("/get-started");
         } catch (err) {
             setError(err instanceof Error ? err.message : "Signup failed");
         } finally {
@@ -26,39 +27,44 @@ export default function Signup() {
     }
 
     return (
-        <div>
-            <h1>Sign up</h1>
-            <form onSubmit={handleSubmit}>
-                <div>
-                    <label>
-                        Email
+        <div className="auth">
+            <div className="auth-card">
+                <div className="auth-brand">
+                    <span className="auth-mark"><SlidersHorizontal size={22} /></span>
+                    <div className="auth-title">Create your account</div>
+                    <div className="auth-tagline">Fine-tune an LLM as easily as tuning a guitar.</div>
+                </div>
+                <form onSubmit={handleSubmit}>
+                    <div className="field">
+                        <label className="label">Email</label>
                         <input
+                            className="input"
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
+                            autoFocus
                         />
-                    </label>
-                </div>
-                <div>
-                    <label>
-                        Password
+                    </div>
+                    <div className="field">
+                        <label className="label">Password</label>
                         <input
+                            className="input"
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
                         />
-                    </label>
+                    </div>
+                    {error && <p className="form-error">{error}</p>}
+                    <button type="submit" className="btn btn-primary auth-submit" disabled={busy}>
+                        {busy ? "Creating…" : "Sign up"}
+                    </button>
+                </form>
+                <div className="auth-alt">
+                    Have an account? <Link to="/login">Log in</Link>
                 </div>
-                <button type="submit" disabled={busy}>
-                    {busy ? "Creating..." : "Sign up"}
-                </button>
-            </form>
-            {error && <p>Error: {error}</p>}
-            <p>
-                Have an account? <a href="/login">Log in</a>
-            </p>
+            </div>
         </div>
     );
 }
