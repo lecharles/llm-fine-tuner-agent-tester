@@ -633,6 +633,9 @@ button {
 }
 
 .label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -661,4 +664,168 @@ button {
 
 .input::placeholder {
   color: var(--text-muted);
+}
+
+/* ---------- Page eyebrow + generic card ---------- */
+.page-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  margin-bottom: 4px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 18px;
+}
+
+/* ---------- Status badges (shared: Train, Models) ---------- */
+.badge-success {
+  background: var(--success-tint);
+  color: var(--success);
+}
+
+.badge-warning {
+  background: var(--warning-tint);
+  color: var(--warning);
+}
+
+.badge-danger {
+  background: var(--danger-tint);
+  color: var(--danger);
+}
+
+/* ---------- Train: config ---------- */
+.train-config {
+  max-width: 520px;
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.config-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.field-iters {
+  max-width: 130px;
+}
+
+.btn-sm {
+  height: 30px;
+  padding: 0 11px;
+  font-size: 12.5px;
+}
+
+/* Iters tooltip */
+.hint {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-muted);
+}
+
+.hint-bubble {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 220px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 11.5px;
+  line-height: 1.5;
+  text-transform: none;
+  letter-spacing: normal;
+  font-family: var(--font-sans);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s ease;
+  z-index: 10;
+}
+
+[data-theme="light"] .hint-bubble {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.hint:hover .hint-bubble {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ---------- Train: run card ---------- */
+.run-card {
+  max-width: 520px;
+  margin-top: 14px;
+}
+
+.run-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.run-id {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.run-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 6px;
+  font-family: var(--font-mono);
+}
+
+/* A small pulsing dot inside the badge while a run is actively running. */
+.pulse-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  margin-right: 6px;
+  vertical-align: middle;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* ---------- Train: resume-a-run utility ---------- */
+.attach {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.attach-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.attach-input {
+  width: 110px;
 }

@@ -1,8 +1,17 @@
 import { useEffect, useRef, useState } from "react";
+import { Play, HelpCircle } from "lucide-react";
 import { apiFetch } from "../api";
 import type { Dataset, TrainingRun } from "../types";
 
 const TERMINAL = ["completed", "failed"];
+
+// Map a run's status to its badge color.
+const STATUS_CLASS: Record<string, string> = {
+    queued: "badge-neutral",
+    running: "badge-warning",
+    completed: "badge-success",
+    failed: "badge-danger",
+};
 
 // Train: pick a dataset + iters, start a run, then poll its status every 2s until
 // it reaches a terminal state (completed/failed). Polling is the core new pattern.
@@ -14,6 +23,7 @@ export default function Train() {
     const [run, setRun] = useState<TrainingRun | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [starting, setStarting] = useState(false);
+    const [attachId, setAttachId] = useState("");
 
     // A ref holds the interval id across renders without triggering re-renders.
     const pollRef = useRef<number | null>(null);
@@ -78,62 +88,96 @@ export default function Train() {
         }
     }
 
-    // Prove-polling helper: attach the poller to an existing run id (e.g. a finished
-    // one) without starting a new run. Lets us validate the machinery instantly.
+    // Utility: attach the poller to an existing run id without starting a new run.
+    // Handy for resuming after a refresh, or showing a finished run instantly.
     function handleAttach(e: React.FormEvent) {
         e.preventDefault();
-        const idStr = (new FormData(e.currentTarget as HTMLFormElement).get("existingId") as string) ?? "";
-        const id = Number(idStr);
+        const id = Number(attachId);
         if (!id) return;
         setError(null);
         startPolling(id);
     }
 
     return (
-        <div>
-            <h1>Train</h1>
+        <div className="page">
+            <div className="page-eyebrow" style={{ color: "var(--warning)" }}>Fine-tune</div>
+            <h1 className="page-title">Train</h1>
 
-            <form onSubmit={handleStart}>
-                <select
-                    value={datasetId}
-                    onChange={(e) => setDatasetId(e.target.value === "" ? "" : Number(e.target.value))}
-                    required
-                >
-                    <option value="">Select a dataset</option>
-                    {datasets.map((d) => (
-                        <option key={d.id} value={d.id}>
-                            {d.name}
-                        </option>
-                    ))}
-                </select>
-                <input
-                    type="number"
-                    value={iters}
-                    onChange={(e) => setIters(Number(e.target.value))}
-                    min={1}
-                />
-                <button type="submit" disabled={starting}>
-                    {starting ? "Starting..." : "Start training"}
-                </button>
+            <form className="card train-config" onSubmit={handleStart}>
+                <div className="field">
+                    <label className="label">Dataset</label>
+                    <select
+                        className="select"
+                        value={datasetId}
+                        onChange={(e) => setDatasetId(e.target.value === "" ? "" : Number(e.target.value))}
+                        required
+                    >
+                        <option value="">Select a dataset</option>
+                        {datasets.map((d) => (
+                            <option key={d.id} value={d.id}>
+                                {d.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="config-row">
+                    <div className="field field-iters">
+                        <label className="label">
+                            Iters
+                            <span className="hint">
+                                <HelpCircle size={13} />
+                                <span className="hint-bubble">
+                                    Training steps. More iters means more learning but a longer run. 200 to 400 is a good start.
+                                </span>
+                            </span>
+                        </label>
+                        <input
+                            className="input"
+                            type="number"
+                            value={iters}
+                            onChange={(e) => setIters(Number(e.target.value))}
+                            min={1}
+                        />
+                    </div>
+                    <button type="submit" className="btn btn-primary" disabled={starting || datasetId === ""}>
+                        <Play size={16} /> {starting ? "Starting…" : "Start training"}
+                    </button>
+                </div>
             </form>
 
-            <form onSubmit={handleAttach}>
-                <input name="existingId" type="number" placeholder="Poll existing run id" min={1} />
-                <button type="submit">Attach to run</button>
-            </form>
-
-            {error && <p>Error: {error}</p>}
+            {error && <p className="form-error">{error}</p>}
 
             {run && (
-                <div>
-                    <h2>Run #{run.id}</h2>
-                    <p>Status: {run.status}</p>
-                    <p>Base model: {run.base_model}</p>
-                    <p>Iters: {run.iters}</p>
-                    {run.completed_at && <p>Completed at: {run.completed_at}</p>}
-                    {!TERMINAL.includes(run.status) && <p>Polling every 4s...</p>}
+                <div className="card run-card">
+                    <div className="run-head">
+                        <span className="run-id">Run #{run.id}</span>
+                        <span className={`badge ${STATUS_CLASS[run.status] ?? "badge-neutral"}`}>
+                            {run.status === "running" && <span className="pulse-dot" />}
+                            {run.status}
+                        </span>
+                    </div>
+                    <div className="run-meta">
+                        {run.base_model} · {run.method} · {run.iters} iters
+                    </div>
+                    {run.completed_at && (
+                        <div className="run-meta">Completed {new Date(run.completed_at).toLocaleString()}</div>
+                    )}
                 </div>
             )}
+
+            <form className="attach" onSubmit={handleAttach}>
+                <span className="attach-label">Resume a run</span>
+                <input
+                    className="input attach-input"
+                    type="number"
+                    placeholder="Run id"
+                    min={1}
+                    value={attachId}
+                    onChange={(e) => setAttachId(e.target.value)}
+                />
+                <button type="submit" className="btn btn-ghost btn-sm">Attach</button>
+            </form>
         </div>
     );
 }
