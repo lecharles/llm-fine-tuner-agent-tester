@@ -1,8 +1,16 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { ArrowLeft, Sparkles, Download, Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { apiFetch } from "../api";
 import type { Dataset, QAPair } from "../types";
+import QAPairModal, { type QAPairValues } from "../components/QAPairModal";
+import ConfirmDialog from "../components/ConfirmDialog";
 
+const PAGE_SIZE = 10;
+
+// Dataset detail: edit the use-case prompt, generate or import pairs in bulk,
+// and add/edit/delete individual pairs. Pairs paginate client-side. Create and
+// edit go through one modal; delete goes through the ConfirmDialog.
 export default function DatasetDetail() {
     const { datasetId } = useParams<{ datasetId: string }>();
 
@@ -11,24 +19,23 @@ export default function DatasetDetail() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const [question, setQuestion] = useState("");
-    const [answer, setAnswer] = useState("");
-    const [creating, setCreating] = useState(false);
-
-    const [editingId, setEditingId] = useState<number | null>(null);
-    const [editQuestion, setEditQuestion] = useState("");
-    const [editAnswer, setEditAnswer] = useState("");
-
-    // A2: use-case prompt editor + generate-from-prompt controls.
+    // Use-case prompt editor + generate/import controls.
     const [prompt, setPrompt] = useState("");
     const [savingPrompt, setSavingPrompt] = useState(false);
     const [genCount, setGenCount] = useState(20);
     const [generating, setGenerating] = useState(false);
-
-    // A3: import-from-preset controls.
     const [preset, setPreset] = useState("general");
     const [impCount, setImpCount] = useState(50);
     const [importing, setImporting] = useState(false);
+
+    // Pair create/edit modal, delete confirmation, and the current page.
+    const [pairForm, setPairForm] = useState<{ open: boolean; mode: "create" | "edit"; pair: QAPair | null }>({
+        open: false,
+        mode: "create",
+        pair: null,
+    });
+    const [confirmTarget, setConfirmTarget] = useState<QAPair | null>(null);
+    const [page, setPage] = useState(0);
 
     useEffect(() => {
         Promise.all([
@@ -44,57 +51,7 @@ export default function DatasetDetail() {
             .finally(() => setLoading(false));
     }, [datasetId]);
 
-    async function handleCreate(e: React.FormEvent) {
-        e.preventDefault();
-        setCreating(true);
-        setError(null);
-        try {
-            const created = await apiFetch<QAPair>(`/datasets/${datasetId}/qa-pairs`, {
-                method: "POST",
-                body: { question, answer },
-            });
-            setPairs((prev) => [...prev, created]);
-            setQuestion("");
-            setAnswer("");
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Create failed");
-        } finally {
-            setCreating(false);
-        }
-    }
-
-    function startEdit(p: QAPair) {
-        setEditingId(p.id);
-        setEditQuestion(p.question);
-        setEditAnswer(p.answer);
-        setError(null);
-    }
-
-    async function handleSave(id: number) {
-        setError(null);
-        try {
-            const updated = await apiFetch<QAPair>(`/datasets/${datasetId}/qa-pairs/${id}`, {
-                method: "PUT",
-                body: { question: editQuestion, answer: editAnswer },
-            });
-            setPairs((prev) => prev.map((p) => (p.id === id ? updated : p)));
-            setEditingId(null);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Update failed");
-        }
-    }
-
-    async function handleDelete(id: number) {
-        setError(null);
-        try {
-            await apiFetch<null>(`/datasets/${datasetId}/qa-pairs/${id}`, { method: "DELETE" });
-            setPairs((prev) => prev.filter((p) => p.id !== id));
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Delete failed");
-        }
-    }
-
-    // A2: save the dataset's use_case_prompt, then generate pairs from it.
+    // Save the dataset's use_case_prompt (generation reads it server-side).
     async function handleSavePrompt() {
         setSavingPrompt(true);
         setError(null);
@@ -143,107 +100,150 @@ export default function DatasetDetail() {
         }
     }
 
-    return (
-        <div>
-            <p><Link to="/datasets">← Datasets</Link></p>
+    const openCreatePair = () => setPairForm({ open: true, mode: "create", pair: null });
+    const openEditPair = (p: QAPair) => setPairForm({ open: true, mode: "edit", pair: p });
+    const closePairForm = () => setPairForm((f) => ({ ...f, open: false }));
 
-            {loading && <p>Loading...</p>}
-            {error && <p>Error: {error}</p>}
+    async function submitPair(values: QAPairValues) {
+        if (pairForm.mode === "create") {
+            const created = await apiFetch<QAPair>(`/datasets/${datasetId}/qa-pairs`, { method: "POST", body: values });
+            setPairs((prev) => [...prev, created]);
+        } else if (pairForm.pair) {
+            const id = pairForm.pair.id;
+            const updated = await apiFetch<QAPair>(`/datasets/${datasetId}/qa-pairs/${id}`, { method: "PUT", body: values });
+            setPairs((prev) => prev.map((p) => (p.id === id ? updated : p)));
+        }
+    }
+
+    async function confirmDeletePair() {
+        if (!confirmTarget) return;
+        try {
+            await apiFetch<null>(`/datasets/${datasetId}/qa-pairs/${confirmTarget.id}`, { method: "DELETE" });
+            setPairs((prev) => prev.filter((p) => p.id !== confirmTarget.id));
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Delete failed");
+        } finally {
+            setConfirmTarget(null);
+        }
+    }
+
+    const totalPages = Math.max(1, Math.ceil(pairs.length / PAGE_SIZE));
+    const safePage = Math.min(page, totalPages - 1);
+    const start = safePage * PAGE_SIZE;
+    const pagePairs = pairs.slice(start, start + PAGE_SIZE);
+
+    return (
+        <div className="page dd-page">
+            <Link to="/datasets" className="dd-back"><ArrowLeft size={15} /> Datasets</Link>
+
+            {loading && <p className="loading">Loading…</p>}
+            {error && <p className="form-error">{error}</p>}
 
             {!loading && dataset && (
                 <>
-                    <h1>{dataset.name}</h1>
-                    <p>{dataset.description ?? "no description"} ({dataset.source})</p>
-                    <div>
-                        <p>Use-case prompt (generation uses this):</p>
-                        <textarea
-                            placeholder="e.g. A terse assistant that answers in one sentence"
-                            value={prompt}
-                            onChange={(e) => setPrompt(e.target.value)}
-                        />
-                        <button onClick={handleSavePrompt} disabled={savingPrompt}>
-                            {savingPrompt ? "Saving..." : "Save prompt"}
-                        </button>
+                    <div className="dd-head">
+                        <h1 className="page-title">{dataset.name}</h1>
+                        <div className="dd-sub">
+                            <span className={`badge ${dataset.source === "generated" ? "badge-info" : "badge-neutral"}`}>{dataset.source}</span>
+                            {dataset.description && <span className="dd-desc">{dataset.description}</span>}
+                        </div>
                     </div>
 
-                    <h2>QA pairs ({pairs.length})</h2>
+                    <div className="dd-controls">
+                        <div className="card">
+                            <div className="label">Use-case prompt</div>
+                            <textarea
+                                className="textarea"
+                                rows={3}
+                                placeholder="e.g. A terse assistant that answers in one sentence"
+                                value={prompt}
+                                onChange={(e) => setPrompt(e.target.value)}
+                            />
+                            <div className="dd-row">
+                                <button className="btn btn-ghost" onClick={handleSavePrompt} disabled={savingPrompt}>
+                                    {savingPrompt ? "Saving…" : "Save prompt"}
+                                </button>
+                                <div className="dd-row-right">
+                                    <input className="input dd-count" type="number" min={1} max={100} value={genCount} onChange={(e) => setGenCount(Number(e.target.value))} />
+                                    <button className="btn btn-primary" onClick={handleGenerate} disabled={generating || genCount < 1 || !dataset.use_case_prompt}>
+                                        <Sparkles size={15} /> {generating ? "Generating…" : "Generate"}
+                                    </button>
+                                </div>
+                            </div>
+                            {!dataset.use_case_prompt && <div className="dd-hint">Save a use-case prompt first.</div>}
+                        </div>
 
-                    <form onSubmit={handleCreate}>
-                        <input
-                            placeholder="Question"
-                            value={question}
-                            onChange={(e) => setQuestion(e.target.value)}
-                            required
-                        />
-                        <input
-                            placeholder="Answer"
-                            value={answer}
-                            onChange={(e) => setAnswer(e.target.value)}
-                            required
-                        />
-                        <button type="submit" disabled={creating}>
-                            {creating ? "Adding..." : "Add pair"}
-                        </button>
-                    </form>
-
-                    <div>
-                        <p>Generate pairs from the prompt:</p>
-                        <input
-                            type="number"
-                            min={1}
-                            max={100}
-                            value={genCount}
-                            onChange={(e) => setGenCount(Number(e.target.value))}
-                        />
-                        <button
-                            onClick={handleGenerate}
-                            disabled={generating || genCount < 1 || !dataset.use_case_prompt}
-                        >
-                            {generating ? "Generating..." : "Generate"}
-                        </button>
-                        {!dataset.use_case_prompt && <span> Save a use-case prompt first.</span>}
+                        <div className="card">
+                            <div className="label">Import preset</div>
+                            <select className="select" value={preset} onChange={(e) => setPreset(e.target.value)}>
+                                <option value="general">General instructions (Dolly)</option>
+                                <option value="finance">Finance Q&amp;A</option>
+                            </select>
+                            <div className="dd-row dd-row-end">
+                                <div className="dd-row-right">
+                                    <input className="input dd-count" type="number" min={1} max={500} value={impCount} onChange={(e) => setImpCount(Number(e.target.value))} />
+                                    <button className="btn btn-ghost" onClick={handleImport} disabled={importing || impCount < 1}>
+                                        <Download size={15} /> {importing ? "Importing…" : "Import"}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div>
-                        <p>Import pairs from a preset dataset:</p>
-                        <select value={preset} onChange={(e) => setPreset(e.target.value)}>
-                            <option value="general">General instructions (Dolly)</option>
-                            <option value="finance">Finance Q&A</option>
-                        </select>
-                        <input
-                            type="number"
-                            min={1}
-                            max={500}
-                            value={impCount}
-                            onChange={(e) => setImpCount(Number(e.target.value))}
-                        />
-                        <button onClick={handleImport} disabled={importing || impCount < 1}>
-                            {importing ? "Importing..." : "Import"}
-                        </button>
+                    <div className="dd-pairs-head">
+                        <div className="dd-pairs-title">Q&amp;A pairs <span className="dd-count-label">· {pairs.length}</span></div>
+                        <button className="btn btn-primary btn-sm" onClick={openCreatePair}><Plus size={15} /> Add pair</button>
                     </div>
 
-                    {pairs.length === 0 && <p>No QA pairs yet.</p>}
+                    {pairs.length === 0 ? (
+                        <p className="empty">No pairs yet. Add one, generate from a prompt, or import a preset.</p>
+                    ) : (
+                        <>
+                            <div className="table">
+                                <div className="table-head">
+                                    <div className="cell cell-q">Question</div>
+                                    <div className="cell cell-a">Answer</div>
+                                    <div className="cell cell-actions" />
+                                </div>
+                                {pagePairs.map((p) => (
+                                    <div className="table-row" key={p.id}>
+                                        <div className="cell cell-q dd-cell-text">{p.question}</div>
+                                        <div className="cell cell-a dd-cell-text">{p.answer}</div>
+                                        <div className="cell cell-actions">
+                                            <button className="btn-icon" onClick={() => openEditPair(p)} aria-label="Edit pair"><Pencil size={15} /></button>
+                                            <button className="btn-icon btn-icon-danger" onClick={() => setConfirmTarget(p)} aria-label="Delete pair"><Trash2 size={15} /></button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
 
-                    <ul>
-                        {pairs.map((p) => (
-                            <li key={p.id}>
-                                {editingId === p.id ? (
-                                    <>
-                                        <input value={editQuestion} onChange={(e) => setEditQuestion(e.target.value)} />
-                                        <input value={editAnswer} onChange={(e) => setEditAnswer(e.target.value)} />
-                                        <button onClick={() => handleSave(p.id)}>Save</button>
-                                        <button onClick={() => setEditingId(null)}>Cancel</button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <strong>Q:</strong> {p.question} <strong>A:</strong> {p.answer}{" "}
-                                        <button onClick={() => startEdit(p)}>Edit</button>{" "}
-                                        <button onClick={() => handleDelete(p.id)}>Delete</button>
-                                    </>
-                                )}
-                            </li>
-                        ))}
-                    </ul>
+                            {totalPages > 1 && (
+                                <div className="pager">
+                                    <div className="pager-info">
+                                        Showing {start + 1}–{Math.min(start + PAGE_SIZE, pairs.length)} of {pairs.length}
+                                    </div>
+                                    <div className="pager-controls">
+                                        <button className="pager-btn" onClick={() => setPage(Math.max(0, safePage - 1))} disabled={safePage === 0} aria-label="Previous page">
+                                            <ChevronLeft size={14} />
+                                        </button>
+                                        <span className="pager-page">{safePage + 1} / {totalPages}</span>
+                                        <button className="pager-btn" onClick={() => setPage(Math.min(totalPages - 1, safePage + 1))} disabled={safePage === totalPages - 1} aria-label="Next page">
+                                            <ChevronRight size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    <QAPairModal open={pairForm.open} mode={pairForm.mode} pair={pairForm.pair} onClose={closePairForm} onSubmit={submitPair} />
+                    <ConfirmDialog
+                        open={confirmTarget !== null}
+                        title="Delete pair?"
+                        message="This deletes this Q&A pair. This can't be undone."
+                        onConfirm={confirmDeletePair}
+                        onCancel={() => setConfirmTarget(null)}
+                    />
                 </>
             )}
         </div>
