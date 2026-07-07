@@ -17,7 +17,7 @@ export default function Login() {
         setBusy(true);
         try {
             await login(email, password);
-            navigate("/datasets"); // token is stored; the guard will now let us in
+            navigate("/get-started"); // token is stored; the guard will now let us in
         } catch (err) {
             setError(err instanceof Error ? err.message : "Login failed");
         } finally {
