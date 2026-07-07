@@ -1,31 +1,30 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { apiFetch, clearToken } from "../api";
+import { Link } from "react-router-dom";
+import { Plus, Pencil, Trash2 } from "lucide-react";
+import { apiFetch } from "../api";
 import type { Dataset } from "../types";
+import DatasetFormModal, { type DatasetFormValues } from "../components/DatasetFormModal";
+import ConfirmDialog from "../components/ConfirmDialog";
 
-// Datasets: read (list) + create + delete. Each mutation updates local state so
-// the list re-renders immediately, no refetch and no page reload.
+// Datasets: read (list) + create + edit + delete. Each mutation updates local
+// state so the list re-renders immediately, no refetch and no page reload.
+// Create and edit go through one modal; delete goes through the ConfirmDialog.
 export default function Datasets() {
     const [datasets, setDatasets] = useState<Dataset[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Create-form state
-    const [name, setName] = useState("");
-    const [description, setDescription] = useState("");
-    const [source, setSource] = useState("manual");
-    const [creating, setCreating] = useState(false);
+    // The create/edit modal: open flag, which mode, and (for edit) which dataset.
+    const [form, setForm] = useState<{ open: boolean; mode: "create" | "edit"; dataset: Dataset | null }>({
+        open: false,
+        mode: "create",
+        dataset: null,
+    });
 
-    // Edit state: which row is being edited, and the draft values in its form.
-    // editingId === null means no row is in edit mode.
-    const [editingId, setEditingId] = useState<number | null>(null);
-    const [editName, setEditName] = useState("");
-    const [editDescription, setEditDescription] = useState("");
+    // The dataset pending a delete confirmation; null means the dialog is closed.
+    const [confirmTarget, setConfirmTarget] = useState<Dataset | null>(null);
 
-    const navigate = useNavigate();
-
-    // useEffect with an empty dependency array [] runs once, after first render.
-    // This is where a screen loads its data. The token rides along via apiFetch.
+    // Load once, after first render. The token rides along via apiFetch.
     useEffect(() => {
         apiFetch<Dataset[]>("/datasets")
             .then((data) => setDatasets(data))
@@ -33,133 +32,119 @@ export default function Datasets() {
             .finally(() => setLoading(false));
     }, []);
 
-    function handleLogout() {
-        clearToken();
-        navigate("/login");
-    }
+    const openCreate = () => setForm({ open: true, mode: "create", dataset: null });
+    const openEdit = (d: Dataset) => setForm({ open: true, mode: "edit", dataset: d });
+    const closeForm = () => setForm((f) => ({ ...f, open: false }));
 
-    async function handleCreate(e: React.FormEvent) {
-        e.preventDefault();
-        setCreating(true);
-        setError(null);
-        try {
+    // Create prepends; edit swaps in place. Errors bubble to the modal, which shows them.
+    async function submitForm(values: DatasetFormValues) {
+        if (form.mode === "create") {
             const created = await apiFetch<Dataset>("/datasets", {
                 method: "POST",
-                body: { name, description: description || null, source },
+                body: { name: values.name, description: values.description || null, source: values.source },
             });
-            // Prepend the new dataset to state -> list re-renders with it on top.
             setDatasets((prev) => [created, ...prev]);
-            setName("");
-            setDescription("");
-            setSource("manual");
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Create failed");
-        } finally {
-            setCreating(false);
-        }
-    }
-
-    async function handleDelete(id: number) {
-        // No confirm dialog yet: native window.confirm is banned (unstyleable, fails
-        // WCAG). A styled <ConfirmDialog> component replaces this in the styling pass.
-        setError(null);
-        try {
-            await apiFetch<null>(`/datasets/${id}`, { method: "DELETE" });
-            setDatasets((prev) => prev.filter((d) => d.id !== id));
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Delete failed");
-        }
-    }
-
-    // Enter edit mode for a row: pre-fill the draft fields with its current values.
-    function startEdit(d: Dataset) {
-        setEditingId(d.id);
-        setEditName(d.name);
-        setEditDescription(d.description ?? "");
-        setError(null);
-    }
-
-    function cancelEdit() {
-        setEditingId(null);
-    }
-
-    async function handleSave(id: number) {
-        setError(null);
-        try {
+        } else if (form.dataset) {
+            const id = form.dataset.id;
             const updated = await apiFetch<Dataset>(`/datasets/${id}`, {
                 method: "PUT",
-                body: { name: editName, description: editDescription || null },
+                body: { name: values.name, description: values.description || null },
             });
-            // Swap the updated dataset into state in place, keeping list order.
             setDatasets((prev) => prev.map((d) => (d.id === id ? updated : d)));
-            setEditingId(null);
+        }
+    }
+
+    async function confirmDelete() {
+        if (!confirmTarget) return;
+        try {
+            await apiFetch<null>(`/datasets/${confirmTarget.id}`, { method: "DELETE" });
+            setDatasets((prev) => prev.filter((d) => d.id !== confirmTarget.id));
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Update failed");
+            setError(err instanceof Error ? err.message : "Delete failed");
+        } finally {
+            setConfirmTarget(null);
         }
     }
 
     return (
-        <div>
-            <div>
-                <h1>Datasets</h1>
-                <button onClick={handleLogout}>Log out</button>
+        <div className="page">
+            <div className="page-head">
+                <h1 className="page-title">Datasets</h1>
+                <button className="btn btn-primary" onClick={openCreate}>
+                    <Plus size={16} /> New dataset
+                </button>
             </div>
 
-            <form onSubmit={handleCreate}>
-                <input
-                    placeholder="Dataset name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                />
-                <input
-                    placeholder="Description (optional)"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                />
-                <select value={source} onChange={(e) => setSource(e.target.value)}>
-                    <option value="manual">manual</option>
-                    <option value="generated">generated</option>
-                    <option value="imported">imported</option>
-                </select>
-                <button type="submit" disabled={creating}>
-                    {creating ? "Creating..." : "Create dataset"}
-                </button>
-            </form>
-
-            {loading && <p>Loading...</p>}
-            {error && <p>Error: {error}</p>}
-
-            {!loading && !error && datasets.length === 0 && <p>No datasets yet.</p>}
+            {loading && <p className="loading">Loading…</p>}
+            {error && <p className="form-error">{error}</p>}
+            {!loading && !error && datasets.length === 0 && (
+                <p className="empty">No datasets yet. Create your first one.</p>
+            )}
 
             {!loading && !error && datasets.length > 0 && (
-                <ul>
+                <div className="table">
+                    <div className="table-head">
+                        <div className="cell cell-grow">Name</div>
+                        <div className="cell cell-source">Source</div>
+                        <div className="cell cell-date">Created</div>
+                        <div className="cell cell-actions" />
+                    </div>
                     {datasets.map((d) => (
-                        <li key={d.id}>
-                            {editingId === d.id ? (
-                                <>
-                                    <input
-                                        value={editName}
-                                        onChange={(e) => setEditName(e.target.value)}
-                                    />
-                                    <input
-                                        value={editDescription}
-                                        onChange={(e) => setEditDescription(e.target.value)}
-                                    />
-                                    <button onClick={() => handleSave(d.id)}>Save</button>
-                                    <button onClick={cancelEdit}>Cancel</button>
-                                </>
-                            ) : (
-                                <>
-                                    <Link to={`/datasets/${d.id}`}>{d.name}</Link> — {d.description ?? "no description"} ({d.source}){" "}
-                                    <button onClick={() => startEdit(d)}>Edit</button>{" "}
-                                    <button onClick={() => handleDelete(d.id)}>Delete</button>
-                                </>
-                            )}
-                        </li>
+                        <div className="table-row" key={d.id}>
+                            <div className="cell cell-grow">
+                                <Link to={`/datasets/${d.id}`} className="row-name">
+                                    {d.name}
+                                </Link>
+                                {d.description && <div className="row-sub">{d.description}</div>}
+                            </div>
+                            <div className="cell cell-source">
+                                <span className={`badge ${d.source === "generated" ? "badge-info" : "badge-neutral"}`}>
+                                    {d.source}
+                                </span>
+                            </div>
+                            <div className="cell cell-date">
+                                {new Date(d.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                            </div>
+                            <div className="cell cell-actions">
+                                <button className="btn-icon" onClick={() => openEdit(d)} aria-label={`Edit ${d.name}`}>
+                                    <Pencil size={15} />
+                                </button>
+                                <button
+                                    className="btn-icon btn-icon-danger"
+                                    onClick={() => setConfirmTarget(d)}
+                                    aria-label={`Delete ${d.name}`}
+                                >
+                                    <Trash2 size={15} />
+                                </button>
+                            </div>
+                        </div>
                     ))}
-                </ul>
+                </div>
             )}
+
+            <DatasetFormModal
+                open={form.open}
+                mode={form.mode}
+                dataset={form.dataset}
+                onClose={closeForm}
+                onSubmit={submitForm}
+            />
+
+            <ConfirmDialog
+                open={confirmTarget !== null}
+                title="Delete dataset?"
+                message={
+                    confirmTarget ? (
+                        <>
+                            This permanently deletes <strong>{confirmTarget.name}</strong> and its pairs. This can't be undone.
+                        </>
+                    ) : (
+                        ""
+                    )
+                }
+                onConfirm={confirmDelete}
+                onCancel={() => setConfirmTarget(null)}
+            />
         </div>
     );
 }
