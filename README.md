@@ -48,3 +48,17 @@ It is a deliberately simplified take on the local fine-tuning workflow: one mode
 ## About
 
 A project built to go deeper on React, dive into TypeScript, and FastAPI, for product engineering work on AI developer tooling.
+
+## Demo
+
+![LLM Tuner](screenshots/1-llm-tuner.png)
+
+![LLM Tuner](screenshots/2-llm-tuner.png)
+
+![LLM Tuner](screenshots/3-llm-tuner.png)
+
+![LLM Tuner](screenshots/4-llm-tuner.png)
+
+![LLM Tuner](screenshots/5-llm-tuner.png)
+
+![LLM Tuner](screenshots/6-llm-tuner.png)
