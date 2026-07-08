@@ -3,8 +3,9 @@ import {
     AlertTriangle, Lightbulb, ShieldCheck,
     Download, CircleCheck,
     Database, Cpu, Box, Columns3,
-    ArrowDown, ChevronLeft, ChevronRight,
+    ArrowDown,
 } from "lucide-react";
+import Pager from "../components/Pager";
 
 const SLIDES = 3;
 
@@ -120,22 +121,7 @@ export default function GetStarted() {
             )}
 
             <div className="gs-nav">
-                <button className="gs-chevron" onClick={() => setSlide((s) => Math.max(0, s - 1))} disabled={slide === 0} aria-label="Previous slide">
-                    <ChevronLeft size={18} />
-                </button>
-                <div className="gs-dots">
-                    {Array.from({ length: SLIDES }).map((_, i) => (
-                        <button
-                            key={i}
-                            className={`gs-dot${slide === i ? " active" : ""}`}
-                            onClick={() => setSlide(i)}
-                            aria-label={`Go to slide ${i + 1}`}
-                        />
-                    ))}
-                </div>
-                <button className="gs-chevron" onClick={() => setSlide((s) => Math.min(SLIDES - 1, s + 1))} disabled={slide === SLIDES - 1} aria-label="Next slide">
-                    <ChevronRight size={18} />
-                </button>
+                <Pager page={slide} total={SLIDES} onChange={setSlide} />
             </div>
         </div>
     );

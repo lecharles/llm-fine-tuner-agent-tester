@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Sparkles, Download, Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Sparkles, Download, Plus, Pencil, Trash2 } from "lucide-react";
+import Pager from "../components/Pager";
 import { apiFetch } from "../api";
 import type { Dataset, QAPair } from "../types";
 import QAPairModal, { type QAPairValues } from "../components/QAPairModal";
@@ -222,15 +223,7 @@ export default function DatasetDetail() {
                                     <div className="pager-info">
                                         Showing {start + 1}–{Math.min(start + PAGE_SIZE, pairs.length)} of {pairs.length}
                                     </div>
-                                    <div className="pager-controls">
-                                        <button className="pager-btn" onClick={() => setPage(Math.max(0, safePage - 1))} disabled={safePage === 0} aria-label="Previous page">
-                                            <ChevronLeft size={14} />
-                                        </button>
-                                        <span className="pager-page">{safePage + 1} / {totalPages}</span>
-                                        <button className="pager-btn" onClick={() => setPage(Math.min(totalPages - 1, safePage + 1))} disabled={safePage === totalPages - 1} aria-label="Next page">
-                                            <ChevronRight size={14} />
-                                        </button>
-                                    </div>
+                                    <Pager page={safePage} total={totalPages} onChange={setPage} />
                                 </div>
                             )}
                         </>
