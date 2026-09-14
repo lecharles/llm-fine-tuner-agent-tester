@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from routers import auth, dataset, qa_pair, training_run, generation, chat, fine_tuned_model
+from static_serve import mount_spa
 
 app = FastAPI(title="LLM Fine Tuner & Agent Tester API")
 
@@ -15,3 +16,7 @@ app.include_router(fine_tuned_model.router)
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+
+# Registered last: the SPA catch-all only sees what the routes above do not.
+mount_spa(app)

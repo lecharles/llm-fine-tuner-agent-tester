@@ -333,3 +333,19 @@ Compare (the four-way, the finale):
   model reuses the session (only the messages POST fires, no new session).
 - Both local columns need their mlx_lm.server up (8081, 8082); the hosted two need the API keys loaded
   in the RUNNING backend (restart uvicorn if it started before .env had the keys).
+
+## Single-port app (Phase 6 slice 1)
+
+One process serves API and UI locally. Build once, run once, open http://localhost:8000.
+
+    cd frontend && npm ci && npm run build     # produces dist/
+    cd ../backend && python -m uvicorn main:app --port 8000
+
+Probes:
+
+    curl -s http://localhost:8000/health | jq
+    curl -s http://localhost:8000/ | head -3                                  # the built index.html
+    curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8000/train      # 200, SPA deep link
+    curl -s http://localhost:8000/api/nope                                    # 404 JSON, never HTML
+
+No dist/ means the mount is skipped, so the Vite dev proxy flow is unchanged.

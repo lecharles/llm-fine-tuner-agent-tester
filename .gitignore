@@ -8,4 +8,4 @@ __pycache__/
 .venv/
 
 # Training artifacts (adapters, GGUFs, JSONL, logs)
-backend/_training_runs/
+backend/_training_runs/.venv-smoke/
