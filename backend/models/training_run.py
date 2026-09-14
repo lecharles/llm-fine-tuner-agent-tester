@@ -16,7 +16,7 @@ class TrainingRun(Base):
     iters = Column(Integer, nullable=False, default=300)
     learning_rate = Column(Numeric)
     status = Column(String, nullable=False, default="queued")
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.current_timestamp())
     completed_at = Column(DateTime(timezone=True))
 
     user = relationship("User", back_populates="training_runs")

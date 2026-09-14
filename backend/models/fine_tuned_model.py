@@ -17,7 +17,7 @@ class FineTunedModel(Base):
     format = Column(String, default="gguf")
     size_mb = Column(Integer)
     status = Column(String, nullable=False, default="training")
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.current_timestamp())
 
     user = relationship("User", back_populates="fine_tuned_models")
     training_run = relationship("TrainingRun", back_populates="fine_tuned_model")

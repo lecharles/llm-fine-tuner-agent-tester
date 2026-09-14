@@ -14,7 +14,7 @@ class Dataset(Base):
     description = Column(Text)
     source = Column(String, nullable=False)
     use_case_prompt = Column(Text)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.current_timestamp())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     user = relationship("User", back_populates="datasets")

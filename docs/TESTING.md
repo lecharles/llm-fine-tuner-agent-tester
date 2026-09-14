@@ -349,3 +349,27 @@ Probes:
     curl -s http://localhost:8000/api/nope                                    # 404 JSON, never HTML
 
 No dist/ means the mount is skipped, so the Vite dev proxy flow is unchanged.
+
+## Zero-infra boot (Phase 6 slice 2)
+
+No `DATABASE_URL` or `JWT_SECRET_KEY` needed. The app creates `~/.llmtuner/app.db` (or `$LLMTUNER_HOME/app.db`) and uses a local dev secret. Postgres is the hosted option when you set `DATABASE_URL`.
+
+    export LLMTUNER_HOME=/tmp/test-home
+    cd backend && alembic upgrade head    # creates the SQLite DB
+    python -m uvicorn main:app --port 8000
+
+## Agent-friendly test pattern
+
+Shell variables holding tokens get masked by the transcript secret-filter, breaking scripts. Use header files and jq instead:
+
+    # Capture token to file, not a shell variable
+    curl -s -X POST http://localhost:8000/api/auth/login \
+      -d "username=carlos@example.com&password=***" | jq -r .access_token > /tmp/token
+
+    # Write header file
+    printf "Authorization: Bearer %s\n" "$(cat /tmp/token)" > /tmp/auth.hdr
+
+    # Use header file in subsequent calls
+    curl -s http://localhost:8000/api/datasets -H @/tmp/auth.hdr | jq .
+
+This pattern survives transcript masking and is copy-paste-friendly for humans too.

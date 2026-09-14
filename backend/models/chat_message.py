@@ -13,6 +13,6 @@ class ChatMessage(Base):
     role = Column(String, nullable=False)
     model_label = Column(String)
     content = Column(Text, nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.current_timestamp())
 
     chat_session = relationship("ChatSession", back_populates="chat_messages")

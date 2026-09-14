@@ -12,7 +12,7 @@ class User(Base):
     email = Column(String, unique=True, nullable=False, index=True)
     hashed_password = Column(String, nullable=False)
     display_name = Column(String)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.current_timestamp())
 
     datasets = relationship("Dataset", back_populates="user")
     training_runs = relationship("TrainingRun", back_populates="user")

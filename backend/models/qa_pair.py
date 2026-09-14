@@ -12,6 +12,6 @@ class QAPair(Base):
     dataset_id = Column(Integer, ForeignKey("datasets.id"), nullable=False)
     question = Column(Text, nullable=False)
     answer = Column(Text, nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.current_timestamp())
 
     dataset = relationship("Dataset", back_populates="qa_pairs")

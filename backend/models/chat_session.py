@@ -14,7 +14,7 @@ class ChatSession(Base):
     title = Column(String)
     compare_model_a = Column(String)
     compare_model_b = Column(String)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.current_timestamp())
 
     user = relationship("User", back_populates="chat_sessions")
     fine_tuned_model = relationship("FineTunedModel", back_populates="chat_sessions")
