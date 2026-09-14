@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
+from config import settings
 from database import get_db
 from models.user import User
 from schemas.user import UserCreate, UserOut
@@ -9,6 +10,12 @@ from schemas.token import Token
 from core.security import hash_password, verify_password, create_access_token
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+
+@router.get("/config")
+def auth_config():
+    """Phase 6 slice 3: frontend uses this to detect local mode and skip login."""
+    return {"local_mode": settings.local_mode}
 
 
 @router.post("/signup", response_model=UserOut, status_code=status.HTTP_201_CREATED)

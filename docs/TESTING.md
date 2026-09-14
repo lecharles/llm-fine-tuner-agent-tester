@@ -358,6 +358,23 @@ No `DATABASE_URL` or `JWT_SECRET_KEY` needed. The app creates `~/.llmtuner/app.d
     cd backend && alembic upgrade head    # creates the SQLite DB
     python -m uvicorn main:app --port 8000
 
+## Local single-user bootstrap (Phase 6 slice 3)
+
+Set `LOCAL_MODE=true` to skip the signup wall. The app auto-provisions a local user (`local@llmtuner`) and bypasses JWT validation. JWT stays intact for online pairing later.
+
+    export LOCAL_MODE=true
+    cd backend && alembic upgrade head
+    python -m uvicorn main:app --port 8000
+
+The frontend calls `/api/auth/config` to detect local mode and skip the login screen.
+
+Probes:
+
+    curl -s http://localhost:8000/api/auth/config | jq .                    # {"local_mode": true}
+    curl -s -X POST http://localhost:8000/api/datasets \                    # no token needed
+      -H "Content-Type: application/json" \
+      -d '{"name":"test","source":"manual"}' | jq .
+
 ## Agent-friendly test pattern
 
 Shell variables holding tokens get masked by the transcript secret-filter, breaking scripts. Use header files and jq instead:

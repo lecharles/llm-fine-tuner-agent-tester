@@ -31,8 +31,20 @@ def create_access_token(subject: str) -> str:
     return jwt.encode(to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
 def get_current_user(
-    token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
+    token: str | None = Depends(OAuth2PasswordBearer(tokenUrl="api/auth/login", auto_error=False)),
+    db: Session = Depends(get_db)
 ) -> User:
+    # Phase 6 slice 3: local mode bypass. Auto-provision a local user and skip JWT.
+    if settings.local_mode:
+        return ensure_local_user(db)
+
+    if token is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -51,4 +63,20 @@ def get_current_user(
     user = db.query(User).filter(User.id == int(user_id)).first()
     if user is None:
         raise credentials_exception
+    return user
+
+
+def ensure_local_user(db: Session) -> User:
+    """Auto-provision a single local user for local_mode. Idempotent."""
+    local_email = "local@llmtuner"
+    user = db.query(User).filter(User.email == local_email).first()
+    if user is None:
+        user = User(
+            email=local_email,
+            hashed_password=hash_password("local"),
+            display_name="Local User",
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
     return user
