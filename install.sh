@@ -59,7 +59,7 @@ pip install --quiet \
     fastapi 'uvicorn[standard]' sqlalchemy alembic pydantic-settings \
     python-dotenv 'passlib[bcrypt]' 'python-jose[cryptography]' \
     'pydantic[email]' python-multipart bcrypt==4.0.1 httpx \
-    anthropic openai datasets
+    anthropic openai datasets mlx-lm
 
 # Install frontend dependencies and build
 echo "🎨 Building frontend..."
