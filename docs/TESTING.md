@@ -375,6 +375,20 @@ Probes:
       -H "Content-Type: application/json" \
       -d '{"name":"test","source":"manual"}' | jq .
 
+## CLI launcher (Phase 6 slice 4)
+
+One command to check prerequisites, run migrations, and start the server:
+
+    python3 -m cli.llmtuner doctor          # preflight checks
+    python3 -m cli.llmtuner up --port 8000  # migrations + server + browser
+
+The CLI auto-detects the venv Python and runs in local mode by default.
+
+Probes:
+
+    python3 -m cli.llmtuner doctor | grep -E "✅|❌"
+    curl -s http://localhost:8000/health | jq .                               # {"status": "ok"}
+
 ## Agent-friendly test pattern
 
 Shell variables holding tokens get masked by the transcript secret-filter, breaking scripts. Use header files and jq instead:
