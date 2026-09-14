@@ -11,6 +11,7 @@ Working plan: where we are, what is next, and what is parked.
 - [x] Phase 3: Dataset generation
 - [x] Phase 4: Compare chat
 - [ ] Phase 5: Polish and deploy
+- [ ] Phase 6: Fluid hybrid experience
 
 ## Phases
 
@@ -61,6 +62,20 @@ Working plan: where we are, what is next, and what is parked.
 - [ ] Styled components built in this pass: ConfirmDialog (replaces the temporary no-confirm delete), a Thinking / VU-meter loading indicator (guitar-tuner needle, used wherever there is a wait), a nicer iters number input, cleaner status labels
 - [ ] Logged-in-user display: show the current user in the nav via GET /api/auth/me, logout in a small user menu (Linear-style)
 - [ ] README screenshots and the deployed-app link
+
+### Phase 6: Fluid hybrid experience
+
+The product gap. Today the only way to run the app is to run the repo, and the experience is
+disjointed: one part of the web app is online, training and models are local, and nothing ties
+them together. North star: as easy to use as any web app, but the compute and the user's data
+live on the user's own machine.
+
+- [ ] Architecture decision: hybrid (online web shell + local companion) versus full local-first (everything installed, UI opens in the browser, Ollama/Unsloth-style)
+- [ ] macOS installer: one command or one file that places the local runtime on the user's Mac
+- [ ] Local companion: receives requests from the web app and drives CLI/bash-level training, fuse, export, and local model serving on the user's machine
+- [ ] Opt-in bridge: explicit "Do you accept?" permission before the web app uses the user's hardware, scoped and revocable
+- [ ] Data model split: user memory, models, and training artifacts stay local; the hosted side keeps only account and metadata
+- [ ] End-to-end fluid path: sign in, dataset, train, export, compare from a fresh install without touching a terminal
 
 ### Frontend (React, TypeScript, Vite) — DONE (unstyled golden path)
 

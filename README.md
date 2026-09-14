@@ -40,6 +40,9 @@ It is a deliberately simplified take on the local fine-tuning workflow: one mode
 
 ## Roadmap
 
+The full plan lives in [docs/ROADMAP.md](docs/ROADMAP.md). Highlights:
+
+- One-command macOS installer and a local companion so the online app can drive fine-tuning on the user's Mac, with explicit opt-in.
 - React Native build for iOS and Android from the same core.
 - Native macOS app.
 - Additional small model families beyond Llama.
