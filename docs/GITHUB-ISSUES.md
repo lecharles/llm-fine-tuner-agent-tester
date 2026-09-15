@@ -14,7 +14,7 @@ Signup succeeds (201), password verifies correctly in Python, but `/api/auth/log
 **Steps to reproduce:**
 1. Start VPS instance on port 8090
 2. Navigate to `http://76.13.122.86:8090/login`
-3. Enter credentials `team@teamox.dev` / `Gz8tNl13XvS70L6a`
+3. Enter credentials `team@teamox.dev` / `<rotated 09-15; operator credentials file>`
 4. Click Login → 401 Unauthorized
 
 **Expected:** Login succeeds, JWT stored, redirect to dashboard  
