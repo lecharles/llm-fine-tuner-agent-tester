@@ -1,21 +1,23 @@
 """Call an LLM with a forced-JSON tool and a quality fallback ladder.
 
 Generation walks a cross-provider ladder. It prefers Anthropic (Fable -> Opus
-4.8 -> Sonnet 5), and when every Anthropic tier fails or no Anthropic key is
-configured, it continues into OpenAI (gpt-4o-mini -> gpt-5.5). One provider
-being out of credit therefore does not sink a generation: it falls through to
-the other account that has balance.
+4.8 -> Sonnet 5), falls through to OpenAI (gpt-4o-mini -> gpt-5.5), and finally
+to local Ollama if reachable. A provider being out of credit or unconfigured
+therefore never sinks a generation: it falls through to the next tier, ending
+on a free on-device model when both hosted accounts are empty.
 
 Structured output is forced with a tool whose input_schema is the shape we
 want back, so the reply is valid JSON we can use directly instead of parsing
-free text. Each provider uses its own SDK's tool-forcing shape, but callers
-see one uniform dict either way.
+free text. Each provider uses its own forcing shape (Anthropic tools, OpenAI
+functions, Ollama `format` schema), but callers see one uniform dict either way.
 
 Model IDs and prompting strategy: see docs/RESEARCH_DATASETS.md.
 """
 
 import json
 import os
+import urllib.error
+import urllib.request
 
 from anthropic import Anthropic
 from openai import OpenAI
@@ -109,6 +111,60 @@ def _call_openai(client, model, system, user, tool_name, input_schema, max_token
     raise RuntimeError("no tool call in response")
 
 
+# --- Local Ollama fallback ------------------------------------------------
+# Ollama speaks its own /api/chat with `format` set to a JSON schema, which
+# forces the reply into exactly our structure. Free, offline, no credit. Uses
+# stdlib urllib only so this fallback can never be blocked by a missing SDK.
+
+def _ollama_http(path: str, payload: dict | None = None, timeout: float = 5.0):
+    url = settings.ollama_base_url.rstrip("/") + path
+    data = json.dumps(payload).encode() if payload is not None else None
+    req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return json.loads(resp.read().decode())
+
+
+def _ollama_available() -> bool:
+    try:
+        _ollama_http("/api/version", timeout=3)
+        return True
+    except Exception:
+        return False
+
+
+def _ollama_local_models() -> list[str]:
+    """Prefer generation_local_models if set, else every installed model."""
+    configured = [m.strip() for m in settings.generation_local_models.split(",") if m.strip()]
+    if configured:
+        return configured
+    try:
+        tags = _ollama_http("/api/tags", timeout=3).get("models", [])
+        return [t["name"] for t in tags if t.get("name")]
+    except Exception:
+        return []
+
+
+def _call_ollama(model, system, user, input_schema, max_tokens):
+    resp = _ollama_http(
+        "/api/chat",
+        {
+            "model": model,
+            "stream": False,
+            "format": input_schema,          # structured output: reply matches schema
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            "options": {"temperature": 0.7, "num_predict": max_tokens},
+        },
+        timeout=120,
+    )
+    content = (resp.get("message") or {}).get("content")
+    if not content:
+        raise RuntimeError("empty response from Ollama")
+    return json.loads(content)
+
+
 def call_json_tool(
     system: str,
     user: str,
@@ -118,10 +174,11 @@ def call_json_tool(
 ) -> dict:
     """Force one tool call and return its input, a dict matching input_schema.
 
-    Walks the Anthropic ladder, then the OpenAI ladder. The first tier that
-    returns a usable tool call wins; any error or empty result falls through.
-    Raises a single error listing every tier's failure, so the caller surfaces
-    one clean message covering both providers."""
+    Walks the Anthropic ladder, then OpenAI, then local Ollama. The first tier
+    that returns a usable structured result wins; any error or empty result
+    falls through. If both hosted providers are keyless AND no Ollama is
+    reachable, it raises an actionable setup message; otherwise it raises a
+    single combined error naming every tier's failure."""
     failures = []
 
     anthropic = _get_anthropic_client()
@@ -146,9 +203,24 @@ def call_json_tool(
         except Exception as exc:
             failures.append(f"openai/{model}: {exc}")
 
-    if anthropic is None and openai is None:
+    # Local fallback: free, on-device, no credit. Last tier, tried whenever
+    # Ollama answers, including when both hosted accounts are keyless.
+    if _ollama_available():
+        local_models = _ollama_local_models()
+        if not local_models:
+            failures.append("ollama: reachable but no models installed (run `ollama pull llama3.1`)")
+        for model in local_models:
+            try:
+                return _call_ollama(model, system, user, input_schema, max_tokens)
+            except Exception as exc:
+                failures.append(f"ollama/{model}: {exc}")
+    else:
+        failures.append("ollama: not reachable at " + settings.ollama_base_url)
+
+    if anthropic is None and openai is None and not _ollama_available():
         raise RuntimeError(
-            "No generator API keys configured. Add ANTHROPIC_API_KEY and/or "
-            "OPENAI_API_KEY to ~/.llmtuner/.env and restart `llmtuner up`."
+            "No generator backend available. Add ANTHROPIC_API_KEY and/or "
+            "OPENAI_API_KEY to ~/.llmtuner/.env, or start Ollama and pull a "
+            "model (e.g. `ollama pull llama3.1`). Then restart `llmtuner up`."
         )
     raise RuntimeError("All generator models failed: " + "; ".join(failures))

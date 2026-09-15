@@ -23,6 +23,12 @@ class Settings(BaseSettings):
     static_dir: str | None = None  # optional path to the built frontend (Phase 6 slice 1)
     local_mode: bool = False  # Phase 6 slice 3: single-user local bootstrap
 
+    # Phase 6 slice 6: local generation fallback. When both hosted providers are
+    # exhausted (out of credit) or unconfigured, generation can fall through to
+    # Ollama on this machine, which is free. Auto-discovers installed models.
+    ollama_base_url: str = "http://localhost:11434"
+    generation_local_models: str = ""  # comma list; empty = use all installed
+
     def resolved_database_url(self) -> str:
         return self.database_url or f"sqlite:///{llmtuner_home() / 'app.db'}"
 
