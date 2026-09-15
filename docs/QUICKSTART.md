@@ -24,9 +24,17 @@ This will:
 - Check that you have Python 3.12+ (if not, it will tell you how to install it)
 - Download the app to `~/.llmtuner`
 - Set up everything it needs
+- **Prompt you for API keys** (Anthropic for Q&A generation, OpenAI for compare chat)
 - Create the `llmtuner` command
 
 When it's done, you'll see a green checkmark and a message like "Installation complete!"
+
+**About API keys:**
+- The installer will ask for your Anthropic and OpenAI API keys
+- These unlock features like auto-generating Q&A pairs and comparing against hosted models
+- If you don't have them yet, press Enter to skip — you can add them later
+- To get an Anthropic key: https://console.anthropic.com/
+- To get an OpenAI key: https://platform.openai.com/api-keys
 
 **If it says Python is missing or too old:**
 - Install Python from https://www.python.org/downloads/
