@@ -37,6 +37,7 @@ Rules for the automated lane:
 |----|------|-------|-------|-----|--------|
 | H1 | 09-15 | #1 VPS login 401 root cause found: the stale :8090 backend process (started 09-14 20:25) hung browser-shaped POSTs carrying an `Origin:` header; plain curl omitted Origin and succeeded, which matched "works via curl, fails in browser". Restarted from current HEAD (pid 2600030+): form login now returns 200 in ~0.24s **with and without** Origin. Remaining: Carlos browser check with normal hard refresh, then close | backend/ | - | AWAIT BROWSER VERIFY |
 | H2 | 09-15 | #20 VPS keepalive shipped early: `scripts/keepalive.sh` (check/start/stop/status, auto-restart on failed /health probe, logs to /tmp/llmtuner-keepalive.log) installed in hermes crontab every 10 min with flock guard | scripts/, deploy/ | - | DONE |
+| H3 | 09-15 | #42 Training failures are silent: capture `Exception as e` in `backend/training/runner.py`, persist error text + log tail on the run (new column + Alembic migration), surface in GET status and the Train UI, and add a preflight on start (425 "training runs on the Mac app only") when MLX is unavailable. Include the :8090 login-stall A/B check from H1 in the same pass | backend/, frontend/ | - | TODO |
 
 ## October extension (Phase 5 polish, then Phase 6)
 
