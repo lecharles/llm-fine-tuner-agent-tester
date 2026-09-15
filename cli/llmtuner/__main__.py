@@ -136,13 +136,29 @@ def up(port: int = 8000, local: bool = True):
     print(f"\n🌐 Server starting at http://localhost:{port}")
     print("   Press Ctrl+C to stop\n")
 
-    # Open browser after a short delay
-    def open_browser():
-        time.sleep(2)
+    # Open the browser only once the server actually answers /health, so the
+    # first page the user ever sees is a real one, not connection-refused.
+    def wait_and_open():
+        import urllib.request
+
+        url = f"http://127.0.0.1:{port}/health"
+        deadline = time.time() + 60
+        ready = False
+        while time.time() < deadline:
+            try:
+                with urllib.request.urlopen(url, timeout=1) as resp:
+                    if resp.status == 200:
+                        ready = True
+                        break
+            except Exception:
+                pass
+            time.sleep(0.5)
+        if not ready:
+            print("⚠️  Server not answering /health after 60s — opening the browser anyway.")
         webbrowser.open(f"http://localhost:{port}")
 
     import threading
-    threading.Thread(target=open_browser, daemon=True).start()
+    threading.Thread(target=wait_and_open, daemon=True).start()
 
     # Start uvicorn
     try:

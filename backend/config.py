@@ -26,7 +26,13 @@ class Settings(BaseSettings):
     def resolved_database_url(self) -> str:
         return self.database_url or f"sqlite:///{llmtuner_home() / 'app.db'}"
 
-    model_config = SettingsConfigDict(env_file=".env")
+    model_config = SettingsConfigDict(
+        # Load keys from both places, absolute paths only:
+        # - backend/.env: developer checkout convention
+        # - ~/.llmtuner/.env: where install.sh saves API keys
+        # Later entries win, so the installer file is authoritative.
+        env_file=(Path(__file__).resolve().parent / ".env", llmtuner_home() / ".env"),
+    )
 
 
 settings = Settings()

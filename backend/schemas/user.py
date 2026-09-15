@@ -11,7 +11,10 @@ class UserCreate(BaseModel):
 
 class UserOut(BaseModel):
     id: int
-    email: EmailStr
+    # str, not EmailStr: the local-mode seed user is `local@llmtuner`, which a
+    # strict email validator rejects on the way OUT of GET /api/auth/me. Input
+    # validation (UserCreate) keeps EmailStr; response rendering must not 500.
+    email: str
     display_name: str | None = None
     created_at: datetime
 

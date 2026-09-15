@@ -8,19 +8,37 @@ shape we want back, so the reply is valid JSON we can use directly instead of pa
 Model IDs and prompting strategy: see docs/RESEARCH_DATASETS.md.
 """
 
+import os
+
 from anthropic import Anthropic
+
+from config import settings
 
 MODEL_LADDER = ["claude-fable-5", "claude-opus-4-8", "claude-sonnet-5"]
 
 _client: Anthropic | None = None
+_client_key: str | None = None
+
+
+def _resolve_api_key() -> str | None:
+    """Key comes from settings (backend/.env or ~/.llmtuner/.env, written by
+    install.sh) with the process environment as the classic fallback."""
+    return settings.anthropic_api_key or os.environ.get("ANTHROPIC_API_KEY")
 
 
 def _get_client() -> Anthropic:
-    """One shared client, created lazily. The key is read from ANTHROPIC_API_KEY in the
-    environment by the SDK, never from the database or the request."""
-    global _client
-    if _client is None:
-        _client = Anthropic()
+    """One shared client, created lazily. Rebuilt if the key changes so an
+    edit to the .env picked up at runtime does not strand a keyless client."""
+    global _client, _client_key
+    api_key = _resolve_api_key()
+    if not api_key:
+        raise RuntimeError(
+            "No Anthropic API key configured. Add ANTHROPIC_API_KEY=*** to "
+            "~/.llmtuner/.env (or backend/.env) and restart `llmtuner up`."
+        )
+    if _client is None or _client_key != api_key:
+        _client = Anthropic(api_key=api_key)
+        _client_key = api_key
     return _client
 
 
