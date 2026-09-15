@@ -9,6 +9,7 @@ healthy() {
 }
 start_it() {
   cd "$REPO/backend" || return 1
+  set -a; . /home/hermes/llmtuner-vps/env; set +a
   .venv-smoke/bin/python -m uvicorn main:app --host 0.0.0.0 --port "$PORT" >> "$LOG" 2>&1 &
   disown
 }
