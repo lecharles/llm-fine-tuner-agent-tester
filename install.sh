@@ -10,7 +10,7 @@
 #   5. Creates a symlink so `llmtuner` is on PATH
 #   6. Runs doctor to verify
 
-set -euo pipefail
+set -eo pipefail
 
 INSTALL_DIR="${LLMTUNER_INSTALL_DIR:-$HOME/.llmtuner}"
 REPO_URL="https://github.com/lecharles/llm-fine-tuner-agent-tester.git"
@@ -67,8 +67,10 @@ echo "🔑 API keys (optional but recommended)"
 echo "   These unlock LLM-powered features like auto-generating Q&A pairs."
 echo "   Press Enter to skip any key."
 echo
-read -p "   Anthropic API key (for Q&A generation): " ANTHROPIC_KEY
-read -p "   OpenAI API key (for compare chat): " OPENAI_KEY
+
+# Read from /dev/tty so it works even when script is piped to bash
+read -p "   Anthropic API key (for Q&A generation): " ANTHROPIC_KEY < /dev/tty || ANTHROPIC_KEY=""
+read -p "   OpenAI API key (for compare chat): " OPENAI_KEY < /dev/tty || OPENAI_KEY=""
 
 if [ -n "$ANTHROPIC_KEY" ] || [ -n "$OPENAI_KEY" ]; then
     echo "💾 Saving API keys to .env..."
