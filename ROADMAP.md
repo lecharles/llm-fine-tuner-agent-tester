@@ -3,8 +3,11 @@
 Goal: a shippable v0.1.0 by Sept 30 — one-click local fine-tuning on Apple
 Silicon with a team instance on the VPS, demonstrated end-to-end.
 
-## Working today (Sept 15)
+**Full issue list:** [docs/GITHUB-ISSUES.md](docs/GITHUB-ISSUES.md)
 
+## Current state (Sept 15, end of day)
+
+✅ **Working today:**
 - One-port local app: `llmtuner up` serves API + UI, opens the browser only
   when `/health` answers; status splash when the UI build is missing.
 - API keys load from `~/.llmtuner/.env` (installer location) — fixed.
@@ -14,9 +17,10 @@ Silicon with a team instance on the VPS, demonstrated end-to-end.
 - QLoRA training via MLX → fuse → fine-tuned model appears under Models.
 - Compare: 4 columns fan out; the two local Llama engines now auto-start on
   demand; every failed column shows its reason in-column.
-- VPS team instance running on port 8090 (no MLX there; training stays Mac).
+- VPS team instance running on port 8090 (signup works, login works via curl,
+  UI serves). **Bug:** browser login returns 401 (issue #1, investigating).
 
-## Desktop app ask — ranked
+✅ **Desktop app ask — ranked:**
 
 | # | Ask | Verdict | Lane |
 |---|-----|---------|------|
@@ -37,16 +41,16 @@ the code and flag Mac-test checkboxes.
 One slice per day, committed and pushed by an automated daily lane at
 12:00 UTC. Details and definitions: [docs/COMMIT-TRAIN.md](docs/COMMIT-TRAIN.md).
 
-Pause switch: create an empty file `PAUSE` at repo root (or tell the lane)
+**Pause switch:** create an empty file `PAUSE` at repo root (or tell the lane)
 and no further slices are committed or pushed.
 
 ## Gates (what "done" means)
 
-- G1 Demo run-through (Sept 18): generate → train → compare on the Mac with
+- **G1 Demo run-through (Sept 18):** generate → train → compare on the Mac with
   only local engines (no cloud credits). Script in docs, run before D3.
-- G2 Team pings (Sept 22): each agent lane can hit the VPS instance with a
+- **G2 Team pings (Sept 22):** each agent lane can hit the VPS instance with a
   service token, create a dataset, queue generation.
-- G3 CI green (Sept 24) + v0.1.0 tag with release notes (Sept 30).
+- **G3 CI green (Sept 24) + v0.1.0 tag with release notes (Sept 30).**
 
 ## Known constraints
 
@@ -55,3 +59,16 @@ and no further slices are committed or pushed.
 - MLX training requires Apple Silicon; the VPS instance runs everything
   except train/compare-local (surfaced as warnings, not crashes).
 - Shared VPS instance uses real auth (no local mode); hardening lands Sept 29.
+- **VPS login bug (#1):** browser login returns 401 despite valid credentials.
+  Investigating; suspected frontend encoding issue (JSON vs form-encoded).
+
+## Next 48 hours
+
+**Sept 16:** Fix VPS login (#1), implement `llmtuner app` (#6), set up commit
+train automation (#19).
+
+**Sept 17:** Install Ollama on VPS, pull a 1B model, smoke test generation
+end-to-end on the team instance (#3).
+
+**Sept 18:** Welcome page (#10), run G1 demo script, verify desktop app works
+with the welcome page as the landing target.
