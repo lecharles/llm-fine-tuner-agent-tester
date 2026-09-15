@@ -35,7 +35,7 @@ Rules for the automated lane:
 
 | S# | DATE | Slice | Scope | MAC | STATUS |
 |----|------|-------|-------|-----|--------|
-| H1 | 09-15 | #1 VPS login 401: bundle at 09-14 20:05 already sends form-encoded; endpoint verified 200 via curl with Origin/Referer. Carlos to verify in browser (hard refresh) and close | frontend/ | - | AWAIT VERIFY |
+| H1 | 09-15 | #1 VPS login 401: form-encoded POST without Origin returns 200 + JWT. Reproduced twice: identical POST **with** an Origin header hangs the :8090 backend (stalled curl clients; process pid 2564821, cwd backend/, started 09-14 20:25, no CORS middleware in tree). Suspect a request-path stall on Origin-bearing POSTs, which the browser always sends and plain curl does not. Next: restart :8090 from current HEAD, retest with and without Origin, then browser verify | backend/ | - | OPEN |
 | H2 | 09-16 | #20 VPS keepalive: health poll of :8090 + auto-restart wrapper for the team instance | deploy/ | - | TODO |
 
 ## October extension (Phase 5 polish, then Phase 6)
