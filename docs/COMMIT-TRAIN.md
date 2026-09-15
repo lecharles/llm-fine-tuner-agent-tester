@@ -35,8 +35,8 @@ Rules for the automated lane:
 
 | S# | DATE | Slice | Scope | MAC | STATUS |
 |----|------|-------|-------|-----|--------|
-| H1 | 09-15 | #1 VPS login 401: form-encoded POST without Origin returns 200 + JWT. Reproduced twice: identical POST **with** an Origin header hangs the :8090 backend (stalled curl clients; process pid 2564821, cwd backend/, started 09-14 20:25, no CORS middleware in tree). Suspect a request-path stall on Origin-bearing POSTs, which the browser always sends and plain curl does not. Next: restart :8090 from current HEAD, retest with and without Origin, then browser verify | backend/ | - | OPEN |
-| H2 | 09-16 | #20 VPS keepalive: health poll of :8090 + auto-restart wrapper for the team instance | deploy/ | - | TODO |
+| H1 | 09-15 | #1 VPS login 401 root cause found: the stale :8090 backend process (started 09-14 20:25) hung browser-shaped POSTs carrying an `Origin:` header; plain curl omitted Origin and succeeded, which matched "works via curl, fails in browser". Restarted from current HEAD (pid 2600030+): form login now returns 200 in ~0.24s **with and without** Origin. Remaining: Carlos browser check with normal hard refresh, then close | backend/ | - | AWAIT BROWSER VERIFY |
+| H2 | 09-15 | #20 VPS keepalive shipped early: `scripts/keepalive.sh` (check/start/stop/status, auto-restart on failed /health probe, logs to /tmp/llmtuner-keepalive.log) installed in hermes crontab every 10 min with flock guard | scripts/, deploy/ | - | DONE |
 
 ## October extension (Phase 5 polish, then Phase 6)
 
