@@ -69,8 +69,11 @@ echo "   Press Enter to skip any key."
 echo
 
 # Read from /dev/tty so it works even when script is piped to bash
-read -p "   Anthropic API key (for Q&A generation): " ANTHROPIC_KEY < /dev/tty || ANTHROPIC_KEY=""
-read -p "   OpenAI API key (for compare chat): " OPENAI_KEY < /dev/tty || OPENAI_KEY=""
+# -s suppresses echo so the key isn't visible on screen
+read -s -p "   Anthropic API key (for Q&A generation): " ANTHROPIC_KEY < /dev/tty || ANTHROPIC_KEY=""
+echo  # newline after hidden input
+read -s -p "   OpenAI API key (for compare chat): " OPENAI_KEY < /dev/tty || OPENAI_KEY=""
+echo  # newline after hidden input
 
 if [ -n "$ANTHROPIC_KEY" ] || [ -n "$OPENAI_KEY" ]; then
     echo "💾 Saving API keys to .env..."
