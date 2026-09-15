@@ -117,8 +117,9 @@ Now the magic happens.
    - **Llama 3.2 1B**: faster, uses less memory, good for testing
    - **Llama 3.2 3B**: better quality, needs more memory
 4. Set the number of training iterations:
-   - **10-50**: quick test
-   - **100-500**: serious training
+   - **10-20**: plumbing smoke test only (proves the pipeline, no real quality)
+   - **200-400**: recommended for a usable model
+   - **500+**: deep training, only after 200-400 gives good results
 5. Click **"Start Training"**
 
 The training will run in the background. You'll see a progress indicator.
@@ -136,6 +137,8 @@ Yes. The training runs in the background. You can browse the app, add more data,
 Once training is complete, you can compare your fine-tuned model against others.
 
 1. Click **"Compare"** in the sidebar
+All four columns answer in under 150 words, so comparisons stay fair and readable.
+
 2. Your fine-tuned model is already selected
 3. Choose comparison models:
    - The base model (untuned)

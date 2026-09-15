@@ -19,6 +19,14 @@ from chat.local_server import ensure_local_servers
 
 router = APIRouter(prefix="/api/chat-sessions", tags=["chat"])
 
+# Compare fairness: every column answers under a shared length cap so the
+# fine-tuned model isn't compared against 500-word hosted essays. Applies to
+# all four backends (two local Llamas + two hosted). Tune here, one place.
+ANSWER_CAP = (
+    "Keep every answer under 150 words. Use short paragraphs with line breaks. "
+    "Be direct and skip preamble and filler."
+)
+
 
 @router.post("", response_model=ChatSessionOut, status_code=status.HTTP_201_CREATED)
 def create_chat_session(
@@ -127,7 +135,7 @@ def send_message(
     )
     histories = {}
     for backend in backends:
-        history = []
+        history = [{"role": "system", "content": ANSWER_CAP}]
         for msg in prior:
             if msg.role == "user":
                 history.append({"role": "user", "content": msg.content})
