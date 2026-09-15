@@ -26,3 +26,22 @@ export async function signup(email: string, password: string): Promise<void> {
     });
     await login(email, password);
 }
+
+// Phase 6 slice 3: check if the app is running in local mode.
+// If yes, auto-login with the local user so the frontend skips the login screen.
+type AuthConfig = { local_mode: boolean };
+
+export async function checkLocalMode(): Promise<boolean> {
+    try {
+        const config = await apiFetch<AuthConfig>("/auth/config");
+        return config.local_mode;
+    } catch {
+        return false;
+    }
+}
+
+export async function autoLoginLocal(): Promise<void> {
+    // In local mode, the backend auto-provisions local@llmtuner and bypasses JWT.
+    // We just need to set a dummy token so the frontend thinks we're authenticated.
+    setToken("local-mode-bypass");
+}
