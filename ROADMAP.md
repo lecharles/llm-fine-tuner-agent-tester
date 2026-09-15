@@ -67,8 +67,25 @@ and no further slices are committed or pushed.
 **Sept 16:** Fix VPS login (#1), implement `llmtuner app` (#6), set up commit
 train automation (#19).
 
-**Sept 17:** Install Ollama on VPS, pull a 1B model, smoke test generation
-end-to-end on the team instance (#3).
+**Sept 17:** Team lanes service-token auth (#11), smoke test VPS instance
+end-to-end (create dataset, queue generation, verify it works for agent lanes).
 
 **Sept 18:** Welcome page (#10), run G1 demo script, verify desktop app works
 with the welcome page as the landing target.
+
+## Desktop app metaphor (Mac-only)
+
+The Ollama screenshots show the pattern: when a user runs `llmtuner up` locally
+on their Mac, it should feel like a native app:
+
+- **Floating browser window:** `llmtuner app` opens Chrome with `--app=`, sized
+  to the welcome page, no address bar, no tabs. Falls back to default browser.
+- **Menu-bar extra:** `llmtuner menubar` creates a top-right icon (the favicon)
+  with a dropdown: status dot, "Open window", "Start/Stop server", "Quit".
+- **App icon:** The favicon becomes the Dock icon and the menu-bar icon.
+- **Native identity:** The `.app` bundle makes "LLM Tuner" appear in the
+  top-left menu bar, not "Google Chrome".
+
+This is **Mac-only**. The VPS instance is a web app accessed via browser — no
+desktop metaphor there. MLX training is also Mac-only (Apple Silicon); the VPS
+runs everything except train/compare-local.
