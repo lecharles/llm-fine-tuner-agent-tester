@@ -1648,3 +1648,7 @@ button {
   color: var(--border);
   cursor: default;
 }
+
+.dd-hint-warn {
+    color: var(--danger, #f87171);
+}

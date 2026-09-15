@@ -52,7 +52,7 @@ def _get_anthropic_client() -> Anthropic | None:
     if not api_key:
         return None
     if _anthropic_client is None or _anthropic_key != api_key:
-        _anthropic_client = Anthropic(api_key=api_key)
+        _anthropic_client = Anthropic(api_key=api_key, timeout=60.0)
         _anthropic_key = api_key
     return _anthropic_client
 
@@ -63,7 +63,7 @@ def _get_openai_client() -> OpenAI | None:
     if not api_key:
         return None
     if _openai_client is None or _openai_key != api_key:
-        _openai_client = OpenAI(api_key=api_key)
+        _openai_client = OpenAI(api_key=api_key, timeout=60.0)
         _openai_key = api_key
     return _openai_client
 
@@ -165,6 +165,17 @@ def _call_ollama(model, system, user, input_schema, max_tokens):
     return json.loads(content)
 
 
+# Provider-account failures (billing, auth) are identical for every model in
+# that provider's ladder. Fast-fail the whole tier instead of crawling through
+# three doomed calls with SDK retries while the UI says "Generating...".
+_ACCOUNT_MARKERS = ("credit balance", "insufficient", "invalid api key", "authentication", "billing", "quota", "401")
+
+
+def _is_account_error(exc: Exception) -> bool:
+    text = str(exc).lower()
+    return any(m in text for m in _ACCOUNT_MARKERS)
+
+
 def call_json_tool(
     system: str,
     user: str,
@@ -191,6 +202,9 @@ def call_json_tool(
             return _call_anthropic(anthropic, model, system, user, tool_name, input_schema, max_tokens)
         except Exception as exc:
             failures.append(f"{model}: {exc}")
+            if _is_account_error(exc):
+                failures.append("anthropic: account-level error, skipping remaining models")
+                break
 
     openai = _get_openai_client()
     if openai is None:
@@ -202,6 +216,9 @@ def call_json_tool(
             return _call_openai(openai, model, system, user, tool_name, input_schema, max_tokens)
         except Exception as exc:
             failures.append(f"openai/{model}: {exc}")
+            if _is_account_error(exc):
+                failures.append("openai: account-level error, skipping remaining models")
+                break
 
     # Local fallback: free, on-device, no credit. Last tier, tried whenever
     # Ollama answers, including when both hosted accounts are keyless.

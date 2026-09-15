@@ -9,6 +9,7 @@ app.include_router(dataset.router)
 app.include_router(qa_pair.router)
 app.include_router(training_run.router)
 app.include_router(generation.router)
+app.include_router(generation.status_router)
 app.include_router(chat.router)
 app.include_router(fine_tuned_model.router)
 

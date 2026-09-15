@@ -14,6 +14,17 @@ from generation.hf_import import IMPORT_PRESETS
 
 router = APIRouter(prefix="/api/datasets", tags=["generation"])
 
+# Separate prefix so /api/datasets/{id} routes never collide with a status path.
+status_router = APIRouter(prefix="/api/generation", tags=["generation"])
+
+
+@status_router.get("/status")
+def get_generation_status(current_user: User = Depends(get_current_user)):
+    """Which generation tiers are reachable right now. Booleans and reasons only,
+    never key material. Powers the pre-flight warning on the dataset page."""
+    from generation.status import generation_status
+    return generation_status()
+
 
 @router.post(
     "/{dataset_id}/generate",

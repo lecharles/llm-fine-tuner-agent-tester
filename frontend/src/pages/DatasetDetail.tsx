@@ -5,6 +5,7 @@ import { apiFetch } from "../api";
 import type { Dataset, QAPair } from "../types";
 import QAPairModal, { type QAPairValues } from "../components/QAPairModal";
 import ConfirmDialog from "../components/ConfirmDialog";
+import { GenerationStatusLine } from "../components/GenerationStatus";
 
 const PAGE_SIZE = 10;
 
@@ -171,6 +172,7 @@ export default function DatasetDetail() {
                                 </div>
                             </div>
                             {!dataset.use_case_prompt && <div className="dd-hint">Save a use-case prompt first.</div>}
+                            <GenerationStatusLine />
                         </div>
 
                         <div className="card">
