@@ -8,6 +8,7 @@ from models.training_run import TrainingRun
 from models.user import User
 from schemas.training_run import TrainingRunCreate, TrainingRunOut
 from core.security import get_current_user
+from training.preflight import mlx_training_available
 from training.runner import run_training
 
 router = APIRouter(prefix="/api/training-runs", tags=["training-runs"])
@@ -34,6 +35,12 @@ def start_training_run(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Dataset has no QA pairs to train on",
         )
+
+    # 425 preflight (#42): on a non-Mac backend training can never succeed, so
+    # answer plainly instead of queueing a doomed run.
+    ok, reason = mlx_training_available()
+    if not ok:
+        raise HTTPException(status_code=425, detail=reason)
 
     run = TrainingRun(
         user_id=current_user.id,

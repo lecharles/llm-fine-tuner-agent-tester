@@ -21,6 +21,7 @@ export type TrainingRun = {
     iters: number;
     learning_rate: number | null;
     status: string; // queued | running | completed | failed
+    error_message?: string | null; // set when status is failed (#42)
     created_at: string;
     completed_at: string | null;
 };

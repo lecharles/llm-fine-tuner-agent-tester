@@ -9,6 +9,7 @@ Flag reference: mlx-lm LoRA docs (see docs/RESEARCH_MLX.md).
 """
 
 import subprocess
+import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -18,6 +19,7 @@ from models.qa_pair import QAPair
 from models.training_run import TrainingRun
 from training.data import build_training_files
 from training.export import export_gguf
+from training.preflight import mlx_training_available
 
 
 BATCH_SIZE = 4
@@ -53,10 +55,19 @@ def build_lora_command(
     return command
 
 
+def tail_text(path: Path, limit: int = 1800) -> str:
+    """Last `limit` characters of a log file; '' when the file never appeared."""
+    try:
+        return path.read_text(encoding="utf-8", errors="replace")[-limit:]
+    except OSError:
+        return ""
+
+
 def run_training(run_id: int) -> None:
     """Background entry point. Opens its own DB session (the request's session is
     already closed by the time this runs), converts the dataset to JSONL, runs the
-    training subprocess, and records the outcome on the run."""
+    training subprocess, and records the outcome on the run.
+    """
     db = SessionLocal()
     try:
         run = db.query(TrainingRun).filter(TrainingRun.id == run_id).first()
@@ -64,7 +75,14 @@ def run_training(run_id: int) -> None:
             return
 
         run.status = "running"
+        run.error_message = None  # stale errors from a retried run must not linger
         db.commit()
+
+        # Safety net behind the router's 425 preflight: if the run was created
+        # before we shipped the check (or the platform lied), fail with words.
+        ok, reason = mlx_training_available()
+        if not ok:
+            raise RuntimeError(reason)
 
         workspace = run_dir_for(run_id)
         data_dir = workspace / "data"
@@ -102,11 +120,22 @@ def run_training(run_id: int) -> None:
         run.status = "completed"
         run.completed_at = datetime.now(timezone.utc)
         db.commit()
-    except Exception:
+    except Exception as exc:
+        # #42: this used to be a bare `except Exception:` that swallowed the
+        # reason. Persist exception text + traceback + log tail on the run so
+        # the API and Train UI can show why it died.
         db.rollback()
         run = db.query(TrainingRun).filter(TrainingRun.id == run_id).first()
         if run is not None:
+            tb = traceback.format_exception(type(exc), exc, exc.__traceback__)
+            detail = f"{type(exc).__name__}: {exc}"
+            if tb:
+                detail += "\n" + "".join(tb).strip()[-1500:]
+            log_tail = tail_text(run_dir_for(run_id) / "train.log")
+            if log_tail.strip():
+                detail += "\n--- train.log tail ---\n" + log_tail
             run.status = "failed"
+            run.error_message = detail[-6000:]
             run.completed_at = datetime.now(timezone.utc)
             db.commit()
     finally:

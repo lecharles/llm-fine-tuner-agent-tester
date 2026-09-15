@@ -160,6 +160,13 @@ export default function Train() {
                     <div className="run-meta">
                         {run.base_model} · {run.method} · {run.iters} iters
                     </div>
+                    {run.status === "failed" && (
+                        run.error_message ? (
+                            <pre className="run-error">{run.error_message}</pre>
+                        ) : (
+                            <div className="run-meta">Failed before error capture shipped (no recorded reason).</div>
+                        )
+                    )}
                     {run.completed_at && (
                         <div className="run-meta">Completed {new Date(run.completed_at).toLocaleString()}</div>
                     )}

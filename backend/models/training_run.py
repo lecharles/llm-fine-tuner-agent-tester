@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Numeric, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, Numeric, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -16,6 +16,9 @@ class TrainingRun(Base):
     iters = Column(Integer, nullable=False, default=300)
     learning_rate = Column(Numeric)
     status = Column(String, nullable=False, default="queued")
+    # #42: when a run fails we persist the exception text + log tail here so the
+    # failure is visible in the API and the Train UI instead of being silent.
+    error_message = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.current_timestamp())
     completed_at = Column(DateTime(timezone=True))
 
