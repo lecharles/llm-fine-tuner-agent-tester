@@ -20,7 +20,7 @@ Rules for the automated lane:
 | S5 | 09-19 | Icon pipeline `scripts/make_app_icon.sh`: favicon.svg → AppIcon.icns (sips/iconutil) | scripts/ | • | TODO |
 | S6 | 09-20 | `llmtuner bundle`: generate `LLM Tuner.app` (Info.plist, launcher, icon) so app name + Dock identity are native | cli/, scripts/ | • | TODO |
 | S7 | 09-21 | Menu-bar extra `llmtuner menubar` (rumps): status dot, open window, start/stop, quit; optional dep | cli/ | • | TODO |
-| S8 | 09-22 | Team lanes: service-token auth (`API_SERVICE_TOKENS`), `GET /api/status`, `docs/TEAMOX.md` with per-lane curl | backend/, docs/ | - | TODO |
+| S8 | 09-22 | Tmux lanes: service-token auth (`API_SERVICE_TOKENS`), `GET /api/status`, `docs/TMUX-LANES.md` with per-lane curl | backend/, docs/ | - | TODO |
 | S9 | 09-23 | Pytest suite: auth/me regression, env precedence, ladder fakes, local_server fakes, splash render | tests/ | - | TODO |
 | S10 | 09-24 | CI: GitHub Actions (compile, pytest, frontend build) + README badge | .github/ | - | TODO |
 | S11 | 09-25 | Train page: live loss curve (parse train.log → `/api/training-runs/{id}/losses` → tiny chart) | backend/, frontend/ | - | TODO |
@@ -29,6 +29,33 @@ Rules for the automated lane:
 | S14 | 09-28 | Docs: README rewrite, screenshots pass, demo run-through v2 | README.md, docs/ | - | TODO |
 | S15 | 09-29 | Shared-instance hardening: signup rate limit, refuse local_mode on non-loopback bind, credential rotation doc | backend/ | - | TODO |
 | S16 | 09-30 | v0.1.0: version tag, release notes, final E2E + summary | repo | • | TODO |
+
+
+## Hotfix inserts (dated ahead of the train)
+
+| S# | DATE | Slice | Scope | MAC | STATUS |
+|----|------|-------|-------|-----|--------|
+| H1 | 09-15 | #1 VPS login 401: bundle at 09-14 20:05 already sends form-encoded; endpoint verified 200 via curl with Origin/Referer. Carlos to verify in browser (hard refresh) and close | frontend/ | - | AWAIT VERIFY |
+| H2 | 09-16 | #20 VPS keepalive: health poll of :8090 + auto-restart wrapper for the team instance | deploy/ | - | TODO |
+
+## October extension (Phase 5 polish, then Phase 6)
+
+| S# | DATE | Slice | Scope | MAC | STATUS |
+|----|------|-------|-------|-----|--------|
+| S17 | 10-01 | Theme pass 1: theme.css foundation, cleaner status labels, nicer iters input | frontend/ | - | TODO |
+| S18 | 10-02 | Theme pass 2: ConfirmDialog replacing temp no-confirm delete, VU-meter loading indicator | frontend/ | - | TODO |
+| S19 | 10-05 | Accessibility: WCAG AA contrast, alt text, link-based navigation audit | frontend/ | - | TODO |
+| S20 | 10-06 | Logged-in user display via GET /api/auth/me + small user menu (Linear-style) | frontend/ | - | TODO |
+| S21 | 10-07 | Deploy web shell online: public instance plan, docs, and first deploy | deploy/ | - | TODO |
+| S22 | 10-08 | Phase 6 ADR: hybrid (web shell + local companion) vs full local-first, decision doc | docs/ | - | TODO |
+| S23 | 10-09 | macOS installer: one command or one file placing the local runtime | install/ | • | TODO |
+| S24 | 10-12 | Local companion: skeleton that receives web-app requests and drives train/fuse/export/serve | companion/ | • | TODO |
+| S25 | 10-13 | Opt-in bridge: explicit permission prompt, scoped and revocable hardware access | backend/, frontend/ | • | TODO |
+| S26 | 10-14 | Data model split: local artifacts stay on device, hosted keeps account + metadata only | backend/ | • | TODO |
+| S27 | 10-15 | Generation UX: auto-fill use-case prompt from dataset name/description | backend/, frontend/ | - | TODO |
+| S28 | 10-16 | Compare: parallelize four-way fan-out instead of sequential calls | backend/ | - | TODO |
+
+October backlog (unscheduled, labeled in GitHub): training error explainer · public/private sharing + owner-or-public auth · advanced hyperparameter panel · training-run history/visibility · brand + light/dark pass · in-app guides · more model families · API Agents / API Infrastructure repo extraction · platform expansion (React Native, native macOS, Swift).
 
 Gate G1 (demo) sits at S4 so the desktop work rides on a proven loop; MAC
 slices (S2, S5–S7, S16) are pushed by the lane but verified by Carlos on the

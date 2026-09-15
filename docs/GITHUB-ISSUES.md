@@ -179,7 +179,7 @@ Add a `/welcome` route (and sidebar entry) that explains the project's motivatio
 **Component:** Backend  
 **Status:** Open (planned for Sept 22)  
 **Description:**  
-Add a `API_SERVICE_TOKENS` env var (comma-separated list) that grants read/write access to the VPS instance without a user session. Each token is tied to a lane name (e.g., `teamox-hermes`, `teamox-openclaw`).
+Add a `API_SERVICE_TOKENS` env var (comma-separated list) that grants read/write access to the VPS instance without a user session. Each token is tied to a lane name (e.g., `tmux-hermes`, `tmux-opencode`).
 
 **Acceptance criteria:**
 - `API_SERVICE_TOKENS=hermes:abc123,openclaw:def456` in `env`
@@ -368,7 +368,7 @@ Cron job checks `/health` every 5 minutes, restarts the server if down.
 **Priority order for Sept 16–30:**
 1. #1 (VPS login) — critical, blocks team use
 2. #6 (desktop app) — high, flagship feature
-3. #11 (team lanes) — high, blocks Teamox integration
+3. #11 (team lanes) — high, blocks tmux-lane integration
 4. #18 (v0.1.0 release) — high, the goal
 5. #7, #8, #9 (desktop app parts 2–4) — high, complete the desktop experience
 6. #10 (welcome page) — medium, needed for desktop app landing
