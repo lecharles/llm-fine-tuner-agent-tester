@@ -69,11 +69,35 @@ echo "   Press Enter to skip any key."
 echo
 
 # Read from /dev/tty so it works even when script is piped to bash
-# -s suppresses echo so the key isn't visible on screen
-read -s -p "   Anthropic API key (for Q&A generation): " ANTHROPIC_KEY < /dev/tty || ANTHROPIC_KEY=""
-echo  # newline after hidden input
-read -s -p "   OpenAI API key (for compare chat): " OPENAI_KEY < /dev/tty || OPENAI_KEY=""
-echo  # newline after hidden input
+# Read char-by-char, print * for each, so user sees "sk-ant-•••••••" but key stays hidden
+read_masked() {
+    local prompt="$1"
+    local varname="$2"
+    local value=""
+    local char=""
+    printf "%s" "$prompt"
+    while IFS= read -r -n1 -s char < /dev/tty; do
+        if [ -z "$char" ]; then
+            # Enter pressed
+            break
+        fi
+        # Handle backspace
+        if [ "$char" = $'\x7f' ] || [ "$char" = $'\b' ]; then
+            if [ -n "$value" ]; then
+                value="${value%?}"
+                printf '\b \b'
+            fi
+        else
+            value+="$char"
+            printf "*"
+        fi
+    done
+    printf '\n'
+    eval "$varname=\$value"
+}
+
+read_masked "   Anthropic API key (for Q&A generation): " ANTHROPIC_KEY
+read_masked "   OpenAI API key (for compare chat): " OPENAI_KEY
 
 if [ -n "$ANTHROPIC_KEY" ] || [ -n "$OPENAI_KEY" ]; then
     echo "💾 Saving API keys to .env..."
@@ -129,7 +153,15 @@ echo
 echo "✅ Installation complete!"
 echo
 echo "Next steps:"
-echo "  llmtuner up          # start the app"
-echo "  llmtuner doctor      # check prerequisites"
+echo "  llmtuner up            # start the app"
+echo "  llmtuner doctor        # check prerequisites"
 echo
 echo "The app will open at http://localhost:8000"
+
+# Offer to start the app now
+echo
+read -p "🚀 Start the app now? [Y/n] " START_NOW < /dev/tty || START_NOW="y"
+if [ -z "$START_NOW" ] || [[ "$START_NOW" =~ ^[Yy] ]]; then
+    echo
+    exec "$HOME/.local/bin/llmtuner" up
+fi
