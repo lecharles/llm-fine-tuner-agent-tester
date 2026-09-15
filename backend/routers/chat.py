@@ -11,9 +11,11 @@ from schemas.chat import (
     ChatSessionOut,
     ChatMessageCreate,
     ChatMessageOut,
+    ChatTurnOut,
 )
 from core.security import get_current_user
 from chat.compare import hosted_backends, local_backends, fan_out
+from chat.local_server import ensure_local_servers
 
 router = APIRouter(prefix="/api/chat-sessions", tags=["chat"])
 
@@ -80,7 +82,7 @@ def read_chat_session(
 
 @router.post(
     "/{session_id}/messages",
-    response_model=list[ChatMessageOut],
+    response_model=ChatTurnOut,
     status_code=status.HTTP_201_CREATED,
 )
 def send_message(
@@ -101,11 +103,17 @@ def send_message(
 
     ft = session.fine_tuned_model  # the pinned model, via the relationship
 
+    # The two local columns are separate mlx_lm.server processes. Nothing else
+    # in the stack starts them, so bring them up on demand before fanning out:
+    # first send pays the model-load cost, later sends reuse the warm servers.
+    fused_path = ft.gguf_path or f"_training_runs/{ft.training_run_id}/fused_model"
+    startup_errors = ensure_local_servers(fused_path, ft.base_model)
+
     # Four columns: the two local Llamas derived from the pinned model (its fused
     # model served on 8081, its untuned base on 8082), plus the two hosted models
     # chosen on the session.
     backends = local_backends(
-        f"_training_runs/{ft.training_run_id}/fused_model", ft.base_model
+        fused_path, ft.base_model
     ) + hosted_backends(session.compare_model_a, session.compare_model_b)
 
     # Multi-turn: rebuild each column's own conversation from the stored messages,
@@ -148,7 +156,14 @@ def send_message(
     db.commit()
     for obj in created:
         db.refresh(obj)
-    return created
+
+    # Surface every column that could not answer: a startup failure carries
+    # more context than the downstream connection error, so it wins.
+    errors: dict[str, str] = {k: v for k, v in startup_errors.items() if v}
+    for reply in replies:
+        if reply.content is None and reply.label not in errors:
+            errors[reply.label] = reply.error or "no reply"
+    return {"messages": created, "errors": errors}
 
 
 @router.get("/{session_id}/messages", response_model=list[ChatMessageOut])

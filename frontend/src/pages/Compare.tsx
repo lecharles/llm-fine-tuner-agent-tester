@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Send } from "lucide-react";
 import { apiFetch } from "../api";
-import type { FineTunedModel, ChatSession, ChatMessage } from "../types";
+import type { FineTunedModel, ChatSession, ChatMessage, ChatTurn } from "../types";
 
 // The four compare columns, in display order. The backend tags each assistant
 // reply with one of these model_label values.
@@ -35,6 +35,8 @@ export default function Compare() {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [sending, setSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    // Columns that could not answer the most recent turn: label -> reason.
+    const [colErrors, setColErrors] = useState<Record<string, string>>({});
 
     // The session id lives in a ref: it persists across renders and we read it
     // synchronously inside the send handler. null means "no session yet".
@@ -83,12 +85,13 @@ export default function Compare() {
         try {
             const sessionId = await ensureSession(); // create-on-first-use
             // POST the prompt; backend threads each column's history, fans out to
-            // all four, and returns this turn's user message plus the four replies.
-            const turn = await apiFetch<ChatMessage[]>(
+            // all four, and returns this turn's messages plus per-column failures.
+            const turn = await apiFetch<ChatTurn>(
                 `/chat-sessions/${sessionId}/messages`,
                 { method: "POST", body: { content: prompt } }
             );
-            setMessages((prev) => [...prev, ...turn]);
+            setMessages((prev) => [...prev, ...turn.messages]);
+            setColErrors(turn.errors ?? {});
             setPrompt("");
         } catch (err) {
             setError(err instanceof Error ? err.message : "Send failed");
@@ -154,6 +157,11 @@ export default function Compare() {
                                         <span className="tdot" />
                                         <span className="tdot" />
                                     </div>
+                                </div>
+                            )}
+                            {!sending && colErrors[label] && (
+                                <div className="msg msg-model">
+                                    <div className="bubble bubble-error">⚠ {colErrors[label]}</div>
                                 </div>
                             )}
                         </div>

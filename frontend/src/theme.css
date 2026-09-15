@@ -1036,6 +1036,14 @@ button {
   border: 1px solid var(--border);
 }
 
+.bubble-error {
+  background: var(--danger-tint);
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
 .thinking {
   display: inline-flex;
   gap: 4px;

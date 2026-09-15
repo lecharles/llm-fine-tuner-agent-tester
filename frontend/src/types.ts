@@ -57,6 +57,12 @@ export type ChatMessage = {
     created_at: string;
 };
 
+export type ChatTurn = {
+    messages: ChatMessage[];
+    // Per-column failure reasons for this turn: label -> message.
+    errors: Record<string, string>;
+};
+
 export type QAPair = {
     id: number;
     dataset_id: number;

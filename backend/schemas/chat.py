@@ -39,3 +39,11 @@ class ChatMessageOut(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class ChatTurnOut(BaseModel):
+    # One send's result: the persisted messages plus per-column failure
+    # reasons. Errors are deliberately NOT persisted rows: a failed column
+    # must not leak its error text into the model's own future history.
+    messages: list[ChatMessageOut]
+    errors: dict[str, str] = {}
