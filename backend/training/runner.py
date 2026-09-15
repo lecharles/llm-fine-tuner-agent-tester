@@ -134,6 +134,12 @@ def run_training(run_id: int) -> None:
             log_tail = tail_text(run_dir_for(run_id) / "train.log")
             if log_tail.strip():
                 detail += "\n--- train.log tail ---\n" + log_tail
+            # #46: a fuse-stage failure writes its real reason to fused_model/
+            # fuse.log, not train.log. Surface both so the export step self-
+            # diagnoses instead of showing only "exited with code 1".
+            fuse_tail = tail_text(run_dir_for(run_id) / "fused_model" / "fuse.log")
+            if fuse_tail.strip():
+                detail += "\n--- fuse.log tail ---\n" + fuse_tail
             run.status = "failed"
             run.error_message = detail[-6000:]
             run.completed_at = datetime.now(timezone.utc)
