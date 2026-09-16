@@ -64,6 +64,22 @@ You should see the llmtuner login screen.
 **If the browser doesn't open automatically:**
 - Open your browser manually and go to http://localhost:8000
 
+### Optional: desktop-style app window
+
+If you'd rather have a floating, tabless app window than a browser tab:
+
+```bash
+llmtuner app                 # 1100x800 window at 80,80
+llmtuner app --size 1400x900 --position 100x60
+llmtuner app --fresh         # isolated profile; use if Chrome is already open
+llmtuner app --url http://localhost:8000  # explicit URL (e.g. VPS instance)
+```
+
+This opens the UI in Chrome/Chromium/Edge/Brave `--app` mode and falls back to
+your default browser if none of those are installed. Note: macOS Chrome only
+honors `--window-size`/`--window-position` when it launches fresh — add
+`--fresh` if you already have Chrome running.
+
 ## Step 3: Create your account
 
 Since you're running locally, the app is in "local mode" — no signup needed. You're automatically logged in as the local user.

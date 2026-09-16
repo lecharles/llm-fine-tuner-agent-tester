@@ -14,7 +14,7 @@ Rules for the automated lane:
 | S# | DATE | Slice | Scope | MAC | STATUS |
 |----|------|-------|-------|-----|--------|
 | S1 | 09-15 | Foundations: key loading, auth/me, splash, compare engines, fallback ladder | done in 53f3b71…1d56f87 | - | DONE |
-| S2 | 09-16 | `llmtuner app`: floating browser-app window (Chrome `--app`), falls back to default browser; `--size` flag | cli/ | • | TODO |
+| S2 | 09-16 | `llmtuner app`: floating browser-app window (Chrome `--app`), falls back to default browser; `--size` flag | cli/ | • | CODED — AWAIT MAC VERIFY |
 | S3 | 09-17 | VPS generation: install Ollama on server, pull a 1B model, set `OLLAMA_BASE_URL`, smoke `generate` | deploy/ | - | TODO |
 | S4 | 09-18 | Welcome/motivation page (route `/welcome` + sidebar entry); gate G1 demo script `docs/DEMO.md` | frontend/, docs/ | - | TODO |
 | S5 | 09-19 | Icon pipeline `scripts/make_app_icon.sh`: favicon.svg → AppIcon.icns (sips/iconutil) | scripts/ | • | TODO |

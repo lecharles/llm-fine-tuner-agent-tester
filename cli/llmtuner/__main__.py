@@ -3,6 +3,7 @@
 Usage:
     python -m llmtuner up [--port 8000] [--local]
     python -m llmtuner doctor
+    python -m llmtuner app [--port 8000] [--size 1200x800] [--position 100x100]
 """
 
 import argparse
@@ -173,6 +174,98 @@ def up(port: int = 8000, local: bool = True):
     return 0
 
 
+def _parse_wh(value: str, default: tuple[int, int]) -> tuple[int, int]:
+    """Parse 'WxH' (also accepts 'W,H' or 'W H'); fall back to defaults."""
+    if not value:
+        return default
+    cleaned = value.lower().replace(",", "x").replace(" ", "x").strip("x")
+    parts = [p for p in cleaned.split("x") if p]
+    if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+        return int(parts[0]), int(parts[1])
+    print(f"⚠️  Could not parse '{value}' as WxH; using default {default[0]}x{default[1]}")
+    return default
+
+
+def _find_chromium_browsers() -> list[Path]:
+    """Candidate Chrome-family binaries on macOS/Linux, most preferred first."""
+    system = platform.system()
+    candidates: list[Path] = []
+    if system == "Darwin":
+        apps = [
+            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+            "/Applications/Google Chrome Beta.app/Contents/MacOS/Google Chrome Beta",
+            "/Applications/Chromium.app/Contents/MacOS/Chromium",
+            "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+            "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+        ]
+        candidates = [Path(a) for a in apps]
+    else:
+        names = [
+            "google-chrome",
+            "google-chrome-stable",
+            "chromium",
+            "chromium-browser",
+            "microsoft-edge",
+            "brave-browser",
+        ]
+        candidates = [Path(p) for name in names if (p := shutil.which(name))]
+    return [c for c in candidates if c.exists()]
+
+
+def app(port: int = 8000, url: str | None = None, size: str = "",
+        position: str = "", fresh: bool = False) -> int:
+    """Open LLM Tuner in a floating Chrome-app window; fall back to default browser.
+
+    Uses Chrome/Chromium/Edge/Brave `--app=` mode for a frameless, tabless
+    desktop-style window. If no Chromium-family browser is available, opens
+    the URL in the system default browser instead.
+    """
+    target = url or f"http://localhost:{port}"
+
+    # Optional cheap reachability check — never block the window on it.
+    if url is None:
+        import socket
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.settimeout(0.35)
+            if sock.connect_ex(("127.0.0.1", port)) != 0:
+                print(f"⚠️  Nothing answering on :{port} — start it with `llmtuner up --port {port}`.")
+                print(f"   Opening {target} anyway (you may see a connection error first).")
+
+    width, height = _parse_wh(size, (1100, 800))
+    left, top = _parse_wh(position, (80, 80))
+
+    chrome = _find_chromium_browsers()
+    if chrome:
+        binary = chrome[0]
+        args = [
+            str(binary),
+            f"--app={target}",
+            f"--window-size={width},{height}",
+            f"--window-position={left},{top}",
+        ]
+        if fresh:
+            # Isolated profile so the app window survives (and does not fight)
+            # a normal Chrome session already running.
+            profile = Path.home() / ".llmtuner" / "app-profile"
+            profile.mkdir(parents=True, exist_ok=True)
+            args.append(f"--user-data-dir={profile}")
+        print(f"🪟 Opening {target} in app window "
+              f"({binary.name}, {width}x{height} @ {left},{top})")
+        try:
+            subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            return 0
+        except OSError as exc:
+            print(f"⚠️  Could not launch {binary.name}: {exc}")
+
+    print(f"🌐 No Chrome-family browser found — opening {target} in the default browser.")
+    opened = webbrowser.open(target)
+    if not opened:
+        print("❌ Default browser refused to open. Visit the URL manually.")
+        return 1
+    return 0
+
+
 def main():
     parser = argparse.ArgumentParser(description="llmtuner CLI")
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
@@ -182,6 +275,21 @@ def main():
     up_parser.add_argument("--port", type=int, default=8000, help="Port to run on (default: 8000)")
     up_parser.add_argument("--local", action="store_true", default=True, help="Run in local mode (default: True)")
 
+    # app command
+    app_parser = subparsers.add_parser(
+        "app",
+        help="Open the UI in a floating Chrome-app window (falls back to default browser)",
+    )
+    app_parser.add_argument("--port", type=int, default=8000, help="Server port (default: 8000)")
+    app_parser.add_argument("--url", default=None, help="Full URL override (default: http://localhost:PORT)")
+    app_parser.add_argument("--size", default="1100x800", help="Window size WxH (default: 1100x800)")
+    app_parser.add_argument("--position", default="80x80", help="Window position XxY (default: 80x80)")
+    app_parser.add_argument(
+        "--fresh",
+        action="store_true",
+        help="Use an isolated Chrome profile (~/.llmtuner/app-profile) so the window runs standalone",
+    )
+
     # doctor command
     subparsers.add_parser("doctor", help="Run preflight checks")
 
@@ -189,6 +297,16 @@ def main():
 
     if args.command == "up":
         sys.exit(up(port=args.port, local=args.local))
+    elif args.command == "app":
+        sys.exit(
+            app(
+                port=args.port,
+                url=args.url,
+                size=args.size,
+                position=args.position,
+                fresh=args.fresh,
+            )
+        )
     elif args.command == "doctor":
         sys.exit(doctor())
     else:
