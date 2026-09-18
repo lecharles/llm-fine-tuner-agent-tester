@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 import GetStarted from "./pages/GetStarted";
+import Welcome from "./pages/Welcome";
 import Login from "./pages/Login";
 import Datasets from "./pages/Datasets";
 import Train from "./pages/Train";
@@ -23,7 +24,8 @@ export default function App() {
       {/* Authenticated: guarded, then rendered inside the sidebar shell.
           ProtectedRoute bounces guests; Layout provides the sidebar + Outlet. */}
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-        <Route path="/" element={<Navigate to="/get-started" replace />} />
+        <Route path="/" element={<Navigate to="/welcome" replace />} />
+        <Route path="/welcome" element={<Welcome />} />
         <Route path="/get-started" element={<GetStarted />} />
         <Route path="/datasets" element={<Datasets />} />
         <Route path="/datasets/:datasetId" element={<DatasetDetail />} />

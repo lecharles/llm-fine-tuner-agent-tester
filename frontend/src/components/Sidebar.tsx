@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
-    SlidersHorizontal, Route, Database, Cpu, Box, Columns3,
+    SlidersHorizontal, Route, Database, Cpu, Box, Columns3, Sparkles,
     PanelLeftClose, PanelLeft, Moon, Sun, LogOut,
 } from "lucide-react";
 import { apiFetch, clearToken } from "../api";
@@ -16,6 +16,7 @@ type Props = {
 // Each destination carries its own accent, so the sidebar reads as a color-coded
 // map. Red and coral are deliberately absent here: they mean delete and hosted.
 const NAV = [
+    { to: "/welcome", label: "Welcome", Icon: Sparkles, color: "var(--accent-guide)" },
     { to: "/get-started", label: "Get started", Icon: Route, color: "var(--accent-guide)" },
     { to: "/datasets", label: "Datasets", Icon: Database, color: "var(--info)" },
     { to: "/train", label: "Train", Icon: Cpu, color: "var(--warning)" },
