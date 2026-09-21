@@ -9,3 +9,6 @@ __pycache__/
 
 # Training artifacts (adapters, GGUFs, JSONL, logs)
 backend/_training_runs/.venv-smoke/
+
+# Generated icon pipeline output (scripts/make_app_icon.sh)
+build/

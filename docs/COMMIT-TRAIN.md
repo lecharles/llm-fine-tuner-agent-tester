@@ -17,7 +17,7 @@ Rules for the automated lane:
 | S2 | 09-16 | `llmtuner app`: floating browser-app window (Chrome `--app`), falls back to default browser; `--size` flag | cli/ | • | CODED — AWAIT MAC VERIFY |
 | S3 | 09-17 | VPS generation: install Ollama on server, pull a 1B model, set `OLLAMA_BASE_URL`, smoke `generate` | deploy/ | - | DONE 2026-09-17 — Ollama 0.34.1, llama3.2:1b (1.3GB), OLLAMA_BASE_URL set, ladder smoke ok |
 | S4 | 09-18 | Welcome/motivation page (route `/welcome` + sidebar entry); gate G1 demo script `docs/DEMO.md` | frontend/, docs/ | - | DONE 2026-09-18 — `/welcome` lands + sidebar entry, `docs/DEMO.md` G1 script; `npm run build` green |
-| S5 | 09-19 | Icon pipeline `scripts/make_app_icon.sh`: favicon.svg → AppIcon.icns (sips/iconutil) | scripts/ | • | TODO |
+| S5 | 09-19 | Icon pipeline `scripts/make_app_icon.sh`: favicon.svg → AppIcon.icns (sips/iconutil) | scripts/ | • | DONE (Mac verify pending) |
 | S6 | 09-20 | `llmtuner bundle`: generate `LLM Tuner.app` (Info.plist, launcher, icon) so app name + Dock identity are native | cli/, scripts/ | • | TODO |
 | S7 | 09-21 | Menu-bar extra `llmtuner menubar` (rumps): status dot, open window, start/stop, quit; optional dep | cli/ | • | TODO |
 | S8 | 09-22 | Tmux lanes: service-token auth (`API_SERVICE_TOKENS`), `GET /api/status`, `docs/TMUX-LANES.md` with per-lane curl | backend/, docs/ | - | TODO |
