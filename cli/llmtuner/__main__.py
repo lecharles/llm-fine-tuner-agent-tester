@@ -5,6 +5,7 @@ Usage:
     python -m llmtuner doctor
     python -m llmtuner app [--port 8000] [--size 1200x800] [--position 100x100]
     python -m llmtuner bundle [--out ~/Applications] [--port 8000]
+    python -m llmtuner menubar [--port 8000]   # macOS only; needs `pip install rumps`
 """
 
 import argparse
@@ -419,6 +420,13 @@ def main():
     )
     bundle_parser.add_argument("--port", type=int, default=8000, help="Server port baked into the launcher (default: 8000)")
 
+    # menubar command (macOS only; rumps is an optional dep)
+    menubar_parser = subparsers.add_parser(
+        "menubar",
+        help="macOS menu-bar extra: status dot + open window / start / stop / quit (needs `pip install rumps`)",
+    )
+    menubar_parser.add_argument("--port", type=int, default=8000, help="Server port to watch (default: 8000)")
+
     args = parser.parse_args()
 
     if args.command == "up":
@@ -437,6 +445,10 @@ def main():
         sys.exit(doctor())
     elif args.command == "bundle":
         sys.exit(bundle(out=args.out, port=args.port))
+    elif args.command == "menubar":
+        from llmtuner.menubar import menubar as run_menubar
+
+        sys.exit(run_menubar(port=args.port))
     else:
         parser.print_help()
         sys.exit(1)

@@ -1,0 +1,4 @@
+# Optional dependency for `llmtuner menubar` (macOS only).
+# Not needed for up/app/doctor/bundle. Install on the Mac with:
+#   pip install -r cli/requirements-menubar.txt
+rumps>=0.4.0

@@ -19,7 +19,7 @@ Rules for the automated lane:
 | S4 | 09-18 | Welcome/motivation page (route `/welcome` + sidebar entry); gate G1 demo script `docs/DEMO.md` | frontend/, docs/ | - | DONE 2026-09-18 — `/welcome` lands + sidebar entry, `docs/DEMO.md` G1 script; `npm run build` green |
 | S5 | 09-19 | Icon pipeline `scripts/make_app_icon.sh`: favicon.svg → AppIcon.icns (sips/iconutil) | scripts/ | • | DONE (Mac verify pending) |
 | S6 | 09-20 | `llmtuner bundle`: generate `LLM Tuner.app` (Info.plist, launcher, icon) so app name + Dock identity are native | cli/, scripts/ | • | DONE (Mac verify pending) |
-| S7 | 09-21 | Menu-bar extra `llmtuner menubar` (rumps): status dot, open window, start/stop, quit; optional dep | cli/ | • | TODO |
+| S7 | 09-21 | Menu-bar extra `llmtuner menubar` (rumps): status dot, open window, start/stop, quit; optional dep | cli/ | • | DONE (Mac verify pending) |
 | S8 | 09-22 | Tmux lanes: service-token auth (`API_SERVICE_TOKENS`), `GET /api/status`, `docs/TMUX-LANES.md` with per-lane curl | backend/, docs/ | - | TODO |
 | S9 | 09-23 | Pytest suite: auth/me regression, env precedence, ladder fakes, local_server fakes, splash render | tests/ | - | TODO |
 | S10 | 09-24 | CI: GitHub Actions (compile, pytest, frontend build) + README badge | .github/ | - | TODO |
