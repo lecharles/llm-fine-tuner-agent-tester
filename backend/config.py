@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://localhost:11434"
     generation_local_models: str = ""  # comma list; empty = use all installed
 
+    # S8 (#11): team lanes. Comma-separated lane:token pairs, e.g.
+    # API_SERVICE_TOKENS=tmux-hermes:abc123,tmux-opencode:def456
+    # Empty (default) = service-token auth disabled.
+    api_service_tokens: str = ""
+
     def resolved_database_url(self) -> str:
         return self.database_url or f"sqlite:///{llmtuner_home() / 'app.db'}"
 

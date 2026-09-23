@@ -5,7 +5,7 @@ from database import get_db
 from models.dataset import Dataset
 from models.user import User
 from schemas.dataset import DatasetCreate, DatasetUpdate, DatasetOut
-from core.security import get_current_user
+from core.security import get_current_user, is_service_lane
 
 router = APIRouter(prefix="/api/datasets", tags=["datasets"])
 
@@ -84,6 +84,12 @@ def delete_dataset(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    # S8 (#11): service lanes get read/create/queue permissions only.
+    if is_service_lane(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Service lanes cannot delete datasets",
+        )
     dataset = (
         db.query(Dataset)
         .filter(Dataset.id == dataset_id, Dataset.user_id == current_user.id)

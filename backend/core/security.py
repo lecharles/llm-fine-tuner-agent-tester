@@ -1,3 +1,5 @@
+import hmac
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
 from fastapi import Depends, HTTPException, status
@@ -30,6 +32,70 @@ def create_access_token(subject: str) -> str:
     to_encode = {"sub": subject, "exp": expire}
     return jwt.encode(to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
+
+# --- S8 (#11): team lanes over service tokens -------------------------------
+# API_SERVICE_TOKENS is a comma-separated list of lane:token pairs, e.g.
+#   API_SERVICE_TOKENS=tmux-hermes:s3cr3t-a,tmux-opencode:s3cr3t-b
+# A request carrying `Authorization: Bearer <lane token>` acts as that lane:
+# it gets a dedicated, auto-provisioned service user, so every existing
+# per-user ownership filter keeps the lanes apart. Lanes may read, create
+# datasets, and queue generation — they may NOT delete (enforced in the
+# delete endpoints via the `lane_name` marker set below).
+
+LANE_PERMISSIONS = ("read", "create", "queue_generation")
+
+
+@dataclass(frozen=True)
+class ServiceLane:
+    name: str
+    token: str
+
+
+def parse_service_tokens() -> list[ServiceLane]:
+    lanes: list[ServiceLane] = []
+    for entry in settings.api_service_tokens.split(","):
+        entry = entry.strip()
+        if not entry or ":" not in entry:
+            continue
+        name, _, token = entry.partition(":")
+        name, token = name.strip(), token.strip()
+        if name and token:
+            lanes.append(ServiceLane(name=name, token=token))
+    return lanes
+
+
+def resolve_service_lane(token: str) -> ServiceLane | None:
+    # Constant-time comparison against every configured lane token; empty
+    # configuration (default) disables lane auth entirely.
+    match: ServiceLane | None = None
+    for lane in parse_service_tokens():
+        if hmac.compare_digest(lane.token.encode(), token.encode()):
+            match = lane
+    return match
+
+
+def ensure_lane_user(db: Session, lane: ServiceLane) -> User:
+    """Provision (idempotently) the service user backing a lane."""
+    email = f"lane-{lane.name}@service.local"
+    user = db.query(User).filter(User.email == email).first()
+    if user is None:
+        user = User(
+            email=email,
+            hashed_password=hash_password("no-login-service-lane"),
+            display_name=f"Lane {lane.name}",
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    # Request-scoped marker (not persisted): tells delete endpoints to 403.
+    user.lane_name = lane.name
+    return user
+
+
+def is_service_lane(user: User) -> bool:
+    return getattr(user, "lane_name", None) is not None
+
+
 def get_current_user(
     token: str | None = Depends(OAuth2PasswordBearer(tokenUrl="api/auth/login", auto_error=False)),
     db: Session = Depends(get_db)
@@ -44,6 +110,11 @@ def get_current_user(
             detail="Not authenticated",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    # S8 (#11): a token that matches a configured lane acts as that lane.
+    lane = resolve_service_lane(token)
+    if lane is not None:
+        return ensure_lane_user(db, lane)
 
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

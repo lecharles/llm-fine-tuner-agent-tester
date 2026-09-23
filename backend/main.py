@@ -1,10 +1,11 @@
 from fastapi import FastAPI
-from routers import auth, dataset, qa_pair, training_run, generation, chat, fine_tuned_model
+from routers import auth, dataset, qa_pair, training_run, generation, chat, fine_tuned_model, status
 from static_serve import mount_spa
 
 app = FastAPI(title="LLM Fine Tuner & Agent Tester API")
 
 app.include_router(auth.router)
+app.include_router(status.router)
 app.include_router(dataset.router)
 app.include_router(qa_pair.router)
 app.include_router(training_run.router)
