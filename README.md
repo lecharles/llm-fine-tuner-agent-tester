@@ -1,5 +1,7 @@
 # LLM Fine Tuner & Agent Tester
 
+[![CI](https://github.com/lecharles/llm-fine-tuner-agent-tester/actions/workflows/ci.yml/badge.svg)](https://github.com/lecharles/llm-fine-tuner-agent-tester/actions/workflows/ci.yml)
+
 **New here?** Install in one command and train your first model: see [Quickstart](docs/QUICKSTART.md).
 
 Fine-tune a small open-weights LLM as easily as tuning a guitar, then test it side by side against other models. Local-first, built for Apple Silicon.

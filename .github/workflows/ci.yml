@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    env:
+      # Keep the SQLite fallback and app-home writes inside the workspace.
+      LLMTUNER_HOME: ${{ github.workspace }}/.llmtuner-ci
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          # Matches the .venv-smoke interpreter the lane verifies with.
+          # backend/Pipfile pins 3.14 for the Mac runtime; CI stays on 3.12
+          # until mlx-lm's absence is re-checked against 3.14 wheels.
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install backend dependencies
+        # Pipfile packages minus mlx-lm (Mac-only; the S9 suite fakes
+        # mlx_lm.server, so nothing here imports it), plus pytest and httpx
+        # (TestClient) which S9's tests README says S10 wires in.
+        run: |
+          python -m pip install --upgrade pip
+          pip install \
+            "fastapi" \
+            "uvicorn[standard]" \
+            "sqlalchemy" \
+            "psycopg2-binary" \
+            "alembic" \
+            "pydantic-settings" \
+            "python-dotenv" \
+            "passlib[bcrypt]" \
+            "bcrypt==4.0.1" \
+            "python-jose[cryptography]" \
+            "pydantic[email]" \
+            "python-multipart" \
+            "anthropic" \
+            "openai" \
+            "datasets" \
+            "httpx" \
+            "pytest"
+
+      - name: Compile check (py_compile all of backend/)
+        run: python -m compileall -q backend
+
+      - name: Import smoke (fresh interpreter, backend/)
+        run: cd backend && python -c "import main"
+
+      - name: Pytest suite
+        run: python -m pytest tests -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install and build
+        run: |
+          npm ci
+          npm run build
