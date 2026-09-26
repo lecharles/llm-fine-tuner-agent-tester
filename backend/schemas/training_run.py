@@ -11,6 +11,12 @@ class TrainingRunCreate(BaseModel):
     learning_rate: float | None = None
 
 
+class LossPoint(BaseModel):
+    # One point on the live loss curve (S11, issue #4), parsed from train.log.
+    step: int
+    loss: float
+
+
 class TrainingRunOut(BaseModel):
     id: int
     user_id: int

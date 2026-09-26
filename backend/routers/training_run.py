@@ -6,8 +6,9 @@ from models.dataset import Dataset
 from models.qa_pair import QAPair
 from models.training_run import TrainingRun
 from models.user import User
-from schemas.training_run import TrainingRunCreate, TrainingRunOut
+from schemas.training_run import LossPoint, TrainingRunCreate, TrainingRunOut
 from core.security import get_current_user
+from training.losses import read_losses
 from training.preflight import mlx_training_available
 from training.runner import run_training
 
@@ -87,3 +88,22 @@ def read_training_run(
     if run is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Training run not found")
     return run
+
+
+@router.get("/{run_id}/losses", response_model=list[LossPoint])
+def read_run_losses(
+    run_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # S11 (issue #4): live loss curve. The Train page polls this every few
+    # seconds; train.log is streamed by the runner, so points appear while
+    # the run is still going. No log yet (queued/older runs) -> empty list.
+    run = (
+        db.query(TrainingRun)
+        .filter(TrainingRun.id == run_id, TrainingRun.user_id == current_user.id)
+        .first()
+    )
+    if run is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Training run not found")
+    return read_losses(run.id)

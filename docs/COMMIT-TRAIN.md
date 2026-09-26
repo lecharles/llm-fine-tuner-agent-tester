@@ -23,7 +23,7 @@ Rules for the automated lane:
 | S8 | 09-22 | Tmux lanes: service-token auth (`API_SERVICE_TOKENS`), `GET /api/status`, `docs/TMUX-LANES.md` with per-lane curl | backend/, docs/ | - | DONE 2026-09-22 — lane:token service auth, /api/status identity, lane delete 403 + isolation smoke green |
 | S9 | 09-23 | Pytest suite: auth/me regression, env precedence, ladder fakes, local_server fakes, splash render | tests/ | - | DONE 2026-09-24 — 37 tests green in ~5s (backend/.venv-smoke/bin/python -m pytest tests -q) |
 | S10 | 09-24 | CI: GitHub Actions (compile, pytest, frontend build) + README badge | .github/ | - | DONE 2026-09-25 — ci.yml (py3.12: compileall, `import main` smoke, pytest; node22: npm ci + build) + README badge; suite green locally 37/37 |
-| S11 | 09-25 | Train page: live loss curve (parse train.log → `/api/training-runs/{id}/losses` → tiny chart) | backend/, frontend/ | - | TODO |
+| S11 | 09-25 | Train page: live loss curve (parse train.log → `/api/training-runs/{id}/losses` → tiny chart) | backend/, frontend/ | - | DONE 2026-09-26 — runner streams train.log live; tolerant parser + GET /api/training-runs/{id}/losses (auth'd, 404 on foreign run, [] before first log line); Train page polls it with the status tick and renders a dependency-free SVG curve; py_compile + `import main` + pytest 37 green + `npm run build` green |
 | S12 | 09-26 | Dataset import: CSV/JSONL upload → Q&A pairs (endpoint + UI) | backend/, frontend/ | - | TODO |
 | S13 | 09-27 | Compare: hosted-column model pickers + list installed Ollama models as optional column | frontend/, backend/ | - | TODO |
 | S14 | 09-28 | Docs: README rewrite, screenshots pass, demo run-through v2 | README.md, docs/ | - | TODO |

@@ -26,6 +26,13 @@ export type TrainingRun = {
     completed_at: string | null;
 };
 
+// One point on the live loss curve, parsed from train.log by
+// GET /training-runs/{id}/losses (S11, issue #4).
+export type LossPoint = {
+    step: number;
+    loss: number;
+};
+
 export type FineTunedModel = {
     id: number;
     user_id: number;

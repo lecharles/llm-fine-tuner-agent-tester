@@ -63,6 +63,27 @@ def tail_text(path: Path, limit: int = 1800) -> str:
         return ""
 
 
+def stream_train_log(command: list[str], log_path: Path) -> int:
+    """Run `command`, appending its merged stdout+stderr to `log_path` as
+    lines arrive. Returns the exit code. Line-by-line flushing is what makes
+    the loss curve live (S11, issue #4): GET /losses parses this file while
+    the subprocess is still running.
+    """
+    with log_path.open("w", encoding="utf-8", errors="replace") as log_file:
+        proc = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            errors="replace",
+        )
+        assert proc.stdout is not None
+        for line in proc.stdout:
+            log_file.write(line)
+            log_file.flush()
+        return proc.wait()
+
+
 def run_training(run_id: int) -> None:
     """Background entry point. Opens its own DB session (the request's session is
     already closed by the time this runs), converts the dataset to JSONL, runs the
@@ -96,12 +117,13 @@ def run_training(run_id: int) -> None:
             run.base_model, data_dir, adapter_dir, run.iters, run.learning_rate
         )
 
-        result = subprocess.run(command, capture_output=True, text=True)
-        (workspace / "train.log").write_text(
-            result.stdout + "\n" + result.stderr, encoding="utf-8"
-        )
-        if result.returncode != 0:
-            raise RuntimeError(f"mlx_lm.lora exited with code {result.returncode}")
+        # S11 (issue #4): stream stdout+stderr into train.log line by line
+        # instead of capturing and writing at the end, so the losses endpoint
+        # can chart the run *live*. The merged stream lands in the same file
+        # the failure path already tails, so error reporting is unchanged.
+        returncode = stream_train_log(command, workspace / "train.log")
+        if returncode != 0:
+            raise RuntimeError(f"mlx_lm.lora exited with code {returncode}")
         
         fused_dir = workspace / "fused_model"
         export_result = export_gguf(run.base_model, adapter_dir, fused_dir)

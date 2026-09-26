@@ -807,6 +807,52 @@ button {
   word-break: break-word;
 }
 
+/* Live loss curve (S11, issue #4): tiny SVG chart inside the run card. */
+.loss-chart {
+  margin: 10px 0 0;
+}
+
+.loss-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.loss-axis {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.loss-line {
+  fill: none;
+  stroke: var(--warning);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.loss-dot {
+  fill: var(--warning);
+}
+
+.loss-tick {
+  fill: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.loss-current {
+  fill: var(--text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.loss-empty {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 /* A small pulsing dot inside the badge while a run is actively running. */
 .pulse-dot {
   display: inline-block;

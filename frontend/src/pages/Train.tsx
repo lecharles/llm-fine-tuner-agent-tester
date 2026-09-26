@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Play, HelpCircle } from "lucide-react";
 import { apiFetch } from "../api";
-import type { Dataset, TrainingRun } from "../types";
+import LossChart from "../components/LossChart";
+import type { Dataset, LossPoint, TrainingRun } from "../types";
 
 const TERMINAL = ["completed", "failed"];
 
@@ -21,6 +22,7 @@ export default function Train() {
     const [iters, setIters] = useState(300);
 
     const [run, setRun] = useState<TrainingRun | null>(null);
+    const [losses, setLosses] = useState<LossPoint[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [starting, setStarting] = useState(false);
     const [attachId, setAttachId] = useState("");
@@ -51,6 +53,12 @@ export default function Train() {
 
     // Ask the backend for this run's latest state; stop once it's terminal.
     function pollOnce(id: number) {
+        // S11 (issue #4): the loss curve rides the same tick. A failed/empty
+        // losses fetch must never kill the status poll, so errors are swallowed
+        // here (queued runs legitimately have no train.log yet).
+        apiFetch<LossPoint[]>(`/training-runs/${id}/losses`)
+            .then(setLosses)
+            .catch(() => undefined);
         apiFetch<TrainingRun>(`/training-runs/${id}`)
             .then((latest) => {
                 setRun(latest);
@@ -74,6 +82,7 @@ export default function Train() {
         if (datasetId === "") return;
         setStarting(true);
         setError(null);
+        setLosses([]); // fresh curve for the fresh run
         try {
             const created = await apiFetch<TrainingRun>("/training-runs", {
                 method: "POST",
@@ -95,6 +104,7 @@ export default function Train() {
         const id = Number(attachId);
         if (!id) return;
         setError(null);
+        setLosses([]); // avoid flashing the previous run's curve
         startPolling(id);
     }
 
@@ -160,6 +170,7 @@ export default function Train() {
                     <div className="run-meta">
                         {run.base_model} · {run.method} · {run.iters} iters
                     </div>
+                    <LossChart points={losses} iters={run.iters} />
                     {run.status === "failed" && (
                         run.error_message ? (
                             <pre className="run-error">{run.error_message}</pre>
