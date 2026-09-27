@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Sparkles, Download, Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
-import { apiFetch } from "../api";
+import { ArrowLeft, Sparkles, Download, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Upload } from "lucide-react";
+import { apiFetch, apiUpload } from "../api";
 import type { Dataset, QAPair } from "../types";
 import QAPairModal, { type QAPairValues } from "../components/QAPairModal";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -28,6 +28,7 @@ export default function DatasetDetail() {
     const [preset, setPreset] = useState("general");
     const [impCount, setImpCount] = useState(50);
     const [importing, setImporting] = useState(false);
+    const [fileImporting, setFileImporting] = useState(false);
 
     // Pair create/edit modal, delete confirmation, and the current page.
     const [pairForm, setPairForm] = useState<{ open: boolean; mode: "create" | "edit"; pair: QAPair | null }>({
@@ -102,6 +103,24 @@ export default function DatasetDetail() {
     }
 
     const openCreatePair = () => setPairForm({ open: true, mode: "create", pair: null });
+
+    // S12 (#14): upload a CSV/JSONL file and append the parsed pairs.
+    async function handleFileImport(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0];
+        e.target.value = ""; // allow re-picking the same file after a failure
+        if (!file) return;
+        setFileImporting(true);
+        setError(null);
+        try {
+            const created = await apiUpload<QAPair[]>(`/datasets/${datasetId}/qa-pairs/upload`, file);
+            setPairs((prev) => [...prev, ...created]);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Upload failed");
+        } finally {
+            setFileImporting(false);
+        }
+    }
+
     const openEditPair = (p: QAPair) => setPairForm({ open: true, mode: "edit", pair: p });
     const closePairForm = () => setPairForm((f) => ({ ...f, open: false }));
 
@@ -173,6 +192,23 @@ export default function DatasetDetail() {
                             </div>
                             {!dataset.use_case_prompt && <div className="dd-hint">Save a use-case prompt first.</div>}
                             <GenerationStatusLine />
+                        </div>
+
+                        <div className="card">
+                            <div className="label">Import from file</div>
+                            <div className="dd-hint">CSV or JSONL with question/answer columns (up to 2 MB, 5,000 pairs).</div>
+                            <div className="dd-row dd-row-end">
+                                <label className="btn btn-ghost" style={{ marginBottom: 0 }}>
+                                    <Upload size={15} /> {fileImporting ? "Uploading…" : "Choose file"}
+                                    <input
+                                        type="file"
+                                        accept=".csv,.jsonl,.tsv"
+                                        style={{ display: "none" }}
+                                        onChange={handleFileImport}
+                                        disabled={fileImporting}
+                                    />
+                                </label>
+                            </div>
                         </div>
 
                         <div className="card">

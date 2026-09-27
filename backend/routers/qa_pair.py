@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from database import get_db
+from datasets_import import ImportError_, parse_upload
 from models.dataset import Dataset
 from models.qa_pair import QAPair
 from models.user import User
@@ -50,6 +51,33 @@ def list_qa_pairs(
     get_owned_dataset(dataset_id, db, current_user)
     qa_pairs = db.query(QAPair).filter(QAPair.dataset_id == dataset_id).all()
     return qa_pairs
+
+
+# S12 (#14): fixed path declared before /{qa_pair_id} so it never shadows a pair id.
+@router.post("/upload", response_model=list[QAPairOut], status_code=status.HTTP_201_CREATED)
+async def upload_qa_pairs(
+    dataset_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Bulk-import Q&A pairs from an uploaded CSV or JSONL file."""
+    get_owned_dataset(dataset_id, db, current_user)
+    raw = await file.read()
+    try:
+        pairs = parse_upload(file.filename or "", raw)
+    except ImportError_ as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+    created = [
+        QAPair(dataset_id=dataset_id, question=p["question"], answer=p["answer"])
+        for p in pairs
+    ]
+    db.add_all(created)
+    db.commit()
+    for obj in created:
+        db.refresh(obj)
+    return created
 
 
 @router.get("/{qa_pair_id}", response_model=QAPairOut)

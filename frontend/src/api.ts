@@ -70,3 +70,35 @@ export async function apiFetch<T>(path: string, options: ApiOptions = {}): Promi
 
     return response.json() as Promise<T>;
 }
+
+// Multipart upload (S12, issue #14): file -> backend. The browser sets the
+// multipart Content-Type itself, so we only attach the auth header.
+export async function apiUpload<T>(path: string, file: File): Promise<T> {
+    const form = new FormData();
+    form.append("file", file);
+
+    const headers: Record<string, string> = {};
+    const token = getToken();
+    if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${BASE}${path}`, {
+        method: "POST",
+        headers,
+        body: form,
+    });
+
+    if (response.status === 401) {
+        clearToken();
+        if (window.location.pathname !== "/login") {
+            window.location.href = "/login";
+        }
+        throw new Error("Unauthorized");
+    }
+    if (!response.ok) {
+        const err = await response.json().catch(() => null);
+        throw new Error(err?.detail ?? `Upload failed: ${response.status}`);
+    }
+    return response.json() as Promise<T>;
+}
