@@ -10,6 +10,9 @@ class ChatSessionCreate(BaseModel):
     # override; the two local Llama columns are derived from the fine-tuned model.
     compare_model_a: str = "gpt-4o-mini"
     compare_model_b: str = "claude-opus-4-8"
+    # S13 (#15): the optional Ollama column. None = off; a model name from
+    # GET /api/compare/ollama-models adds it as a fifth column.
+    compare_ollama_model: str | None = None
 
 
 class ChatSessionOut(BaseModel):
@@ -19,6 +22,7 @@ class ChatSessionOut(BaseModel):
     title: str | None = None
     compare_model_a: str | None = None
     compare_model_b: str | None = None
+    compare_ollama_model: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

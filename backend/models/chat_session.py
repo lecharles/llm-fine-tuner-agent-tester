@@ -14,6 +14,9 @@ class ChatSession(Base):
     title = Column(String)
     compare_model_a = Column(String)
     compare_model_b = Column(String)
+    # S13 (#15): optional fifth column backed by an installed Ollama model.
+    # null = the compare runs with the four default columns.
+    compare_ollama_model = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.current_timestamp())
 
     user = relationship("User", back_populates="chat_sessions")

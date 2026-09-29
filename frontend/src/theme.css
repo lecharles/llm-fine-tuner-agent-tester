@@ -1004,6 +1004,33 @@ button {
   max-width: 260px;
 }
 
+/* S13: the head packs the fine-tuned model picker plus the optional Ollama
+   column picker side by side. */
+.compare-picks {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* Optional fifth column (installed Ollama model): same equal grid, one more
+   track. Applied only while the picker holds a model. */
+.compare-cols.cols-five {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+/* Hosted-column model picker, in the column header. Compact override of the
+   form .select so it fits the 40-ish px header strip. */
+.compare-col-head .col-picker {
+  margin-left: auto;
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: 150px;
+  padding: 3px 6px;
+  font-size: 11px;
+  background: var(--surface-elevated);
+}
+
 .compare-cols {
   flex: 1;
   min-height: 0;

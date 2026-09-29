@@ -14,10 +14,14 @@ from schemas.chat import (
     ChatTurnOut,
 )
 from core.security import get_current_user
-from chat.compare import hosted_backends, local_backends, fan_out
+from chat.compare import hosted_backends, local_backends, ollama_backend, fan_out, installed_ollama_models
 from chat.local_server import ensure_local_servers
 
 router = APIRouter(prefix="/api/chat-sessions", tags=["chat"])
+
+# Small companion router so the compare picker list lives on its own prefix
+# and never collides with the /{session_id} int paths below.
+picker_router = APIRouter(prefix="/api/compare", tags=["compare"])
 
 # Compare fairness: every column answers under a shared length cap so the
 # fine-tuned model isn't compared against 500-word hosted essays. Applies to
@@ -26,6 +30,14 @@ ANSWER_CAP = (
     "Keep every answer under 150 words. Use short paragraphs with line breaks. "
     "Be direct and skip preamble and filler."
 )
+
+
+@picker_router.get("/ollama-models")
+def list_ollama_models(current_user: User = Depends(get_current_user)):
+    """Installed Ollama models for the optional compare column (S13, #15).
+    Auth'd like every other route; an empty list means Ollama is unreachable
+    or has nothing pulled, and the UI simply offers no optional column."""
+    return {"models": installed_ollama_models()}
 
 
 @router.post("", response_model=ChatSessionOut, status_code=status.HTTP_201_CREATED)
@@ -55,6 +67,7 @@ def create_chat_session(
         title=session_in.title,
         compare_model_a=session_in.compare_model_a,
         compare_model_b=session_in.compare_model_b,
+        compare_ollama_model=session_in.compare_ollama_model,
     )
     db.add(session)
     db.commit()
@@ -117,12 +130,15 @@ def send_message(
     fused_path = ft.gguf_path or f"_training_runs/{ft.training_run_id}/fused_model"
     startup_errors = ensure_local_servers(fused_path, ft.base_model)
 
-    # Four columns: the two local Llamas derived from the pinned model (its fused
-    # model served on 8081, its untuned base on 8082), plus the two hosted models
-    # chosen on the session.
+    # Four columns by default: the two local Llamas derived from the pinned
+    # model (its fused model served on 8081, its untuned base on 8082), plus
+    # the two hosted models chosen on the session. With compare_ollama_model
+    # set (S13, #15) a fifth column fans out to that installed Ollama model.
     backends = local_backends(
         fused_path, ft.base_model
     ) + hosted_backends(session.compare_model_a, session.compare_model_b)
+    if session.compare_ollama_model:
+        backends.append(ollama_backend(session.compare_ollama_model))
 
     # Multi-turn: rebuild each column's own conversation from the stored messages,
     # then append the new user turn. Each column sees the shared user turns plus

@@ -12,6 +12,7 @@ app.include_router(training_run.router)
 app.include_router(generation.router)
 app.include_router(generation.status_router)
 app.include_router(chat.router)
+app.include_router(chat.picker_router)
 app.include_router(fine_tuned_model.router)
 
 

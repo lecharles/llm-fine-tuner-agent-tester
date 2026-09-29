@@ -3,9 +3,16 @@ import { Send } from "lucide-react";
 import { apiFetch } from "../api";
 import type { FineTunedModel, ChatSession, ChatMessage, ChatTurn } from "../types";
 
-// The four compare columns, in display order. The backend tags each assistant
-// reply with one of these model_label values.
-const COLUMNS = ["fine_tuned", "vanilla", "openai", "anthropic"] as const;
+// The four always-on compare columns, in display order. The backend tags each
+// assistant reply with one of these model_label values. S13 (#15) adds a
+// fifth, optional "ollama" column that only exists while a model is picked.
+const BASE_COLUMNS = ["fine_tuned", "vanilla", "openai", "anthropic"] as const;
+
+// Hardcoded hosted model pickers (S13, #15). The defaults match the backend
+// schema defaults in schemas/chat.py, so untouched pickers behave exactly
+// like before this feature existed.
+const OPENAI_MODELS = ["gpt-4o-mini", "gpt-4o", "gpt-5.5"];
+const ANTHROPIC_MODELS = ["claude-opus-4-8", "claude-sonnet-5"];
 
 // Per-column display: a name, a category (your model / baseline / hosted), and
 // an accent color. Both hosted columns share the coral, on purpose.
@@ -14,18 +21,21 @@ const COL_NAME: Record<string, string> = {
     vanilla: "Vanilla base",
     openai: "OpenAI",
     anthropic: "Anthropic",
+    ollama: "Ollama",
 };
 const COL_CATEGORY: Record<string, string> = {
     fine_tuned: "Your model",
     vanilla: "Baseline",
     openai: "Hosted",
     anthropic: "Hosted",
+    ollama: "Local extra",
 };
 const COL_COLOR: Record<string, string> = {
     fine_tuned: "var(--primary)",
     vanilla: "var(--text-muted)",
     openai: "var(--hosted)",
     anthropic: "var(--hosted)",
+    ollama: "var(--info)",
 };
 
 export default function Compare() {
@@ -37,12 +47,21 @@ export default function Compare() {
     const [error, setError] = useState<string | null>(null);
     // Columns that could not answer the most recent turn: label -> reason.
     const [colErrors, setColErrors] = useState<Record<string, string>>({});
+    // Hosted-column model pickers (S13, #15): which model each hosted column
+    // uses. Applied when the session is created; changing one starts a new
+    // session, same rule as swapping the fine-tuned model.
+    const [openaiModel, setOpenaiModel] = useState(OPENAI_MODELS[0]);
+    const [anthropicModel, setAnthropicModel] = useState(ANTHROPIC_MODELS[0]);
+    // Optional fifth column: an installed Ollama model, or "" for off.
+    const [ollamaModel, setOllamaModel] = useState("");
+    const [ollamaModels, setOllamaModels] = useState<string[]>([]);
 
     // The session id lives in a ref: it persists across renders and we read it
     // synchronously inside the send handler. null means "no session yet".
     const sessionRef = useRef<number | null>(null);
-    // Which model the current session was created for, so we can detect a change.
-    const sessionModelRef = useRef<number | null>(null);
+    // The column setup the current session was created with (fine-tuned model
+    // + the three pickers), so we can detect any change.
+    const sessionSetupRef = useRef<string | null>(null);
     // The columns container, so we can keep each thread scrolled to the bottom.
     const colsRef = useRef<HTMLDivElement>(null);
 
@@ -53,6 +72,15 @@ export default function Compare() {
             .catch((err) => setError(err instanceof Error ? err.message : "Failed to load models"));
     }, []);
 
+    // S13: list the models installed on this machine's Ollama so the compare
+    // can offer the optional column. Empty (or a failed call) just means the
+    // picker offers nothing to enable — no error, the four columns work alone.
+    useEffect(() => {
+        apiFetch<{ models: string[] }>("/compare/ollama-models")
+            .then((r) => setOllamaModels(r.models ?? []))
+            .catch(() => setOllamaModels([]));
+    }, []);
+
     // On every new message (or while a reply is pending), pin each column's
     // thread to the bottom so the latest turn is in view.
     useEffect(() => {
@@ -61,19 +89,25 @@ export default function Compare() {
         });
     }, [messages, sending]);
 
-    // Lazy session: create one only when we first need it (or when the chosen
-    // model changed since the last session). Returns the session id to use.
+    // Lazy session: create one only when we first need it (or when the column
+    // setup changed since the last session). Returns the session id to use.
     async function ensureSession(): Promise<number> {
-        if (sessionRef.current !== null && sessionModelRef.current === modelId) {
+        const setup = `${modelId}|${openaiModel}|${anthropicModel}|${ollamaModel}`;
+        if (sessionRef.current !== null && sessionSetupRef.current === setup) {
             return sessionRef.current;
         }
         const session = await apiFetch<ChatSession>("/chat-sessions", {
             method: "POST",
-            body: { fine_tuned_model_id: modelId },
+            body: {
+                fine_tuned_model_id: modelId,
+                compare_model_a: openaiModel,
+                compare_model_b: anthropicModel,
+                compare_ollama_model: ollamaModel === "" ? null : ollamaModel,
+            },
         });
         sessionRef.current = session.id;
-        sessionModelRef.current = modelId as number;
-        setMessages([]); // a new session (first use or model change) starts a fresh transcript
+        sessionSetupRef.current = setup;
+        setMessages([]); // a new session (first use or setup change) starts a fresh transcript
         return session.id;
     }
 
@@ -85,7 +119,7 @@ export default function Compare() {
         try {
             const sessionId = await ensureSession(); // create-on-first-use
             // POST the prompt; backend threads each column's history, fans out to
-            // all four, and returns this turn's messages plus per-column failures.
+            // every column, and returns this turn's messages plus per-column failures.
             const turn = await apiFetch<ChatTurn>(
                 `/chat-sessions/${sessionId}/messages`,
                 { method: "POST", body: { content: prompt } }
@@ -106,6 +140,10 @@ export default function Compare() {
         return messages.filter((m) => m.role === "user" || m.model_label === label);
     }
 
+    // The ollama column renders only while one is picked; the backend adds it
+    // to the fan-out via the session's compare_ollama_model.
+    const columns: string[] = ollamaModel === "" ? [...BASE_COLUMNS] : [...BASE_COLUMNS, "ollama"];
+
     return (
         <div className="compare">
             <div className="compare-head">
@@ -113,30 +151,69 @@ export default function Compare() {
                     <div className="page-eyebrow" style={{ color: "var(--primary)" }}>Agent tester</div>
                     <h1 className="page-title">Compare</h1>
                 </div>
-                <select
-                    className="select compare-model-select"
-                    value={modelId}
-                    onChange={(e) => setModelId(e.target.value === "" ? "" : Number(e.target.value))}
-                    required
-                >
-                    <option value="">Select a fine-tuned model</option>
-                    {models.map((m) => (
-                        <option key={m.id} value={m.id}>
-                            {m.name}
-                        </option>
-                    ))}
-                </select>
+                <div className="compare-picks">
+                    <select
+                        className="select compare-model-select"
+                        value={modelId}
+                        onChange={(e) => setModelId(e.target.value === "" ? "" : Number(e.target.value))}
+                        required
+                    >
+                        <option value="">Select a fine-tuned model</option>
+                        {models.map((m) => (
+                            <option key={m.id} value={m.id}>
+                                {m.name}
+                            </option>
+                        ))}
+                    </select>
+                    <select
+                        className="select compare-model-select"
+                        value={ollamaModel}
+                        onChange={(e) => setOllamaModel(e.target.value)}
+                        title={ollamaModels.length === 0 ? "No models installed in Ollama" : "Optional fifth column"}
+                    >
+                        <option value="">Ollama column: off</option>
+                        {ollamaModels.map((m) => (
+                            <option key={m} value={m}>Ollama: {m}</option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
             {error && <p className="form-error">{error}</p>}
 
-            <div className="compare-cols" ref={colsRef}>
-                {COLUMNS.map((label) => (
+            <div className={`compare-cols${columns.length === 5 ? " cols-five" : ""}`} ref={colsRef}>
+                {columns.map((label) => (
                     <div className="compare-col" key={label}>
                         <div className="compare-col-head">
                             <span className="col-dot" style={{ background: COL_COLOR[label] }} />
                             <span className="col-name" style={{ color: COL_COLOR[label] }}>{COL_NAME[label]}</span>
-                            <span className="col-cat">{COL_CATEGORY[label]}</span>
+                            {label === "openai" ? (
+                                <select
+                                    className="select col-picker"
+                                    value={openaiModel}
+                                    onChange={(e) => setOpenaiModel(e.target.value)}
+                                    title="OpenAI model for this column"
+                                >
+                                    {OPENAI_MODELS.map((m) => (
+                                        <option key={m} value={m}>{m}</option>
+                                    ))}
+                                </select>
+                            ) : label === "anthropic" ? (
+                                <select
+                                    className="select col-picker"
+                                    value={anthropicModel}
+                                    onChange={(e) => setAnthropicModel(e.target.value)}
+                                    title="Anthropic model for this column"
+                                >
+                                    {ANTHROPIC_MODELS.map((m) => (
+                                        <option key={m} value={m}>{m}</option>
+                                    ))}
+                                </select>
+                            ) : label === "ollama" ? (
+                                <span className="col-cat">{ollamaModel}</span>
+                            ) : (
+                                <span className="col-cat">{COL_CATEGORY[label]}</span>
+                            )}
                         </div>
                         <div className="compare-thread">
                             {columnThread(label).map((m) =>
@@ -172,7 +249,7 @@ export default function Compare() {
             <form className="compare-input" onSubmit={handleSend}>
                 <input
                     className="input"
-                    placeholder="Message all four models…"
+                    placeholder={`Message all ${columns.length} models…`}
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     required

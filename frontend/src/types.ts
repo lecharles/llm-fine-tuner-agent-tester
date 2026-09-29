@@ -53,6 +53,7 @@ export type ChatSession = {
     title: string | null;
     compare_model_a: string | null;
     compare_model_b: string | null;
+    compare_ollama_model: string | null; // S13: optional fifth column, null = off
     created_at: string;
 };
 
@@ -60,7 +61,7 @@ export type ChatMessage = {
     id: number;
     chat_session_id: number;
     role: string;
-    model_label: string | null; // fine_tuned | vanilla | openai | anthropic (null for user)
+    model_label: string | null; // fine_tuned | vanilla | openai | anthropic | ollama (null for user)
     content: string;
     created_at: string;
 };

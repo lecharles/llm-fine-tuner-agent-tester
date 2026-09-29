@@ -1,7 +1,8 @@
 """Fan one prompt out to several compare backends and collect labeled replies.
 
-The compare chat shows the same prompt answered by up to four models side by side.
-Every backend is an OpenAI-compatible endpoint (the two Llama columns via Ollama,
+The compare chat shows the same prompt answered by four models side by side,
+plus one optional Ollama column (S13). Every backend is an OpenAI-compatible
+endpoint (the two Llama columns via Ollama,
 the OpenAI column, and the Anthropic column via its compat endpoint), so all of
 them go through the one chat_completion function, just with a different base URL,
 key, and model. Adding a column later means appending one Backend to the list.
@@ -11,6 +12,10 @@ is captured as an error on that column and the replies that did come back are st
 returned.
 """
 
+from __future__ import annotations
+
+import json
+import urllib.request
 from dataclasses import dataclass
 
 from chat.client import chat_completion
@@ -64,6 +69,30 @@ def local_backends(fine_tuned_model: str, base_model: str) -> list[Backend]:
         Backend("fine_tuned", FINE_TUNED_BASE_URL, "local", fine_tuned_model),
         Backend("vanilla", VANILLA_BASE_URL, "local", base_model),
     ]
+
+
+def ollama_backend(model: str) -> Backend:
+    """One optional column backed by an installed Ollama model (S13, #15).
+    Ollama speaks the OpenAI shape at <ollama_base_url>/v1, so it goes through
+    the same chat_completion as every other column; the key is a placeholder
+    since Ollama ignores it."""
+    base_url = settings.ollama_base_url.rstrip("/") + "/v1"
+    return Backend("ollama", base_url, "ollama", model)
+
+
+def installed_ollama_models() -> list[str]:
+    """Names of the models installed in the Ollama server, for the compare
+    picker. Hits Ollama's native /api/tags directly (not the generation ladder
+    helper, which respects GENERATION_LOCAL_MODELS) so the picker shows
+    everything actually available. Returns [] when Ollama is unreachable: the
+    compare page then simply offers no optional column instead of failing."""
+    url = settings.ollama_base_url.rstrip("/") + "/api/tags"
+    try:
+        with urllib.request.urlopen(url, timeout=3) as resp:
+            tags = json.loads(resp.read().decode()).get("models", [])
+        return [t["name"] for t in tags if t.get("name")]
+    except Exception:
+        return []
 
 
 def fan_out(backends: list[Backend], histories: dict[str, list[dict]]) -> list[Reply]:
