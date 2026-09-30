@@ -60,6 +60,11 @@ def client(in_memory_db):
 
     from database import get_db
     from routers import auth
+    from core.rate_limit import signup_limiter
+
+    # S15 (#17): the signup limiter is process-global; give every test a
+    # fresh window so per-test signup counts never bleed into each other.
+    signup_limiter.reset()
 
     app = FastAPI()
     app.include_router(auth.router)

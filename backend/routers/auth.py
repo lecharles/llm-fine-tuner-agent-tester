@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -7,6 +7,7 @@ from database import get_db
 from models.user import User
 from schemas.user import UserCreate, UserOut
 from schemas.token import Token
+from core.rate_limit import signup_limiter
 from core.security import hash_password, verify_password, create_access_token
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -19,7 +20,22 @@ def auth_config():
 
 
 @router.post("/signup", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-def signup(user_in: UserCreate, db: Session = Depends(get_db)):
+def signup(user_in: UserCreate, request: Request, db: Session = Depends(get_db)):
+    # S15 (#17): shared-instance hardening. Attempts (not just successes)
+    # count against a per-client-IP sliding window, so duplicate-email
+    # probing can't burn the hour for free. The key is the TCP peer from
+    # request.client (no X-Forwarded-For trust — nothing runs behind a
+    # proxy today, and a spoofable header would defeat the limit).
+    peer = request.client.host if request.client else "unknown-peer"
+    allowed, retry_after = signup_limiter.allow(
+        peer, settings.signup_rate_limit_per_hour, 3600.0
+    )
+    if not allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many signup attempts from this address. Try again later.",
+            headers={"Retry-After": str(int(retry_after))},
+        )
     existing_user = db.query(User).filter(User.email == user_in.email).first()
     if existing_user:
         raise HTTPException(

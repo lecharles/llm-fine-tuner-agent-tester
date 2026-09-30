@@ -1,8 +1,21 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from routers import auth, dataset, qa_pair, training_run, generation, chat, fine_tuned_model, status
 from static_serve import mount_spa
+from core import bind_guard
 
-app = FastAPI(title="LLM Fine Tuner & Agent Tester API")
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    # S15 (#17): LOCAL_MODE=true on a non-loopback bind refuses startup.
+    bind_guard.ensure_local_mode_bind_ok()
+    yield
+
+
+app = FastAPI(title="LLM Fine Tuner & Agent Tester API", lifespan=lifespan)
+
+bind_guard.register(app)
 
 app.include_router(auth.router)
 app.include_router(status.router)

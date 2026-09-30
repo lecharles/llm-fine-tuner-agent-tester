@@ -34,6 +34,12 @@ class Settings(BaseSettings):
     # Empty (default) = service-token auth disabled.
     api_service_tokens: str = ""
 
+    # S15 (#17): shared-instance hardening. Signup attempts allowed per
+    # client IP per rolling hour (in-process window; 0 disables). Issue #17
+    # asks for 1/hour on the shared VPS box; tests/local installs may raise
+    # it. See docs/CREDENTIALS.md.
+    signup_rate_limit_per_hour: int = 1
+
     def resolved_database_url(self) -> str:
         return self.database_url or f"sqlite:///{llmtuner_home() / 'app.db'}"
 
