@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Box } from "lucide-react";
 import { apiFetch } from "../api";
+import { displayStatus } from "../statusText";
 import type { FineTunedModel } from "../types";
 
 // Model status -> badge color (a model lands "ready" once it is fused).
@@ -55,7 +56,7 @@ export default function Models() {
                                     </div>
                                 </div>
                                 <span className={`badge ${STATUS_CLASS[m.status] ?? "badge-neutral"}`}>
-                                    {m.status}
+                                    {displayStatus(m.status)}
                                 </span>
                             </div>
                             <div className="model-meta">

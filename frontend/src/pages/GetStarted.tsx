@@ -63,7 +63,7 @@ export default function GetStarted() {
                                     <div className="gs-setup-tag">on-device</div>
                                 </div>
                             </div>
-                            <span className="badge badge-success">ready</span>
+                            <span className="badge badge-success">Ready</span>
                         </div>
                         <div className="gs-setup-blurb">Opt in, and LLM Tuner installs everything training needs, then runs entirely on your own hardware.</div>
                         <div className="gs-checklist">

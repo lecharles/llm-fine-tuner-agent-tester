@@ -1,10 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import { Play, HelpCircle } from "lucide-react";
 import { apiFetch } from "../api";
+import { displayStatus } from "../statusText";
 import LossChart from "../components/LossChart";
 import type { Dataset, LossPoint, TrainingRun } from "../types";
 
 const TERMINAL = ["completed", "failed"];
+
+// S17: iters input guard rails + quick presets (10-20 smoke, 200-400 sweet
+// spot per the quickstart guidance; 1000 for a proper run).
+const DEFAULT_ITERS = 300;
+const clampIters = (v: number) => Math.min(5000, Math.max(1, Math.round(v)));
+const ITERS_PRESETS = [
+    { value: 20, label: "smoke" },
+    { value: 300, label: "recommended" },
+    { value: 1000, label: "full run" },
+];
 
 // Map a run's status to its badge color.
 const STATUS_CLASS: Record<string, string> = {
@@ -19,7 +30,7 @@ const STATUS_CLASS: Record<string, string> = {
 export default function Train() {
     const [datasets, setDatasets] = useState<Dataset[]>([]);
     const [datasetId, setDatasetId] = useState<number | "">("");
-    const [iters, setIters] = useState(300);
+    const [iters, setIters] = useState(DEFAULT_ITERS);
 
     const [run, setRun] = useState<TrainingRun | null>(null);
     const [losses, setLosses] = useState<LossPoint[]>([]);
@@ -142,13 +153,48 @@ export default function Train() {
                                 </span>
                             </span>
                         </label>
-                        <input
-                            className="input"
-                            type="number"
-                            value={iters}
-                            onChange={(e) => setIters(Number(e.target.value))}
-                            min={1}
-                        />
+                        {/* S17: stepper + presets replace the bare number box. */}
+                        <div className="iters-stepper">
+                            <button
+                                type="button"
+                                className="stepper-btn"
+                                aria-label="Decrease iters by 50"
+                                onClick={() => setIters((v) => clampIters(v - 50))}
+                            >
+                                −
+                            </button>
+                            <input
+                                className="input iters-input"
+                                type="number"
+                                value={iters}
+                                onChange={(e) => {
+                                    const v = Number(e.target.value);
+                                    setIters(Number.isFinite(v) ? clampIters(v) : DEFAULT_ITERS);
+                                }}
+                                min={1}
+                                max={5000}
+                            />
+                            <button
+                                type="button"
+                                className="stepper-btn"
+                                aria-label="Increase iters by 50"
+                                onClick={() => setIters((v) => clampIters(v + 50))}
+                            >
+                                +
+                            </button>
+                        </div>
+                        <div className="iters-presets" role="group" aria-label="Iters presets">
+                            {ITERS_PRESETS.map((p) => (
+                                <button
+                                    key={p.value}
+                                    type="button"
+                                    className={`chip${iters === p.value ? " chip-active" : ""}`}
+                                    onClick={() => setIters(p.value)}
+                                >
+                                    {p.value} · {p.label}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                     <button type="submit" className="btn btn-primary" disabled={starting || datasetId === ""}>
                         <Play size={16} /> {starting ? "Starting…" : "Start training"}
@@ -164,7 +210,7 @@ export default function Train() {
                         <span className="run-id">Run #{run.id}</span>
                         <span className={`badge ${STATUS_CLASS[run.status] ?? "badge-neutral"}`}>
                             {run.status === "running" && <span className="pulse-dot" />}
-                            {run.status}
+                            {displayStatus(run.status)}
                         </span>
                     </div>
                     <div className="run-meta">

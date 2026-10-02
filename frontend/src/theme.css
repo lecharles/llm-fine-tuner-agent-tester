@@ -717,8 +717,81 @@ button {
   gap: 16px;
 }
 
+/* ---------- S17 theme pass 1: iters stepper + preset chips ---------- */
+/* The iters field now holds a −/+ stepper and a row of presets, so the old
+   130px max-width was widened here rather than left as a shadowed rule. */
 .field-iters {
-  max-width: 130px;
+  max-width: 240px;
+}
+
+.iters-stepper {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.stepper-btn {
+  width: 30px;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-elevated);
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1;
+}
+
+.stepper-btn:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+
+.stepper-btn:active {
+  background: var(--primary-tint);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.iters-stepper .iters-input {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  font-family: var(--font-mono);
+}
+
+.iters-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+/* Chips: pill-sized quick picks; active state mirrors the selected value. */
+.chip {
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-elevated);
+  color: var(--text-muted);
+  font-size: 11.5px;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.chip:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+
+.chip-active {
+  background: var(--primary-tint);
+  border-color: var(--primary);
+  color: var(--primary);
+  font-weight: 500;
+}
+
+[data-theme="light"] .chip-active {
+  color: var(--primary);
 }
 
 .btn-sm {

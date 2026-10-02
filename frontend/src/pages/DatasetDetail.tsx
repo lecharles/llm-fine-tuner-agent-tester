@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Sparkles, Download, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Upload } from "lucide-react";
 import { apiFetch, apiUpload } from "../api";
+import { displayStatus } from "../statusText";
 import type { Dataset, QAPair } from "../types";
 import QAPairModal, { type QAPairValues } from "../components/QAPairModal";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -164,7 +165,7 @@ export default function DatasetDetail() {
                     <div className="dd-head">
                         <h1 className="page-title">{dataset.name}</h1>
                         <div className="dd-sub">
-                            <span className={`badge ${dataset.source === "generated" ? "badge-info" : "badge-neutral"}`}>{dataset.source}</span>
+                            <span className={`badge ${dataset.source === "generated" ? "badge-info" : "badge-neutral"}`}>{displayStatus(dataset.source)}</span>
                             {dataset.description && <span className="dd-desc">{dataset.description}</span>}
                         </div>
                     </div>

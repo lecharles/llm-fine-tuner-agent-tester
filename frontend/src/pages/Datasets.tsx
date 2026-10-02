@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { apiFetch } from "../api";
+import { displayStatus } from "../statusText";
 import type { Dataset } from "../types";
 import DatasetFormModal, { type DatasetFormValues } from "../components/DatasetFormModal";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -99,7 +100,7 @@ export default function Datasets() {
                             </div>
                             <div className="cell cell-source">
                                 <span className={`badge ${d.source === "generated" ? "badge-info" : "badge-neutral"}`}>
-                                    {d.source}
+                                    {displayStatus(d.source)}
                                 </span>
                             </div>
                             <div className="cell cell-date">
