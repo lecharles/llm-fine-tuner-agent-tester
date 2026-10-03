@@ -1212,21 +1212,8 @@ button {
   padding: 4px 2px;
 }
 
-.tdot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: currentColor;
-  animation: pulse 1.2s ease-in-out infinite;
-}
-
-.tdot:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.tdot:nth-child(3) {
-  animation-delay: 0.4s;
-}
+/* S18: the .tdot pulsing dots were retired in favor of the shared VU meter
+   (see the S18 section at the bottom of this file). */
 
 .compare-input {
   display: flex;
@@ -1812,4 +1799,59 @@ button {
     display: inline-flex;
     align-items: center;
     gap: 7px;
+}
+
+/* ---------- S18 theme pass 2: VU-meter loading indicator ---------- */
+/* One loader idiom for the whole app: four/five short EQ bars that bounce in
+   the current accent color. Used inline on page loads (Datasets, Dataset
+   detail, Models) and inside the compare columns where the .tdot dots used
+   to live. Pure CSS on existing tokens, so light+dark and every column
+   accent get it for free; the component is aria-hidden and the neighboring
+   label (or the visible thread) carries the state. */
+.vu-meter {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.vu-bar {
+  width: 3px;
+  height: 100%;
+  border-radius: 1px;
+  background: currentColor;
+  transform-origin: bottom;
+  animation: vu-bounce 1s ease-in-out infinite;
+}
+
+@keyframes vu-bounce {
+
+  0%,
+  100% {
+    transform: scaleY(0.3);
+    opacity: 0.55;
+  }
+
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+/* The loading rows host the meter inline with the text label. */
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Reduced motion: freeze the bars at half height; the label next to them
+   still says what's happening. */
+@media (prefers-reduced-motion: reduce) {
+  .vu-bar {
+    animation: none;
+    transform: scaleY(0.6);
+    opacity: 0.8;
+  }
 }

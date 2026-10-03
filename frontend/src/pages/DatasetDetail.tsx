@@ -6,6 +6,7 @@ import { displayStatus } from "../statusText";
 import type { Dataset, QAPair } from "../types";
 import QAPairModal, { type QAPairValues } from "../components/QAPairModal";
 import ConfirmDialog from "../components/ConfirmDialog";
+import VuMeter from "../components/VuMeter";
 import { GenerationStatusLine } from "../components/GenerationStatus";
 
 const PAGE_SIZE = 10;
@@ -157,7 +158,11 @@ export default function DatasetDetail() {
         <div className="page dd-page">
             <Link to="/datasets" className="dd-back"><ArrowLeft size={15} /> Datasets</Link>
 
-            {loading && <p className="loading">Loading…</p>}
+            {loading && (
+                <p className="loading">
+                    <VuMeter bars={4} /> Loading…
+                </p>
+            )}
             {error && <p className="form-error">{error}</p>}
 
             {!loading && dataset && (

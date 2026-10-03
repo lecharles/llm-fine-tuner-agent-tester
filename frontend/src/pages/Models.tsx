@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Box } from "lucide-react";
 import { apiFetch } from "../api";
 import { displayStatus } from "../statusText";
+import VuMeter from "../components/VuMeter";
 import type { FineTunedModel } from "../types";
 
 // Model status -> badge color (a model lands "ready" once it is fused).
@@ -35,7 +36,11 @@ export default function Models() {
                 </div>
             )}
 
-            {loading && <p className="loading">Loading…</p>}
+            {loading && (
+                <p className="loading">
+                    <VuMeter bars={4} /> Loading…
+                </p>
+            )}
             {error && <p className="form-error">{error}</p>}
             {!loading && !error && models.length === 0 && (
                 <p className="empty">No fine-tuned models yet. Train one to see it here.</p>

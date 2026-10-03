@@ -6,6 +6,7 @@ import { displayStatus } from "../statusText";
 import type { Dataset } from "../types";
 import DatasetFormModal, { type DatasetFormValues } from "../components/DatasetFormModal";
 import ConfirmDialog from "../components/ConfirmDialog";
+import VuMeter from "../components/VuMeter";
 
 // Datasets: read (list) + create + edit + delete. Each mutation updates local
 // state so the list re-renders immediately, no refetch and no page reload.
@@ -76,7 +77,11 @@ export default function Datasets() {
                 </button>
             </div>
 
-            {loading && <p className="loading">Loading…</p>}
+            {loading && (
+                <p className="loading">
+                    <VuMeter bars={4} /> Loading…
+                </p>
+            )}
             {error && <p className="form-error">{error}</p>}
             {!loading && !error && datasets.length === 0 && (
                 <p className="empty">No datasets yet. Create your first one.</p>

@@ -45,7 +45,7 @@ Rules for the automated lane:
 | S# | DATE | Slice | Scope | MAC | STATUS |
 |----|------|-------|-------|-----|--------|
 | S17 | 10-01 | Theme pass 1: theme.css foundation, cleaner status labels, nicer iters input | frontend/ | - | DONE 2026-10-02 — #21: status badges sentence-cased via shared `displayStatus` (Train run, Models, Datasets/DatasetDetail source, GetStarted "Ready"); iters input = −/+ stepper (±50, clamped 1–5000) + preset chips (20 smoke · 300 recommended · 1000 full run) with active state; theme.css gains the S17 stepper/chip section (token-driven, light+dark). `tsc -b && vite build` green |
-| S18 | 10-02 | Theme pass 2: ConfirmDialog replacing temp no-confirm delete, VU-meter loading indicator | frontend/ | - | TODO |
+| S18 | 10-02 | Theme pass 2: ConfirmDialog replacing temp no-confirm delete, VU-meter loading indicator | frontend/ | - | DONE 2026-10-03 — #21: destructive-path audit clean — `window.confirm` was already retired in July's dataset REST work and both UI DELETEs (dataset, QA pair) route through `ConfirmDialog`, verified no temp/no-confirm delete remains; shipped the new shared `VuMeter` loader (pure-CSS EQ bars on `currentColor`, aria-hidden, reduced-motion freeze) wired into the Datasets / Dataset detail / Models "Loading…" rows and the Compare columns (retired `.tdot`); `tsc -b && vite build` green |
 | S19 | 10-05 | Accessibility: WCAG AA contrast, alt text, link-based navigation audit | frontend/ | - | TODO |
 | S20 | 10-06 | Logged-in user display via GET /api/auth/me + small user menu (Linear-style) | frontend/ | - | TODO |
 | S21 | 10-07 | Deploy web shell online: public instance plan, docs, and first deploy | deploy/ | - | TODO |

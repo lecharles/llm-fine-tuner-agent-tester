@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Send } from "lucide-react";
 import { apiFetch } from "../api";
+import VuMeter from "../components/VuMeter";
 import type { FineTunedModel, ChatSession, ChatMessage, ChatTurn } from "../types";
 
 // The four always-on compare columns, in display order. The backend tags each
@@ -229,10 +230,10 @@ export default function Compare() {
                             )}
                             {sending && (
                                 <div className="msg msg-model">
+                                    {/* S18: the shared VU meter replaces the
+                                        per-column pulsing dots. */}
                                     <div className="thinking" style={{ color: COL_COLOR[label] }}>
-                                        <span className="tdot" />
-                                        <span className="tdot" />
-                                        <span className="tdot" />
+                                        <VuMeter bars={4} />
                                     </div>
                                 </div>
                             )}
