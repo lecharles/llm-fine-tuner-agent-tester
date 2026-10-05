@@ -23,6 +23,12 @@
   --hosted: #F0885C;         /* coral: any third-party hosted model (OpenAI, Anthropic, Gemini, ...) */
   --accent-guide: #2DD4BF;   /* teal: the Get Started / guide accent */
 
+  /* S19 (a11y): solid button fill, darker than --primary so white label text
+     reaches WCAG AA (5.25:1); --primary stays bright for text/icons on bg. */
+  --primary-strong: #6359DD;
+  /* S19 (a11y): keyboard focus ring (non-text contrast ≥3:1 on every surface) */
+  --focus-ring: #9A93F7;
+
   /* Compare column identity: your models vs the baseline vs the field */
   --col-finetuned: var(--primary);   /* your fine-tuned model */
   --col-vanilla: var(--text-muted);  /* its untuned base */
@@ -60,12 +66,16 @@
   --text-muted: #6A6E76;
 
   --primary: #5A50D6;
-  --success: #1E9B55;
-  --warning: #AE770E;
-  --danger: #D53A44;
+  --success: #147A3C;
+  --warning: #8A5E0B;
+  --danger: #C22B36;
   --info: #2569C4;
-  --hosted: #D5583B;
-  --accent-guide: #0D9488;
+  --hosted: #BC4A2C;
+  --accent-guide: #0B7C72;
+
+  /* S19 (a11y): light-mode button fill + focus ring (white text 5.9:1 on fill) */
+  --primary-strong: #4C43BF;
+  --focus-ring: #5A50D6;
 
   --primary-tint: #EEEDFB;
   --success-tint: #E6F4EC;
@@ -393,7 +403,7 @@ button {
 }
 
 .btn-primary {
-  background: var(--primary);
+  background: var(--primary-strong);
   color: var(--on-primary);
 }
 
@@ -1854,4 +1864,58 @@ button {
     transform: scaleY(0.6);
     opacity: 0.8;
   }
+}
+
+/* ---------- S19 accessibility: focus visibility + skip link ---------- */
+
+/* Keyboard focus: a visible 2px ring that meets WCAG 2.4.7 and stays clear of
+   component borders via offset. Mouse users keep the calmer :focus styling. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Inputs already swap border-color on :focus; add the ring for keyboard use. */
+.input:focus-visible,
+.select:focus-visible,
+.textarea:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+/* Skip link: offscreen until focused, then docks top-center above the shell. */
+.skip-link {
+  position: fixed;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  padding: 8px 16px;
+  border-radius: 0 0 var(--radius) var(--radius);
+  background: var(--surface-elevated);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-top: none;
+  font-size: 13px;
+  text-decoration: none;
+  transition: top 120ms ease;
+}
+
+.skip-link:focus-visible {
+  top: 0;
+}
+
+/* S19 a11y: visually hidden but focusable (file pickers). The wrapping
+   label shows the keyboard ring when the input inside it takes focus. */
+.sr-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+label.btn:focus-within {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }

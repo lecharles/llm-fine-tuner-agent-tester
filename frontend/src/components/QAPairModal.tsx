@@ -45,14 +45,14 @@ export default function QAPairModal({ open, mode, pair, onClose, onSubmit }: Pro
         <Modal open={open} onClose={onClose} title={mode === "create" ? "Add pair" : "Edit pair"}>
             <form className="form" onSubmit={submit}>
                 <div className="field">
-                    <label className="label">Question</label>
-                    <textarea className="textarea" rows={2} value={question} onChange={(e) => setQuestion(e.target.value)} required autoFocus />
+                    <label className="label" htmlFor="qa-question">Question</label>
+                    <textarea id="qa-question" className="textarea" rows={2} value={question} onChange={(e) => setQuestion(e.target.value)} required autoFocus />
                 </div>
                 <div className="field">
-                    <label className="label">Answer</label>
-                    <textarea className="textarea" rows={3} value={answer} onChange={(e) => setAnswer(e.target.value)} required />
+                    <label className="label" htmlFor="qa-answer">Answer</label>
+                    <textarea id="qa-answer" className="textarea" rows={3} value={answer} onChange={(e) => setAnswer(e.target.value)} required />
                 </div>
-                {error && <p className="form-error">{error}</p>}
+                {error && <p className="form-error" role="alert">{error}</p>}
                 <div className="modal-actions">
                     <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
                     <button type="submit" className="btn btn-primary" disabled={busy}>

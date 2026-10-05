@@ -126,8 +126,9 @@ export default function Train() {
 
             <form className="card train-config" onSubmit={handleStart}>
                 <div className="field">
-                    <label className="label">Dataset</label>
+                    <label className="label" htmlFor="train-dataset">Dataset</label>
                     <select
+                        id="train-dataset"
                         className="select"
                         value={datasetId}
                         onChange={(e) => setDatasetId(e.target.value === "" ? "" : Number(e.target.value))}
@@ -144,7 +145,7 @@ export default function Train() {
 
                 <div className="config-row">
                     <div className="field field-iters">
-                        <label className="label">
+                        <label className="label" htmlFor="train-iters">
                             Iters
                             <span className="hint">
                                 <HelpCircle size={13} />
@@ -164,6 +165,7 @@ export default function Train() {
                                 −
                             </button>
                             <input
+                                id="train-iters"
                                 className="input iters-input"
                                 type="number"
                                 value={iters}
@@ -202,7 +204,7 @@ export default function Train() {
                 </div>
             </form>
 
-            {error && <p className="form-error">{error}</p>}
+            {error && <p className="form-error" role="alert">{error}</p>}
 
             {run && (
                 <div className="card run-card">

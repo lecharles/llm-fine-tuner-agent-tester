@@ -82,7 +82,7 @@ export default function Datasets() {
                     <VuMeter bars={4} /> Loading…
                 </p>
             )}
-            {error && <p className="form-error">{error}</p>}
+            {error && <p className="form-error" role="alert">{error}</p>}
             {!loading && !error && datasets.length === 0 && (
                 <p className="empty">No datasets yet. Create your first one.</p>
             )}

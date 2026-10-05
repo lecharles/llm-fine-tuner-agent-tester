@@ -21,13 +21,15 @@ export default function Layout() {
 
     return (
         <div className={`app-shell${collapsed ? " is-collapsed" : ""}`}>
+            {/* S19 a11y: first tab stop skips the sidebar and lands in the page. */}
+            <a className="skip-link" href="#main-content">Skip to content</a>
             <Sidebar
                 collapsed={collapsed}
                 onToggleCollapse={() => setCollapsed((c) => !c)}
                 theme={theme}
                 onToggleTheme={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
             />
-            <main className="app-main">
+            <main className="app-main" id="main-content" tabIndex={-1}>
                 <Outlet />
             </main>
         </div>

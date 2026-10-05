@@ -36,8 +36,9 @@ export default function Login() {
                 </div>
                 <form onSubmit={handleSubmit}>
                     <div className="field">
-                        <label className="label">Email</label>
+                        <label className="label" htmlFor="login-email">Email</label>
                         <input
+                            id="login-email"
                             className="input"
                             type="email"
                             value={email}
@@ -47,8 +48,9 @@ export default function Login() {
                         />
                     </div>
                     <div className="field">
-                        <label className="label">Password</label>
+                        <label className="label" htmlFor="login-password">Password</label>
                         <input
+                            id="login-password"
                             className="input"
                             type="password"
                             value={password}
@@ -56,7 +58,7 @@ export default function Login() {
                             required
                         />
                     </div>
-                    {error && <p className="form-error">{error}</p>}
+                    {error && <p className="form-error" role="alert">{error}</p>}
                     <button type="submit" className="btn btn-primary auth-submit" disabled={busy}>
                         {busy ? "Logging in…" : "Log in"}
                     </button>

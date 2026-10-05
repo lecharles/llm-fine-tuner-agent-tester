@@ -36,8 +36,9 @@ export default function Signup() {
                 </div>
                 <form onSubmit={handleSubmit}>
                     <div className="field">
-                        <label className="label">Email</label>
+                        <label className="label" htmlFor="signup-email">Email</label>
                         <input
+                            id="signup-email"
                             className="input"
                             type="email"
                             value={email}
@@ -47,8 +48,9 @@ export default function Signup() {
                         />
                     </div>
                     <div className="field">
-                        <label className="label">Password</label>
+                        <label className="label" htmlFor="signup-password">Password</label>
                         <input
+                            id="signup-password"
                             className="input"
                             type="password"
                             value={password}
@@ -56,7 +58,7 @@ export default function Signup() {
                             required
                         />
                     </div>
-                    {error && <p className="form-error">{error}</p>}
+                    {error && <p className="form-error" role="alert">{error}</p>}
                     <button type="submit" className="btn btn-primary auth-submit" disabled={busy}>
                         {busy ? "Creating…" : "Sign up"}
                     </button>

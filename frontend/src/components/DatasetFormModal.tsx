@@ -50,12 +50,13 @@ export default function DatasetFormModal({ open, mode, dataset, onClose, onSubmi
         <Modal open={open} onClose={onClose} title={mode === "create" ? "New dataset" : "Edit dataset"}>
             <form className="form" onSubmit={submit}>
                 <div className="field">
-                    <label className="label">Name</label>
-                    <input className="input" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
+                    <label className="label" htmlFor="dataset-name">Name</label>
+                    <input id="dataset-name" className="input" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
                 </div>
                 <div className="field">
-                    <label className="label">Description</label>
+                    <label className="label" htmlFor="dataset-description">Description</label>
                     <input
+                        id="dataset-description"
                         className="input"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
@@ -64,15 +65,15 @@ export default function DatasetFormModal({ open, mode, dataset, onClose, onSubmi
                 </div>
                 {mode === "create" && (
                     <div className="field">
-                        <label className="label">Source</label>
-                        <select className="select" value={source} onChange={(e) => setSource(e.target.value)}>
+                        <label className="label" htmlFor="dataset-source">Source</label>
+                        <select id="dataset-source" className="select" value={source} onChange={(e) => setSource(e.target.value)}>
                             <option value="manual">Manual</option>
                             <option value="generated">Generated</option>
                             <option value="imported">Imported</option>
                         </select>
                     </div>
                 )}
-                {error && <p className="form-error">{error}</p>}
+                {error && <p className="form-error" role="alert">{error}</p>}
                 <div className="modal-actions">
                     <button type="button" className="btn btn-ghost" onClick={onClose}>
                         Cancel

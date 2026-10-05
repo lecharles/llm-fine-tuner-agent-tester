@@ -163,7 +163,7 @@ export default function DatasetDetail() {
                     <VuMeter bars={4} /> Loading…
                 </p>
             )}
-            {error && <p className="form-error">{error}</p>}
+            {error && <p className="form-error" role="alert">{error}</p>}
 
             {!loading && dataset && (
                 <>
@@ -179,6 +179,7 @@ export default function DatasetDetail() {
                         <div className="card">
                             <div className="label">Use-case prompt</div>
                             <textarea
+                                aria-label="Use-case prompt for Q&A generation"
                                 className="textarea"
                                 rows={3}
                                 placeholder="e.g. A terse assistant that answers in one sentence"
@@ -190,7 +191,7 @@ export default function DatasetDetail() {
                                     {savingPrompt ? "Saving…" : "Save prompt"}
                                 </button>
                                 <div className="dd-row-right">
-                                    <input className="input dd-count" type="number" min={1} max={100} value={genCount} onChange={(e) => setGenCount(Number(e.target.value))} />
+                                    <input className="input dd-count" type="number" min={1} max={100} aria-label="Number of Q&A pairs to generate" value={genCount} onChange={(e) => setGenCount(Number(e.target.value))} />
                                     <button className="btn btn-primary" onClick={handleGenerate} disabled={generating || genCount < 1 || !dataset.use_case_prompt}>
                                         <Sparkles size={15} /> {generating ? "Generating…" : "Generate"}
                                     </button>
@@ -209,7 +210,8 @@ export default function DatasetDetail() {
                                     <input
                                         type="file"
                                         accept=".csv,.jsonl,.tsv"
-                                        style={{ display: "none" }}
+                                        className="sr-file-input"
+                                        aria-label="Choose CSV or JSONL file to import Q&A pairs"
                                         onChange={handleFileImport}
                                         disabled={fileImporting}
                                     />
@@ -219,13 +221,13 @@ export default function DatasetDetail() {
 
                         <div className="card">
                             <div className="label">Import preset</div>
-                            <select className="select" value={preset} onChange={(e) => setPreset(e.target.value)}>
+                            <select className="select" aria-label="Import preset" value={preset} onChange={(e) => setPreset(e.target.value)}>
                                 <option value="general">General instructions (Dolly)</option>
                                 <option value="finance">Finance Q&amp;A</option>
                             </select>
                             <div className="dd-row dd-row-end">
                                 <div className="dd-row-right">
-                                    <input className="input dd-count" type="number" min={1} max={500} value={impCount} onChange={(e) => setImpCount(Number(e.target.value))} />
+                                    <input className="input dd-count" type="number" min={1} max={500} aria-label="Number of preset pairs to import" value={impCount} onChange={(e) => setImpCount(Number(e.target.value))} />
                                     <button className="btn btn-ghost" onClick={handleImport} disabled={importing || impCount < 1}>
                                         <Download size={15} /> {importing ? "Importing…" : "Import"}
                                     </button>

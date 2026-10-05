@@ -41,7 +41,7 @@ export default function Models() {
                     <VuMeter bars={4} /> Loading…
                 </p>
             )}
-            {error && <p className="form-error">{error}</p>}
+            {error && <p className="form-error" role="alert">{error}</p>}
             {!loading && !error && models.length === 0 && (
                 <p className="empty">No fine-tuned models yet. Train one to see it here.</p>
             )}

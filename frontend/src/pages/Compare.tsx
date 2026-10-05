@@ -156,6 +156,7 @@ export default function Compare() {
                     <select
                         className="select compare-model-select"
                         value={modelId}
+                        aria-label="Fine-tuned model to test"
                         onChange={(e) => setModelId(e.target.value === "" ? "" : Number(e.target.value))}
                         required
                     >
@@ -169,6 +170,7 @@ export default function Compare() {
                     <select
                         className="select compare-model-select"
                         value={ollamaModel}
+                        aria-label="Ollama model for the extra column"
                         onChange={(e) => setOllamaModel(e.target.value)}
                         title={ollamaModels.length === 0 ? "No models installed in Ollama" : "Optional fifth column"}
                     >
@@ -180,7 +182,7 @@ export default function Compare() {
                 </div>
             </div>
 
-            {error && <p className="form-error">{error}</p>}
+            {error && <p className="form-error" role="alert">{error}</p>}
 
             <div className={`compare-cols${columns.length === 5 ? " cols-five" : ""}`} ref={colsRef}>
                 {columns.map((label) => (
@@ -250,6 +252,7 @@ export default function Compare() {
             <form className="compare-input" onSubmit={handleSend}>
                 <input
                     className="input"
+                    aria-label={`Message to send to all ${columns.length} compared models`}
                     placeholder={`Message all ${columns.length} models…`}
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
