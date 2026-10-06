@@ -1,4 +1,6 @@
-# Commit Train — daily slices, Sept 15–30
+# Commit Train — daily slices, Sept 15 → Oct 31
+
+Carlos rule (10-05): at least one commit every calendar day; the train now runs through 10-31 (S45) with weekend rows included.
 
 Rules for the automated lane:
 - Implement exactly one slice per day, the one whose DATE is today (UTC).
@@ -46,7 +48,7 @@ Rules for the automated lane:
 |----|------|-------|-------|-----|--------|
 | S17 | 10-01 | Theme pass 1: theme.css foundation, cleaner status labels, nicer iters input | frontend/ | - | DONE 2026-10-02 — #21: status badges sentence-cased via shared `displayStatus` (Train run, Models, Datasets/DatasetDetail source, GetStarted "Ready"); iters input = −/+ stepper (±50, clamped 1–5000) + preset chips (20 smoke · 300 recommended · 1000 full run) with active state; theme.css gains the S17 stepper/chip section (token-driven, light+dark). `tsc -b && vite build` green |
 | S18 | 10-02 | Theme pass 2: ConfirmDialog replacing temp no-confirm delete, VU-meter loading indicator | frontend/ | - | DONE 2026-10-03 — #21: destructive-path audit clean — `window.confirm` was already retired in July's dataset REST work and both UI DELETEs (dataset, QA pair) route through `ConfirmDialog`, verified no temp/no-confirm delete remains; shipped the new shared `VuMeter` loader (pure-CSS EQ bars on `currentColor`, aria-hidden, reduced-motion freeze) wired into the Datasets / Dataset detail / Models "Loading…" rows and the Compare columns (retired `.tdot`); `tsc -b && vite build` green |
-| S19 | 10-05 | Accessibility: WCAG AA contrast, alt text, link-based navigation audit | frontend/ | - | TODO |
+| S19 | 10-05 | Accessibility: WCAG AA contrast, alt text, link-based navigation audit | frontend/ | - | DONE 2026-10-05 — #21: measured every text/accent token pair in both themes (scripted WCAG math); light-mode success/warning/danger/hosted/guide deepened to AA (were 3.3–4.3:1), new `--primary-strong` button fill (white label 5.3:1 dark / 7.3:1 light) + `--focus-ring` token (≥6:1); global `:focus-visible` outline, skip-to-content link + `#main-content` landmark (`tabIndex=-1`); Welcome CTAs are now router `<Link>`s; all form labels associated via htmlFor/id (Login/Signup/Train/QAPair/DatasetForm), `role="alert"` on 9 error paragraphs, hidden file input made focusable (`sr-file-input`), decorative icons aria-hidden; zero `<img>` in app (LossChart svg already labeled). `tsc -b && vite build` green |
 | S20 | 10-06 | Logged-in user display via GET /api/auth/me + small user menu (Linear-style) | frontend/ | - | TODO |
 | S21 | 10-07 | Deploy web shell online: public instance plan, docs, and first deploy | deploy/ | - | TODO |
 | S22 | 10-08 | Phase 6 ADR: hybrid (web shell + local companion) vs full local-first, decision doc | docs/ | - | TODO |
@@ -57,7 +59,37 @@ Rules for the automated lane:
 | S27 | 10-15 | Generation UX: auto-fill use-case prompt from dataset name/description | backend/, frontend/ | - | TODO |
 | S28 | 10-16 | Compare: parallelize four-way fan-out instead of sequential calls | backend/ | - | TODO |
 
-October backlog (unscheduled, labeled in GitHub): training error explainer · public/private sharing + owner-or-public auth · advanced hyperparameter panel · training-run history/visibility · brand + light/dark pass · in-app guides · more model families · API Agents / API Infrastructure repo extraction · platform expansion (React Native, native macOS, Swift).
+## Month-close extension (daily through 10-31, from the October backlog)
+
+Carlos rule 10-05: at least one commit **every calendar day** — weekend rows
+are scoped VPS-safe (docs/tests/polish) so the lane never idles. Slices pull
+from the October backlog below; split items get an explicit second row.
+
+| S# | DATE | Slice | Scope | MAC | STATUS |
+|----|------|-------|-------|-----|--------|
+| S29 | 10-10 (Sat) | Training error explainer: map common MLX/Ollama/QLoRA failure strings to human cause + fix, shown under the failed run | backend/, frontend/ | - | TODO |
+| S30 | 10-11 (Sun) | In-app guides 1: contextual help bubbles on Train + Dataset detail (reuse S17 hint pattern) | frontend/ | - | TODO |
+| — | 10-12 → 10-16 | (existing rows S24–S28 above) | | | |
+| S31 | 10-17 (Sat) | Public/private sharing 1: visibility field on datasets/models, owner-or-public authz | backend/ | - | TODO |
+| S32 | 10-18 (Sun) | Sharing 2: share toggle UI + public library page | frontend/ | - | TODO |
+| S33 | 10-19 | Advanced hyperparameter panel 1: LoRA rank/alpha + learning rate in train config (backend) | backend/ | - | TODO |
+| S34 | 10-20 | Hyperparameter panel 2: UI section with validated defaults + tooltips | frontend/ | - | TODO |
+| S35 | 10-21 | Training-run history 1: runs list (dataset, base model, iters, final loss) | backend/ | - | TODO |
+| S36 | 10-22 | Run history 2: history page + log viewer + loss replay per run | frontend/ | - | TODO |
+| S37 | 10-23 | More model families 1: phi-4 + gemma-3 recipes in the local registry, fallback-ladder entries | backend/, docs/ | - | TODO |
+| S38 | 10-24 (Sat) | More model families 2: registry tests + ladder fakes for new families | tests/ | - | TODO |
+| S39 | 10-25 (Sun) | Brand + light/dark pass: empty states, icon consistency sweep, screenshot refresh | frontend/, docs/ | - | TODO |
+| S40 | 10-26 | API Agents repo extraction: boundary map + ADR (what lives where, import cuts) | docs/ | - | TODO |
+| S41 | 10-27 | API Infrastructure extraction 1: provider-client layer split into its own package/module | backend/ | - | TODO |
+| S42 | 10-28 | Platform expansion 1: React Native shell spike notes + feasibility matrix | docs/ | • | TODO |
+| S43 | 10-29 | Platform expansion 2: native macOS (Swift) companion spike notes | docs/ | • | TODO |
+| S44 | 10-30 | Perf + security sweep: dependency audit, list-query indexes, CSP/rate-limit pass | backend/ | - | TODO |
+| S45 | 10-31 (Sat) | Month close: v0.1.1 tag + notes, October retro, November train draft | repo, docs/ | • | TODO |
+
+October backlog: all items are now scheduled as S29–S45 above (was: training
+error explainer · sharing · hyperparameter panel · run history · brand pass ·
+in-app guides · model families · repo extraction · platform expansion). New
+unscheduled ideas land in the November train draft (S45).
 
 Gate G1 (demo) sits at S4 so the desktop work rides on a proven loop; MAC
 slices (S2, S5–S7, S16) are pushed by the lane but verified by Carlos on the
