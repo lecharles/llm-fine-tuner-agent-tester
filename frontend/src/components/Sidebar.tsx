@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import {
     SlidersHorizontal, Route, Database, Cpu, Box, Columns3, Sparkles,
-    PanelLeftClose, PanelLeft, Moon, Sun, LogOut,
+    PanelLeftClose, PanelLeft, Moon, Sun,
 } from "lucide-react";
-import { apiFetch, clearToken } from "../api";
+import UserMenu from "./UserMenu";
 
 type Props = {
     collapsed: boolean;
@@ -25,21 +24,6 @@ const NAV = [
 ];
 
 export default function Sidebar({ collapsed, onToggleCollapse, theme, onToggleTheme }: Props) {
-    const navigate = useNavigate();
-    const [email, setEmail] = useState("");
-
-    // Show who is signed in: look up the current user once on mount.
-    useEffect(() => {
-        apiFetch<{ id: number; email: string }>("/auth/me")
-            .then((user) => setEmail(user.email))
-            .catch(() => { });
-    }, []);
-
-    function logout() {
-        clearToken();
-        navigate("/login");
-    }
-
     return (
         <aside className="sidebar">
             <div className="sidebar-head">
@@ -73,15 +57,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, theme, onToggleTh
                     <span className="theme-label">{theme === "dark" ? "Dark" : "Light"}</span>
                     <span className="switch" />
                 </button>
-                <div className="account">
-                    <span className="avatar">{email ? email[0].toUpperCase() : "?"}</span>
-                    <div className="account-info">
-                        <div className="account-email">{email || "\u2026"}</div>
-                        <button className="logout" onClick={logout}>
-                            <LogOut size={12} /> Log out
-                        </button>
-                    </div>
-                </div>
+                <UserMenu />
             </div>
         </aside>
     );
