@@ -52,6 +52,7 @@ Rules for the automated lane:
 | S20 | 10-06 | Logged-in user display via GET /api/auth/me + small user menu (Linear-style) | frontend/ | - | DONE 2026-10-07 — #23: new `UserMenu` component replaces the static sidebar account row; `/auth/me` feeds name+email (display_name when set); Linear-style popover (identity header + Log out) with Esc/outside-click close, aria-haspopup/expanded + role=menu, position:fixed anchoring so the sidebar's overflow can't clip it, avatar-only trigger on the collapsed rail; dead `.account*`/`.logout` CSS removed; `tsc -b && vite build` green; pytest 46 green (no backend changes) |
 | S21 | 10-07 | Deploy web shell online: public instance plan, docs, and first deploy | deploy/ | - | TODO |
 | S22 | 10-08 | Phase 6 ADR: hybrid (web shell + local companion) vs full local-first, decision doc | docs/ | - | TODO |
+| — | 10-08 | Dashboard: commit train visibility + step-by-step testing guide (docs/dashboard-commit-train.html, docs/dashboard-test-steps.html) | docs/ | - | DONE 2026-10-08 — 4be9ee1 |
 | S23 | 10-09 | macOS installer: one command or one file placing the local runtime | install/ | • | TODO |
 | S24 | 10-12 | Local companion: skeleton that receives web-app requests and drives train/fuse/export/serve | companion/ | • | TODO |
 | S25 | 10-13 | Opt-in bridge: explicit permission prompt, scoped and revocable hardware access | backend/, frontend/ | • | TODO |
