@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Tuner — Commit Train Dashboard</title>
+  <style>
+    :root {
+      --bg: #08090a;
+      --surface: #101113;
+      --surface2: #181a1d;
+      --border: #1e2024;
+      --accent: #5e6ad2;
+      --accent2: #8b7bf0;
+      --text: #d0d6e0;
+      --muted: #8a8f98;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      line-height: 1.6;
+      padding: 2rem 1rem;
+      min-height: 100vh;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    header {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+    }
+    .stat-label {
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 600;
+    }
+    .stat-value.success { color: var(--success); }
+    .stat-value.warning { color: var(--warning); }
+    .stat-value.danger { color: var(--danger); }
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    th {
+      text-align: left;
+      padding: 0.75rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 0.85rem;
+    }
+    td {
+      padding: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    tr:last-child td { border-bottom: none; }
+    .status {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .status.done { background: rgba(34, 197, 94, 0.15); color: var(--success); }
+    .status.todo { background: rgba(138, 143, 152, 0.15); color: var(--muted); }
+    .status.skipped { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: var(--surface2);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 0.5rem;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width 0.3s ease;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .nav {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .nav a {
+      padding: 0.5rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+    .nav a:hover { background: var(--surface2); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🚂 LLM Tuner — Commit Train Dashboard</h1>
+      <div class="subtitle">Daily slices, Sept 15 → Oct 31, 2026</div>
+    </header>
+
+    <div class="nav">
+      <a href="index.html">Dashboard</a>
+      <a href="test-steps.html">Test Steps</a>
+      <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester" target="_blank">GitHub</a>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-label">Total Slices</div>
+        <div class="stat-value">45</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Completed</div>
+        <div class="stat-value success">20</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Remaining</div>
+        <div class="stat-value warning">25</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Progress</div>
+        <div class="stat-value">44%</div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: 44%"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Recent Activity (Last 14 Days)</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Slice</th>
+            <th>Description</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Oct 7</td>
+            <td>S20</td>
+            <td>Logged-in user display + Linear-style user menu</td>
+            <td><span class="status done">DONE</span></td>
+          </tr>
+          <tr>
+            <td>Oct 5</td>
+            <td>S19</td>
+            <td>Accessibility — AA contrast tokens, focus ring, skip link</td>
+            <td><span class="status done">DONE</span></td>
+          </tr>
+          <tr>
+            <td>Oct 3</td>
+            <td>S18</td>
+            <td>Theme pass 2 — ConfirmDialog + VU-meter loading</td>
+            <td><span class="status done">DONE</span></td>
+          </tr>
+          <tr>
+            <td>Oct 2</td>
+            <td>S17</td>
+            <td>Theme pass 1 — cleaner status labels + nicer iters input</td>
+            <td><span class="status done">DONE</span></td>
+          </tr>
+          <tr>
+            <td>Oct 1</td>
+            <td>S16</td>
+            <td>v0.1.0 release — version tag, release notes, final E2E plan</td>
+            <td><span class="status done">DONE</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Upcoming Slices</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Slice</th>
+            <th>Description</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Oct 8</td>
+            <td>S22</td>
+            <td>Phase 6 ADR: hybrid vs full local-first decision doc</td>
+            <td><span class="status todo">TODO</span></td>
+          </tr>
+          <tr>
+            <td>Oct 9</td>
+            <td>S23</td>
+            <td>macOS installer: one command placing the local runtime</td>
+            <td><span class="status todo">TODO</span></td>
+          </tr>
+          <tr>
+            <td>Oct 12</td>
+            <td>S24</td>
+            <td>Local companion: skeleton for web-app requests</td>
+            <td><span class="status todo">TODO</span></td>
+          </tr>
+          <tr>
+            <td>Oct 13</td>
+            <td>S25</td>
+            <td>Opt-in bridge: explicit permission prompt, scoped access</td>
+            <td><span class="status todo">TODO</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Skipped Days (No Commits)</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Note</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Sep 17</td>
+            <td>S3 was committed on Sep 17 but git log shows Sep 18</td>
+          </tr>
+          <tr>
+            <td>Sep 28</td>
+            <td>No commit recorded</td>
+          </tr>
+          <tr>
+            <td>Oct 4</td>
+            <td>No commit recorded (weekend)</td>
+          </tr>
+          <tr>
+            <td>Oct 7</td>
+            <td>S21 (Deploy web shell) skipped; S20 committed instead</td>
+          </tr>
+          <tr>
+            <td>Oct 8</td>
+            <td>Cron ran at 14:07 UTC but no commit landed</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Timeline</div>
+      <p style="color: var(--muted); font-size: 0.9rem;">
+        <strong>Start:</strong> September 15, 2026<br>
+        <strong>End:</strong> October 31, 2026 (S45 — month close)<br>
+        <strong>Rule:</strong> At least one commit every calendar day (Carlos rule 10-05)<br>
+        <strong>Cron:</strong> Daily at 14:00 UTC (7:00 AM PT)
+      </p>
+    </div>
+  </div>
+</body>
+</html>

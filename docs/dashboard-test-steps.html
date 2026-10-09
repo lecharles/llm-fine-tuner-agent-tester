@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Tuner — Step-by-Step Testing</title>
+  <style>
+    :root {
+      --bg: #08090a;
+      --surface: #101113;
+      --surface2: #181a1d;
+      --border: #1e2024;
+      --accent: #5e6ad2;
+      --accent2: #8b7bf0;
+      --text: #d0d6e0;
+      --muted: #8a8f98;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      line-height: 1.6;
+      padding: 2rem 1rem;
+      min-height: 100vh;
+    }
+    .container { max-width: 900px; margin: 0 auto; }
+    header {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    h1 { font-size: 1.75rem; font-weight: 600; margin-bottom: 0.5rem; }
+    h2 { font-size: 1.25rem; font-weight: 600; margin: 1.5rem 0 0.75rem; }
+    h3 { font-size: 1rem; font-weight: 600; margin: 1rem 0 0.5rem; color: var(--accent2); }
+    .subtitle { color: var(--muted); font-size: 0.95rem; }
+    .nav { display: flex; gap: 1rem; margin-bottom: 2rem; }
+    .nav a {
+      padding: 0.5rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+    .nav a:hover { background: var(--surface2); text-decoration: none; }
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .callout {
+      background: var(--surface2);
+      border-left: 3px solid var(--accent);
+      padding: 0.75rem 1rem;
+      margin: 1rem 0;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+    .callout.warn { border-left-color: var(--warning); }
+    .callout.danger { border-left-color: var(--danger); }
+    ol, ul { margin-left: 1.5rem; margin-bottom: 1rem; }
+    li { margin-bottom: 0.5rem; }
+    code {
+      background: var(--surface2);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.85em;
+      font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    }
+    pre {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      overflow-x: auto;
+      font-size: 0.85rem;
+      margin: 0.75rem 0;
+    }
+    pre code { background: none; padding: 0; }
+    .variant-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .variant-tab {
+      padding: 0.5rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .variant-tab.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .checklist { list-style: none; margin-left: 0; }
+    .checklist li::before { content: "☐ "; color: var(--muted); }
+    .step-num {
+      display: inline-block;
+      width: 1.5rem;
+      height: 1.5rem;
+      background: var(--accent);
+      color: white;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 1.5rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🧪 LLM Tuner — Step-by-Step Testing</h1>
+      <div class="subtitle">How to install, run, and test the app on your Mac (or the VPS)</div>
+    </header>
+
+    <div class="nav">
+      <a href="index.html">Dashboard</a>
+      <a href="test-steps.html">Test Steps</a>
+      <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester" target="_blank">GitHub</a>
+    </div>
+
+    <div class="section">
+      <h2>📋 Choose Your Path</h2>
+      <div class="variant-tabs">
+        <span class="variant-tab active">A. Mac (full loop)</span>
+        <span class="variant-tab">B. VPS (partial)</span>
+      </div>
+      <p>
+        <strong>Path A (Mac):</strong> Full end-to-end — generate, import, train, compare. Requires Apple Silicon.<br>
+        <strong>Path B (VPS):</strong> Quick smoke test at <a href="http://76.13.122.86:8090" target="_blank">http://76.13.122.86:8090</a> — no install needed.
+      </p>
+    </div>
+
+    <div class="section">
+      <h2>🖥️ Path A — Mac (Full Loop, ~20 min)</h2>
+
+      <h3><span class="step-num">1</span> Install LLM Tuner</h3>
+      <p>Open Terminal (Applications → Utilities, or Spotlight → "Terminal") and paste:</p>
+      <pre><code>curl -fsSL https://raw.githubusercontent.com/lecharles/llm-fine-tuner-agent-tester/main/install.sh | bash</code></pre>
+      <div class="callout">
+        <strong>What it does:</strong> Checks Python 3.12+, downloads the app to <code>~/.llmtuner</code>, prompts for API keys (Anthropic/OpenAI — optional, press Enter to skip), creates the <code>llmtuner</code> command.
+      </div>
+      <p><strong>Troubleshooting:</strong></p>
+      <ul>
+        <li>If Python is missing: install from <a href="https://www.python.org/downloads/" target="_blank">python.org</a></li>
+        <li>If <code>~/.local/bin</code> is not on PATH: add <code>export PATH="$HOME/.local/bin:$PATH"</code> to <code>~/.zshrc</code>, restart Terminal</li>
+      </ul>
+
+      <h3><span class="step-num">2</span> Start the App</h3>
+      <pre><code>llmtuner up</code></pre>
+      <p>This starts the server on <code>http://localhost:8000</code> and opens your browser. You should see the login screen.</p>
+      <div class="callout warn">
+        <strong>If the browser doesn't open:</strong> manually go to <a href="http://localhost:8000" target="_blank">http://localhost:8000</a>
+      </div>
+
+      <h3><span class="step-num">3</span> Create an Account</h3>
+      <ol>
+        <li>Click "Sign up" on the login page</li>
+        <li>Enter email + password + display name</li>
+        <li>Click "Sign up" → you're logged in</li>
+      </ol>
+      <p><strong>Expect:</strong> You land on the dashboard. Your account owns everything you create below.</p>
+
+      <h3><span class="step-num">4</span> Generate Q&A Pairs</h3>
+      <ol>
+        <li>Click <strong>Datasets</strong> in the sidebar → <strong>New dataset</strong></li>
+        <li>Name: <code>test-demo</code></li>
+        <li>Prompt: <em>"10 Q&A pairs about our refund policy: 30-day window, receipt required."</em></li>
+        <li>Iters: <strong>10</strong> (smoke budget)</li>
+        <li>Click <strong>Generate</strong></li>
+      </ol>
+      <p><strong>Expect:</strong> 10 pairs appear with source badges (local Ollama if no API keys). Takes ~1-2 min.</p>
+
+      <h3><span class="step-num">5</span> Import from CSV (Optional)</h3>
+      <ol>
+        <li>Same dataset → <strong>Import from file</strong></li>
+        <li>Upload a CSV with columns <code>question,answer</code> and 3 rows</li>
+        <li>Click <strong>Import</strong></li>
+      </ol>
+      <p><strong>Expect:</strong> The 3 pairs append immediately with <code>csv</code> source badge.</p>
+
+      <h3><span class="step-num">6</span> Train a Model</h3>
+      <ol>
+        <li>Click <strong>Train</strong> in the sidebar</li>
+        <li>Pick dataset: <code>test-demo</code></li>
+        <li>Iters: <strong>10</strong> (smoke) or <strong>200-400</strong> (real tune)</li>
+        <li>Click <strong>Start training</strong></li>
+      </ol>
+      <p><strong>Expect:</strong></p>
+      <ul>
+        <li>Status flips to <code>running</code></li>
+        <li>Live loss curve appears and gains points every few seconds</li>
+        <li>On completion, the model appears under <strong>Models</strong> as <code>test-demo-qlora</code></li>
+      </ul>
+      <div class="callout danger">
+        <strong>If training fails:</strong> the run card shows a red error box with the exception text + log tail. Never silent.
+      </div>
+
+      <h3><span class="step-num">7</span> Compare Models</h3>
+      <ol>
+        <li>Click <strong>Compare</strong> in the sidebar</li>
+        <li>Column A: base model (e.g., <code>llama3.2:1b</code>)</li>
+        <li>Column B: <code>test-demo-qlora</code> (your fine-tuned model)</li>
+        <li>Optional: add OpenAI/Anthropic/Ollama columns from the dropdowns</li>
+        <li>Ask: <em>"Can I return this without a receipt after 40 days?"</em></li>
+      </ol>
+      <p><strong>Expect:</strong></p>
+      <ul>
+        <li>Tuned column cites 30-day + receipt policy</li>
+        <li>Base model is generic</li>
+        <li>Every answer ≤150 words</li>
+        <li>Failed columns show their reason in-column (not silent)</li>
+      </ul>
+
+      <h3><span class="step-num">8</span> Done! ✅</h3>
+      <p>You've completed the full loop: generate → import → train → compare.</p>
+      <p>To stop the server: <code>Ctrl+C</code> in Terminal, or close the Terminal window.</p>
+    </div>
+
+    <div class="section">
+      <h2>🌐 Path B — VPS (Quick Smoke Test, ~5 min)</h2>
+      <p>No install needed. Just open your browser.</p>
+
+      <h3><span class="step-num">1</span> Open the VPS Instance</h3>
+      <p>Go to <a href="http://76.13.122.86:8090" target="_blank">http://76.13.122.86:8090</a></p>
+      <p><strong>Expect:</strong> Login page. Hard-refresh if you see a stale page (Ctrl+Shift+R / Cmd+Shift+R).</p>
+
+      <h3><span class="step-num">2</span> Create an Account + Generate</h3>
+      <ol>
+        <li>Sign up with any email/password</li>
+        <li>Create a dataset, generate 10 pairs</li>
+      </ol>
+      <p><strong>Expect:</strong> Generation falls through to the server's Ollama (local engine), badges visible.</p>
+
+      <h3><span class="step-num">3</span> Import CSV</h3>
+      <p>Same dataset → Import from file → upload a CSV with <code>question,answer</code> columns.</p>
+      <p><strong>Expect:</strong> Appends fine on the shared instance.</p>
+
+      <h3><span class="step-num">4</span> Try to Train (Should Refuse)</h3>
+      <p>Click <strong>Train</strong>, pick the dataset, click <strong>Start training</strong>.</p>
+      <p><strong>Expect:</strong> <strong>425 "Training runs on the Mac app only"</strong> — no doomed run created. The VPS doesn't have Apple Silicon/MLX, so training is blocked by design.</p>
+
+      <h3><span class="step-num">5</span> Compare</h3>
+      <p>Compare base model vs Ollama column vs any hosted columns (if configured).</p>
+      <p><strong>Expect:</strong> 150-word cap applies, in-column errors persist (not silent).</p>
+
+      <h3><span class="step-num">6</span> Done! ✅</h3>
+      <p>You've smoke-tested the VPS instance. Training is Mac-only by design.</p>
+    </div>
+
+    <div class="section">
+      <h2>✅ Pass Criteria Checklist</h2>
+      <ul class="checklist">
+        <li>Install completes without errors</li>
+        <li><code>llmtuner up</code> starts the server and opens the browser</li>
+        <li>Sign up / sign in works</li>
+        <li>Generate produces Q&A pairs (local Ollama fallback if no API keys)</li>
+        <li>Import from CSV appends pairs</li>
+        <li>Train shows live loss curve, completes successfully (Mac only)</li>
+        <li>Compare shows tuned vs base model differences</li>
+        <li>Failed columns show reasons in-column (not silent)</li>
+        <li>VPS training refuses with 425 (Mac-only preflight)</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>🐛 Troubleshooting</h2>
+      <h3>Python missing or too old</h3>
+      <p>Install Python 3.12+ from <a href="https://www.python.org/downloads/" target="_blank">python.org</a></p>
+
+      <h3>~/.local/bin not on PATH</h3>
+      <pre><code>echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc</code></pre>
+
+      <h3>Browser doesn't open automatically</h3>
+      <p>Manually go to <code>http://localhost:8000</code></p>
+
+      <h3>Training fails silently</h3>
+      <p>This shouldn't happen anymore (H3 hotfix). If it does, check the red error box on the run card. If there's no error box, open a GitHub issue.</p>
+
+      <h3>VPS login returns 401</h3>
+      <p>Hard-refresh the page (Ctrl+Shift+R / Cmd+Shift+R). The H1 hotfix fixed the Origin header issue.</p>
+
+      <h3>Need help?</h3>
+      <p>Open a GitHub issue: <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/issues" target="_blank">github.com/lecharles/llm-fine-tuner-agent-tester/issues</a></p>
+    </div>
+  </div>
+</body>
+</html>
