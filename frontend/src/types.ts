@@ -26,6 +26,14 @@ export type TrainingRun = {
     completed_at: string | null;
 };
 
+// S29 (issue #33): one human-readable reading of a failed run's error text,
+// from GET /api/training-runs/{id}/explain.
+export type ErrorExplanation = {
+    title: string;
+    cause: string;
+    fix: string;
+};
+
 // One point on the live loss curve, parsed from train.log by
 // GET /training-runs/{id}/losses (S11, issue #4).
 export type LossPoint = {

@@ -6,8 +6,14 @@ from models.dataset import Dataset
 from models.qa_pair import QAPair
 from models.training_run import TrainingRun
 from models.user import User
-from schemas.training_run import LossPoint, TrainingRunCreate, TrainingRunOut
+from schemas.training_run import (
+    ErrorExplanationOut,
+    LossPoint,
+    TrainingRunCreate,
+    TrainingRunOut,
+)
 from core.security import get_current_user
+from training.explainer import explain_error
 from training.losses import read_losses
 from training.preflight import mlx_training_available
 from training.runner import run_training
@@ -107,3 +113,22 @@ def read_run_losses(
     if run is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Training run not found")
     return read_losses(run.id)
+
+
+@router.get("/{run_id}/explain", response_model=list[ErrorExplanationOut])
+def read_run_explain(
+    run_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # S29 (issue #33): map the failed run's persisted error text (#42/#46) to
+    # human cause + fix entries. Empty list while a run never failed; generic
+    # fallback for unrecognized strings — the UI always gets something back.
+    run = (
+        db.query(TrainingRun)
+        .filter(TrainingRun.id == run_id, TrainingRun.user_id == current_user.id)
+        .first()
+    )
+    if run is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Training run not found")
+    return [e.as_dict() for e in explain_error(run.error_message or "")]

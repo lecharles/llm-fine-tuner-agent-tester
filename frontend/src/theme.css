@@ -961,6 +961,42 @@ button {
   word-break: break-word;
 }
 
+/* S29 (issue #33): human cause+fix cards under a failed run's raw error box. */
+.run-explainer {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.run-explainer-heading {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--warning);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.run-explainer-item {
+  margin-top: 8px;
+}
+
+.run-explainer-item strong {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.run-explainer-item p {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.run-explainer-fix {
+  color: var(--text);
+}
+
 /* Live loss curve (S11, issue #4): tiny SVG chart inside the run card. */
 .loss-chart {
   margin: 10px 0 0;

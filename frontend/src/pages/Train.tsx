@@ -3,7 +3,7 @@ import { Play, HelpCircle } from "lucide-react";
 import { apiFetch } from "../api";
 import { displayStatus } from "../statusText";
 import LossChart from "../components/LossChart";
-import type { Dataset, LossPoint, TrainingRun } from "../types";
+import type { Dataset, ErrorExplanation, LossPoint, TrainingRun } from "../types";
 
 const TERMINAL = ["completed", "failed"];
 
@@ -34,6 +34,7 @@ export default function Train() {
 
     const [run, setRun] = useState<TrainingRun | null>(null);
     const [losses, setLosses] = useState<LossPoint[]>([]);
+    const [explains, setExplains] = useState<ErrorExplanation[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [starting, setStarting] = useState(false);
     const [attachId, setAttachId] = useState("");
@@ -54,6 +55,19 @@ export default function Train() {
             if (pollRef.current !== null) clearInterval(pollRef.current);
         };
     }, []);
+
+    // S29 (issue #33): once a failed run carries error text, ask the backend
+    // to map it to human cause + fix. Fetch failures are swallowed — the raw
+    // error box already shows the truth, the explainer is a courtesy.
+    useEffect(() => {
+        if (!run || run.status !== "failed" || !run.error_message) {
+            setExplains([]);
+            return;
+        }
+        apiFetch<ErrorExplanation[]>(`/training-runs/${run.id}/explain`)
+            .then(setExplains)
+            .catch(() => setExplains([]));
+    }, [run]);
 
     function stopPolling() {
         if (pollRef.current !== null) {
@@ -225,6 +239,18 @@ export default function Train() {
                         ) : (
                             <div className="run-meta">Failed before error capture shipped (no recorded reason).</div>
                         )
+                    )}
+                    {explains.length > 0 && (
+                        <div className="run-explainer" role="note">
+                            <div className="run-explainer-heading">What this probably means</div>
+                            {explains.map((ex) => (
+                                <div className="run-explainer-item" key={ex.title}>
+                                    <strong>{ex.title}</strong>
+                                    <p>{ex.cause}</p>
+                                    <p className="run-explainer-fix">{ex.fix}</p>
+                                </div>
+                            ))}
+                        </div>
                     )}
                     {run.completed_at && (
                         <div className="run-meta">Completed {new Date(run.completed_at).toLocaleString()}</div>

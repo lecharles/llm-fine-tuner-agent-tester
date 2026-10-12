@@ -17,6 +17,13 @@ class LossPoint(BaseModel):
     loss: float
 
 
+class ErrorExplanationOut(BaseModel):
+    # S29 (issue #33): one human reading of a failed run's error text.
+    title: str
+    cause: str
+    fix: str
+
+
 class TrainingRunOut(BaseModel):
     id: int
     user_id: int
