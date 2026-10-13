@@ -1,0 +1,4 @@
+# S24 (issue #27): the only third-party dep the companion needs is the
+# WebSocket client. Everything else is stdlib. Install inside the same venv
+# the installer created (~/.llmtuner/.venv on a Mac).
+websockets>=13
