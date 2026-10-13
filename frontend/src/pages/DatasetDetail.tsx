@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Sparkles, Download, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Upload } from "lucide-react";
+import { ArrowLeft, Sparkles, Download, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Upload, HelpCircle } from "lucide-react";
 import { apiFetch, apiUpload } from "../api";
 import { displayStatus } from "../statusText";
 import type { Dataset, QAPair } from "../types";
@@ -177,7 +177,18 @@ export default function DatasetDetail() {
 
                     <div className="dd-controls">
                         <div className="card">
-                            <div className="label">Use-case prompt</div>
+                            <div className="label">
+                                Use-case prompt
+                                {/* S30 (#38): contextual help, reusing the S17 hint pattern. */}
+                                <span className="hint" tabIndex={0} aria-label="About the use-case prompt">
+                                    <HelpCircle size={13} />
+                                    <span className="hint-bubble">
+                                        One or two sentences describing the persona you want. Every generated
+                                        pair follows it - save it before pressing Generate, which reads the
+                                        saved prompt, not the unsaved box.
+                                    </span>
+                                </span>
+                            </div>
                             <textarea
                                 aria-label="Use-case prompt for Q&A generation"
                                 className="textarea"
@@ -202,7 +213,17 @@ export default function DatasetDetail() {
                         </div>
 
                         <div className="card">
-                            <div className="label">Import from file</div>
+                            <div className="label">
+                                Import from file
+                                <span className="hint" tabIndex={0} aria-label="About file import">
+                                    <HelpCircle size={13} />
+                                    <span className="hint-bubble">
+                                        Bring your own examples. Header names are matched loosely - question,
+                                        prompt, input, instruction or q / answer, completion, output, response
+                                        or a all work.
+                                    </span>
+                                </span>
+                            </div>
                             <div className="dd-hint">CSV or JSONL with question/answer columns (up to 2 MB, 5,000 pairs).</div>
                             <div className="dd-row dd-row-end">
                                 <label className="btn btn-ghost" style={{ marginBottom: 0 }}>
@@ -220,7 +241,17 @@ export default function DatasetDetail() {
                         </div>
 
                         <div className="card">
-                            <div className="label">Import preset</div>
+                            <div className="label">
+                                Import preset
+                                <span className="hint" tabIndex={0} aria-label="About preset import">
+                                    <HelpCircle size={13} />
+                                    <span className="hint-bubble">
+                                        Ready-made public pairs (Dolly instructions or finance Q&A) to pad a
+                                        small dataset. Mix presets with your own examples - don't train on
+                                        presets alone.
+                                    </span>
+                                </span>
+                            </div>
                             <select className="select" aria-label="Import preset" value={preset} onChange={(e) => setPreset(e.target.value)}>
                                 <option value="general">General instructions (Dolly)</option>
                                 <option value="finance">Finance Q&amp;A</option>
@@ -237,7 +268,18 @@ export default function DatasetDetail() {
                     </div>
 
                     <div className="dd-pairs-head">
-                        <div className="dd-pairs-title">Q&amp;A pairs <span className="dd-count-label">· {pairs.length}</span></div>
+                        <div className="dd-pairs-title">
+                            Q&amp;A pairs
+                            <span className="hint" tabIndex={0} aria-label="About Q&A pairs">
+                                <HelpCircle size={13} />
+                                <span className="hint-bubble">
+                                    Each pair is one training example: the question is what the model sees,
+                                    the answer is what it learns to say. Aim for 50+ clean pairs before
+                                    training.
+                                </span>
+                            </span>
+                            <span className="dd-count-label">· {pairs.length}</span>
+                        </div>
                         <button className="btn btn-primary btn-sm" onClick={openCreatePair}><Plus size={15} /> Add pair</button>
                     </div>
 

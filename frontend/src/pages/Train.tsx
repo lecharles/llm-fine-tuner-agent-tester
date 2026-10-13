@@ -140,7 +140,17 @@ export default function Train() {
 
             <form className="card train-config" onSubmit={handleStart}>
                 <div className="field">
-                    <label className="label" htmlFor="train-dataset">Dataset</label>
+                    <label className="label" htmlFor="train-dataset">
+                        Dataset
+                        {/* S30 (#38): contextual help, reusing the S17 hint pattern. */}
+                        <span className="hint" tabIndex={0} aria-label="About the dataset picker">
+                            <HelpCircle size={13} />
+                            <span className="hint-bubble">
+                                The model learns from this dataset's Q&A pairs. 50-200 strong examples beat
+                                thousands of noisy ones - curate it first under Datasets.
+                            </span>
+                        </span>
+                    </label>
                     <select
                         id="train-dataset"
                         className="select"
@@ -259,7 +269,16 @@ export default function Train() {
             )}
 
             <form className="attach" onSubmit={handleAttach}>
-                <span className="attach-label">Resume a run</span>
+                <span className="attach-label">
+                    Resume a run
+                    <span className="hint" tabIndex={0} aria-label="About resuming a run">
+                        <HelpCircle size={13} />
+                        <span className="hint-bubble">
+                            Reconnect the live view to a run already on the server (e.g. after a page refresh).
+                            Use the Run #id shown on the run card.
+                        </span>
+                    </span>
+                </span>
                 <input
                     className="input attach-input"
                     type="number"

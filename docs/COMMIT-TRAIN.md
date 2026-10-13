@@ -69,7 +69,7 @@ from the October backlog below; split items get an explicit second row.
 | S# | DATE | Slice | Scope | MAC | STATUS |
 |----|------|-------|-------|-----|--------|
 | S29 | 10-10 (Sat) | Training error explainer: map common MLX/Ollama/QLoRA failure strings to human cause + fix, shown under the failed run | backend/, frontend/ | - | DONE 2026-10-12 — #33: backend/training/explainer.py deterministic rule map (11 rules + generic fallback); GET /api/training-runs/{id}/explain; Train page renders "What this probably means" cards under the raw error box. py_compile + import main + OpenAPI route + pytest 46 + npm build green |
-| S30 | 10-11 (Sun) | In-app guides 1: contextual help bubbles on Train + Dataset detail (reuse S17 hint pattern) | frontend/ | - | TODO |
+| S30 | 10-11 (Sun) | In-app guides 1: contextual help bubbles on Train + Dataset detail (reuse S17 hint pattern) | frontend/ | - | DONE 2026-10-13 (late, morning run) — #38: hover+keyboard hint bubbles on Train (Dataset picker, Resume a run) and Dataset detail (Use-case prompt, Import from file, Import preset, Q&A pairs), reusing the S17 `.hint`/`.hint-bubble` pattern; new `.hint:focus-visible` rule makes bubbles keyboard-reachable per S19 a11y. `tsc -b && vite build` green |
 | — | 10-12 → 10-16 | (existing rows S24–S28 above) | | | |
 | S31 | 10-17 (Sat) | Public/private sharing 1: visibility field on datasets/models, owner-or-public authz | backend/ | - | TODO |
 | S32 | 10-18 (Sun) | Sharing 2: share toggle UI + public library page | frontend/ | - | TODO |

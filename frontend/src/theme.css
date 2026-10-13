@@ -920,6 +920,26 @@ button {
   visibility: visible;
 }
 
+/* S30 (#38): hint bubbles are keyboard-reachable — focus shows them like hover. */
+.hint {
+  gap: 3px;
+}
+
+.hint:focus {
+  outline: none;
+}
+
+.hint:focus-visible {
+  outline: 2px solid var(--focus-ring, var(--primary));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.hint:focus-visible .hint-bubble {
+  opacity: 1;
+  visibility: visible;
+}
+
 /* ---------- Train: run card ---------- */
 .run-card {
   max-width: 520px;
