@@ -10,6 +10,7 @@ import Models from "./pages/Models";
 import Compare from "./pages/Compare";
 import Signup from "./pages/Signup";
 import DatasetDetail from "./pages/DatasetDetail";
+import Bridge from "./pages/Bridge";
 
 // App skeleton: login and signup render bare; every authenticated page is
 // guarded by ProtectedRoute and rendered inside the sidebar shell (Layout),
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="/train" element={<Train />} />
         <Route path="/models" element={<Models />} />
         <Route path="/compare" element={<Compare />} />
+        <Route path="/bridge" element={<Bridge />} />
       </Route>
     </Routes>
   );

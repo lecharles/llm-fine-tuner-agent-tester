@@ -2046,3 +2046,24 @@ label.btn:focus-within {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
+
+/* ── S25 (#28) · opt-in bridge ─────────────────────────────────────────
+   Token sheet: the pairing secret lives in one row, monospaced and
+   selectable, with its copy button inline. */
+.bridge-token {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.bridge-token code {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--info-tint);
+  color: var(--text);
+  user-select: all;
+}

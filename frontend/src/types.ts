@@ -87,3 +87,27 @@ export type QAPair = {
     answer: string;
     created_at: string;
 };
+
+// S25 (issue #28): one explicit, scoped, revocable grant of the user's Mac
+// hardware. `token` exists only on the create response (shown once); the
+// server keeps just its hash. `online` reflects the live hub session.
+export type BridgePermission = {
+    id: number;
+    name: string;
+    scopes: string[];
+    status: string; // active | revoked
+    online: boolean;
+    last_capabilities: Record<string, unknown> | null;
+    last_seen_at: string | null;
+    created_at: string | null;
+    revoked_at: string | null;
+};
+
+export type BridgePermissionCreated = BridgePermission & { token: string };
+
+export type BridgeProbeResult = {
+    ok: boolean;
+    status: string;
+    data: Record<string, unknown>;
+    detail: string;
+};

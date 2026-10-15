@@ -7,3 +7,4 @@ from models.training_run import TrainingRun
 from models.fine_tuned_model import FineTunedModel
 from models.chat_session import ChatSession
 from models.chat_message import ChatMessage
+from models.bridge import BridgePermission
