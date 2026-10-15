@@ -29,6 +29,26 @@ explicit, scoped, revocable grant. Nothing else talks to a companion.
    A revoked token can never re-pair; the companion exits (code 2) instead
    of retry-looping. Re-pairing requires a brand-new grant.
 
+## Data split (S26, issue #29): bytes stay on the Mac
+
+Phase 6 rule: the hosted database owns the **account** (users, datasets,
+Q&A pairs, chat, run history, these grants) and only ever **metadata
+pointers** to device artifacts — adapters, fused models, GGUFs, train logs.
+
+- A paired companion may send `{"type":"artifacts","items":[{device_run_id,
+  kind(adapter|fused|gguf|trainlog), name, base_model?, size_bytes?,
+  sha256?, device_path?}]}` over `/companion/ws`; the hub validates it and
+  replies `{"type":"artifacts_ack", ok, stored}`. Rows upsert by
+  (permission, device_run_id, kind), so re-reports refresh instead of duplicating.
+- `GET /api/bridge/artifacts` lists **my** pointers (with device name +
+  online flag); `DELETE /api/bridge/artifacts/{id}` forgets one. Forgetting
+  is pointer-only — there are no hosted bytes to delete. That is the point.
+- `device_path` is display metadata. Hosted code never opens, stats, or
+  serves it; no hosted endpoint accepts a device path as input. Existing
+  `fine_tuned_models.gguf_path` rows from pre-split training were created by
+  on-device (LOCAL_MODE) backends, where the path IS local — and the
+  instance-wide `local_mode` gate (H3 + bind guard) is what keeps that true.
+
 ## Where the pieces live
 
 | Piece | File |
@@ -47,6 +67,8 @@ explicit, scoped, revocable grant. Nothing else talks to a companion.
   multi-worker deploy must move `SESSIONS` to shared state first.
 - `train`/`fuse`/`export`/`serve` dispatch through the hub exists, but the
   web shell currently wires only the read-only `status` probe to a button;
-  the artifact pipeline for fine-tuned serves lands with S26 (#29).
+  the S26 pointer ledger (`device_artifacts`) ships with this train, and the
+  companion-side `artifacts` emitter that feeds it is the next companion
+  slice (the hub already accepts and acks the frame — see the S26 test).
 - Companion reconnects supersede an older session on the same grant
   (close code 4009) rather than racing two sockets.
