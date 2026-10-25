@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Box } from "lucide-react";
 import { apiFetch } from "../api";
 import { displayStatus } from "../statusText";
+import ShareToggle, { type Visibility } from "../components/ShareToggle";
 import VuMeter from "../components/VuMeter";
 import type { FineTunedModel } from "../types";
 
@@ -12,8 +13,8 @@ const STATUS_CLASS: Record<string, string> = {
     fused: "badge-success",
 };
 
-// Models: read-only list of the user's fused fine-tuned models. Same
-// fetch-on-mount + map pattern as the Datasets read; no mutations here.
+// Models: the user's fused fine-tuned models. The list itself is read-only,
+// but S32 adds the one owner-side mutation: the public/private share toggle.
 export default function Models() {
     const [models, setModels] = useState<FineTunedModel[]>([]);
     const [loading, setLoading] = useState(true);
@@ -60,9 +61,21 @@ export default function Models() {
                                         <div className="model-sub">from run #{m.training_run_id}</div>
                                     </div>
                                 </div>
-                                <span className={`badge ${STATUS_CLASS[m.status] ?? "badge-neutral"}`}>
-                                    {displayStatus(m.status)}
-                                </span>
+                                <div className="model-actions">
+                                    <ShareToggle
+                                        kind="model"
+                                        id={m.id}
+                                        visibility={m.visibility}
+                                        name={m.name}
+                                        onToggled={(v: Visibility) =>
+                                            setModels((prev) => prev.map((x) => (x.id === m.id ? { ...x, visibility: v } : x)))
+                                        }
+                                        onError={(msg) => setError(msg)}
+                                    />
+                                    <span className={`badge ${STATUS_CLASS[m.status] ?? "badge-neutral"}`}>
+                                        {displayStatus(m.status)}
+                                    </span>
+                                </div>
                             </div>
                             <div className="model-meta">
                                 <span>base <b>{m.base_model}</b></span>

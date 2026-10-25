@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
 import {
-    SlidersHorizontal, Route, Database, Cpu, Box, Columns3, Sparkles, Cable,
+    SlidersHorizontal, Route, Database, Cpu, Box, Columns3, Sparkles, Cable, Library,
     PanelLeftClose, PanelLeft, Moon, Sun,
 } from "lucide-react";
 import UserMenu from "./UserMenu";
@@ -21,6 +21,7 @@ const NAV = [
     { to: "/train", label: "Train", Icon: Cpu, color: "var(--warning)" },
     { to: "/models", label: "Models", Icon: Box, color: "var(--success)" },
     { to: "/compare", label: "Compare", Icon: Columns3, color: "var(--primary)" },
+    { to: "/library", label: "Library", Icon: Library, color: "var(--info)" },
     { to: "/bridge", label: "Bridge", Icon: Cable, color: "var(--accent-guide)" },
 ];
 

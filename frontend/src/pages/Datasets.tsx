@@ -6,6 +6,7 @@ import { displayStatus } from "../statusText";
 import type { Dataset } from "../types";
 import DatasetFormModal, { type DatasetFormValues } from "../components/DatasetFormModal";
 import ConfirmDialog from "../components/ConfirmDialog";
+import ShareToggle, { type Visibility } from "../components/ShareToggle";
 import VuMeter from "../components/VuMeter";
 
 // Datasets: read (list) + create + edit + delete. Each mutation updates local
@@ -92,6 +93,7 @@ export default function Datasets() {
                     <div className="table-head">
                         <div className="cell cell-grow">Name</div>
                         <div className="cell cell-source">Source</div>
+                        <div className="cell cell-share">Share</div>
                         <div className="cell cell-date">Created</div>
                         <div className="cell cell-actions" />
                     </div>
@@ -107,6 +109,19 @@ export default function Datasets() {
                                 <span className={`badge ${d.source === "generated" ? "badge-info" : "badge-neutral"}`}>
                                     {displayStatus(d.source)}
                                 </span>
+                            </div>
+                            <div className="cell cell-share">
+                                {/* S32: owner-only toggle; the backend 404s anyone else. */}
+                                <ShareToggle
+                                    kind="dataset"
+                                    id={d.id}
+                                    visibility={d.visibility}
+                                    name={d.name}
+                                    onToggled={(v: Visibility) =>
+                                        setDatasets((prev) => prev.map((x) => (x.id === d.id ? { ...x, visibility: v } : x)))
+                                    }
+                                    onError={(msg) => setError(msg)}
+                                />
                             </div>
                             <div className="cell cell-date">
                                 {new Date(d.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}

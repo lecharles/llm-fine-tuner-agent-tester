@@ -2067,3 +2067,69 @@ label.btn:focus-within {
   color: var(--text);
   user-select: all;
 }
+
+/* ---------- S32 (sharing 2): share toggle + public library ---------- */
+
+/* Owner-side pill on the Datasets table and Models cards. Private is muted,
+   public wears the info color so a shared row is recognizable at a glance. */
+.share-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-elevated);
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+.share-toggle:hover {
+  color: var(--text);
+  border-color: var(--info);
+}
+.share-toggle.share-public {
+  background: var(--info-tint);
+  border-color: transparent;
+  color: var(--info);
+}
+.share-toggle:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.cell-share {
+  flex: 0 0 96px;
+}
+
+.model-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.library-section {
+  margin-top: 28px;
+}
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 12px;
+}
+.card-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 640px;
+}
+.library-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}

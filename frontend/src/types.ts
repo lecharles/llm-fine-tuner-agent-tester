@@ -8,6 +8,7 @@ export type Dataset = {
     description: string | null;
     source: string;
     use_case_prompt: string | null;
+    visibility: string; // S31/S32: "private" (default) | "public"
     created_at: string; // JSON has no Date type; ISO string over the wire
     updated_at: string | null;
 };
@@ -51,6 +52,7 @@ export type FineTunedModel = {
     format: string | null;
     size_mb: number | null;
     status: string;
+    visibility: string; // S31/S32: "private" (default) | "public"
     created_at: string;
 };
 
@@ -110,4 +112,30 @@ export type BridgeProbeResult = {
     status: string;
     data: Record<string, unknown>;
     detail: string;
+};
+
+// S32 (sharing 2): GET /api/library — read-only view of everything S31 made
+// public. Owner is a display label, never an email or ID.
+export type LibraryDataset = {
+    id: number;
+    name: string;
+    description: string | null;
+    source: string;
+    owner: string;
+    created_at: string;
+};
+
+export type LibraryModel = {
+    id: number;
+    name: string;
+    base_model: string;
+    status: string;
+    size_mb: number | null;
+    owner: string;
+    created_at: string;
+};
+
+export type LibraryPayload = {
+    datasets: LibraryDataset[];
+    models: LibraryModel[];
 };
