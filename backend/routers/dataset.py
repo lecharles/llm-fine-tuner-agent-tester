@@ -6,6 +6,7 @@ from models.dataset import Dataset
 from models.user import User
 from schemas.dataset import DatasetCreate, DatasetUpdate, DatasetOut
 from core.security import get_current_user, is_service_lane
+from generation.prompt_suggest import suggest_use_case_prompt
 
 router = APIRouter(prefix="/api/datasets", tags=["datasets"])
 
@@ -52,6 +53,25 @@ def read_dataset(
     if dataset is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dataset not found")
     return dataset
+
+
+@router.post("/{dataset_id}/use-case-suggestion")
+def suggest_use_case(
+    dataset_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """S27: template a starter use-case prompt from the dataset's saved
+    name/description. Zero-LLM and idempotent — it never writes; the UI fills
+    the editable box and the user saves."""
+    dataset = (
+        db.query(Dataset)
+        .filter(Dataset.id == dataset_id, Dataset.user_id == current_user.id)
+        .first()
+    )
+    if dataset is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dataset not found")
+    return {"suggestion": suggest_use_case_prompt(dataset.name, dataset.description)}
 
 
 @router.put("/{dataset_id}", response_model=DatasetOut)

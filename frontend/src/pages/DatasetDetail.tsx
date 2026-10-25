@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Sparkles, Download, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Upload, HelpCircle } from "lucide-react";
+import { ArrowLeft, Sparkles, Download, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Upload, HelpCircle, Wand2 } from "lucide-react";
 import { apiFetch, apiUpload } from "../api";
 import { displayStatus } from "../statusText";
 import type { Dataset, QAPair } from "../types";
@@ -25,6 +25,7 @@ export default function DatasetDetail() {
     // Use-case prompt editor + generate/import controls.
     const [prompt, setPrompt] = useState("");
     const [savingPrompt, setSavingPrompt] = useState(false);
+    const [suggesting, setSuggesting] = useState(false);
     const [genCount, setGenCount] = useState(20);
     const [generating, setGenerating] = useState(false);
     const [preset, setPreset] = useState("general");
@@ -69,6 +70,28 @@ export default function DatasetDetail() {
             setError(err instanceof Error ? err.message : "Save failed");
         } finally {
             setSavingPrompt(false);
+        }
+    }
+
+    // S27: fill the prompt box with a zero-LLM starter built from the dataset's
+    // saved name/description. The suggestion stays editable until the user saves.
+    async function handleSuggest() {
+        setSuggesting(true);
+        setError(null);
+        try {
+            const res = await apiFetch<{ suggestion: string }>(
+                `/datasets/${datasetId}/use-case-suggestion`,
+                { method: "POST" },
+            );
+            if (res.suggestion) {
+                setPrompt(res.suggestion);
+            } else {
+                setError("Give the dataset a name or description first.");
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Suggestion failed");
+        } finally {
+            setSuggesting(false);
         }
     }
 
@@ -200,6 +223,10 @@ export default function DatasetDetail() {
                             <div className="dd-row">
                                 <button className="btn btn-ghost" onClick={handleSavePrompt} disabled={savingPrompt}>
                                     {savingPrompt ? "Saving…" : "Save prompt"}
+                                </button>
+                                {/* S27: zero-LLM starter from the dataset's name/description. */}
+                                <button className="btn btn-ghost" onClick={handleSuggest} disabled={suggesting}>
+                                    <Wand2 size={15} /> {suggesting ? "Thinking…" : "Suggest"}
                                 </button>
                                 <div className="dd-row-right">
                                     <input className="input dd-count" type="number" min={1} max={100} aria-label="Number of Q&A pairs to generate" value={genCount} onChange={(e) => setGenCount(Number(e.target.value))} />
