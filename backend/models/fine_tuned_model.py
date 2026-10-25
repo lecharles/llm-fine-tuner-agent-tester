@@ -23,6 +23,9 @@ class FineTunedModel(Base):
     format = Column(String, default="gguf")
     size_mb = Column(Integer)
     status = Column(String, nullable=False, default="training")
+    # S31: public models appear in the shared library and are readable by
+    # anyone signed in. Training, chat, and deletion stay owner-only.
+    visibility = Column(String, nullable=False, default="private", server_default="private")
     created_at = Column(DateTime(timezone=True), server_default=func.current_timestamp())
 
     user = relationship("User", back_populates="fine_tuned_models")

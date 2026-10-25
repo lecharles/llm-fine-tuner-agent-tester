@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -14,6 +15,9 @@ class DatasetUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
     use_case_prompt: str | None = None
+    # S31: owner-only share toggle. Literal keeps the value space to exactly
+    # the two states the authz checks understand.
+    visibility: Literal["private", "public"] | None = None
 
 
 class DatasetOut(BaseModel):
@@ -23,6 +27,7 @@ class DatasetOut(BaseModel):
     description: str | None = None
     source: str
     use_case_prompt: str | None = None
+    visibility: str = "private"
     created_at: datetime
     updated_at: datetime | None = None
 

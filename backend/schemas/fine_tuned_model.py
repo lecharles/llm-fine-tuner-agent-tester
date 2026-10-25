@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -13,6 +14,13 @@ class FineTunedModelOut(BaseModel):
     format: str | None = None
     size_mb: int | None = None
     status: str
+    visibility: str = "private"
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class ModelVisibilityUpdate(BaseModel):
+    """S31: owner-only share toggle for a fine-tuned model."""
+
+    visibility: Literal["private", "public"]

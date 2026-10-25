@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from routers import auth, dataset, qa_pair, training_run, generation, chat, fine_tuned_model, status, bridge
+from routers import auth, dataset, qa_pair, training_run, generation, chat, fine_tuned_model, status, bridge, library
 from static_serve import mount_spa
 from core import bind_guard
 
@@ -33,6 +33,7 @@ app.include_router(generation.status_router)
 app.include_router(chat.router)
 app.include_router(chat.picker_router)
 app.include_router(fine_tuned_model.router)
+app.include_router(library.router)
 app.include_router(bridge.router)
 app.include_router(bridge.ws_router)
 

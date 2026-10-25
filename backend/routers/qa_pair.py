@@ -12,12 +12,23 @@ from core.security import get_current_user
 router = APIRouter(prefix="/api/datasets/{dataset_id}/qa-pairs", tags=["qa-pairs"])
 
 
-def get_owned_dataset(dataset_id: int, db: Session, current_user: User) -> Dataset:
-    dataset = (
-        db.query(Dataset)
-        .filter(Dataset.id == dataset_id, Dataset.user_id == current_user.id)
-        .first()
-    )
+def get_owned_dataset(
+    dataset_id: int, db: Session, current_user: User, require_owner: bool = True
+) -> Dataset:
+    """Fetch a dataset with S31 sharing rules.
+
+    require_owner=True (default) keeps every mutation path owner-only. Reads
+    pass False: a public dataset is readable by any signed-in user, a private
+    one still 404s for non-owners.
+    """
+    query = db.query(Dataset).filter(Dataset.id == dataset_id)
+    if require_owner:
+        query = query.filter(Dataset.user_id == current_user.id)
+    else:
+        query = query.filter(
+            (Dataset.user_id == current_user.id) | (Dataset.visibility == "public")
+        )
+    dataset = query.first()
     if dataset is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dataset not found")
     return dataset
@@ -48,7 +59,8 @@ def list_qa_pairs(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    get_owned_dataset(dataset_id, db, current_user)
+    # S31: reads follow owner-or-public; writes above stay owner-only.
+    get_owned_dataset(dataset_id, db, current_user, require_owner=False)
     qa_pairs = db.query(QAPair).filter(QAPair.dataset_id == dataset_id).all()
     return qa_pairs
 

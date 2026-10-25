@@ -14,6 +14,9 @@ class Dataset(Base):
     description = Column(Text)
     source = Column(String, nullable=False)
     use_case_prompt = Column(Text)
+    # S31: public datasets are readable by anyone signed in; everything else
+    # (generate, import, edit, delete) stays owner-only.
+    visibility = Column(String, nullable=False, default="private", server_default="private")
     created_at = Column(DateTime(timezone=True), server_default=func.current_timestamp())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

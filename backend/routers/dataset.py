@@ -45,9 +45,14 @@ def read_dataset(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    # S31: owner-or-public read. Private datasets stay invisible to everyone
+    # else (404, not 403, so existence is not leaked).
     dataset = (
         db.query(Dataset)
-        .filter(Dataset.id == dataset_id, Dataset.user_id == current_user.id)
+        .filter(
+            Dataset.id == dataset_id,
+            (Dataset.user_id == current_user.id) | (Dataset.visibility == "public"),
+        )
         .first()
     )
     if dataset is None:
