@@ -58,7 +58,7 @@ Rules for the automated lane:
 | S25 | 10-13 | Opt-in bridge: explicit permission prompt, scoped and revocable hardware access | backend/, frontend/ | • | DONE (Mac verify pending) 2026-10-15 (morning run) — #28: Bridge consent UI + hub; recipes in commit body |
 | S26 | 10-14 | Data model split: local artifacts stay on device, hosted keeps account + metadata only | backend/ | • | DONE (Mac verify pending) 2026-10-15 (morning run) — #29: device_artifacts pointer ledger + hub `artifacts` frame + GET/DELETE /api/bridge/artifacts; recipes in commit body |
 | S27 | 10-15 | Generation UX: auto-fill use-case prompt from dataset name/description | backend/, frontend/ | - | DONE 2026-10-25 (catch-up run) — `generation/prompt_suggest.py` zero-LLM templates (description preferred, name fallback, 120-char topic cap); `POST /api/datasets/{id}/use-case-suggestion` owner-scoped, never writes, idempotent; DatasetDetail "Suggest" (Wand2) fills the editable box. pytest 64 green, tsc -b + vite build green |
-| S28 | 10-16 | Compare: parallelize four-way fan-out instead of sequential calls | backend/ | - | TODO |
+| S28 | 10-16 | Compare: parallelize four-way fan-out instead of sequential calls | backend/ | - | DONE 2026-10-25 (catch-up run) — fan_out runs each column on a capped ThreadPoolExecutor (pool.map keeps order); error isolation unchanged. 3 new tests incl. a thread-barrier fake that only passes if columns truly overlap. pytest green |
 
 ## Month-close extension (daily through 10-31, from the October backlog)
 

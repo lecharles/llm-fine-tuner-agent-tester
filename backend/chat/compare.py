@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 
 from chat.client import chat_completion
@@ -99,20 +100,29 @@ def fan_out(backends: list[Backend], histories: dict[str, list[dict]]) -> list[R
     """Send each backend its own message history and collect labeled replies.
 
     Each column is an independent conversation: it sees the shared user turns plus
-    only its own prior replies, so histories is keyed by column label. Sequential
-    for now (one call after another). A single backend raising is caught and
-    returned as an error on that column instead of aborting the run, so the compare
-    always shows whatever did come back. Catching broad Exception is deliberate
-    here: any provider or network error should degrade one column, not the whole
-    response."""
-    replies = []
-    for backend in backends:
+    only its own prior replies, so histories is keyed by column label. S28: the
+    columns are asked concurrently on a small thread pool instead of one after
+    another — every backend is blocking urllib I/O, so the wall time of a
+    four-way compare drops to roughly the slowest column. pool.map keeps the
+    reply order aligned with `backends`. A single backend raising is caught and
+    returned as an error on that column instead of aborting the run, so the
+    compare always shows whatever did come back. Catching broad Exception is
+    deliberate here: any provider or network error should degrade one column,
+    not the whole response."""
+    if not backends:
+        return []
+
+    def _ask(backend: Backend) -> Reply:
         messages = histories[backend.label]
         try:
             content = chat_completion(
                 backend.base_url, backend.api_key, backend.model, messages
             )
-            replies.append(Reply(label=backend.label, model=backend.model, content=content))
+            return Reply(label=backend.label, model=backend.model, content=content)
         except Exception as exc:
-            replies.append(Reply(label=backend.label, model=backend.model, error=str(exc)))
-    return replies
+            return Reply(label=backend.label, model=backend.model, error=str(exc))
+
+    # One worker per column, capped: five columns is the current ceiling, and a
+    # shared machine should never see an unbounded burst of provider calls.
+    with ThreadPoolExecutor(max_workers=min(len(backends), 5)) as pool:
+        return list(pool.map(_ask, backends))
