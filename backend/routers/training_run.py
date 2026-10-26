@@ -56,6 +56,8 @@ def start_training_run(
         method=run_in.method,
         iters=run_in.iters,
         learning_rate=run_in.learning_rate,
+        lora_rank=run_in.lora_rank,
+        lora_alpha=run_in.lora_alpha,
         status="queued",
     )
     db.add(run)

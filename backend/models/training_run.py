@@ -15,6 +15,11 @@ class TrainingRun(Base):
     method = Column(String, nullable=False, default="qlora")
     iters = Column(Integer, nullable=False, default=300)
     learning_rate = Column(Numeric)
+    # S33 (#35) advanced hyperparameters: LoRA width (rank) and its scaling
+    # factor (alpha). mlx_lm.lora's own defaults are 8/16; we persist them per
+    # run so the UI can show and replay exactly what a run trained with.
+    lora_rank = Column(Integer, nullable=False, default=8)
+    lora_alpha = Column(Integer, nullable=False, default=16)
     status = Column(String, nullable=False, default="queued")
     # #42: when a run fails we persist the exception text + log tail here so the
     # failure is visible in the API and the Train UI instead of being silent.

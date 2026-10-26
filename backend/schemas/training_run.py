@@ -1,14 +1,19 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class TrainingRunCreate(BaseModel):
     dataset_id: int
     base_model: str = "mlx-community/Llama-3.2-1B-Instruct-4bit"
     method: str = "qlora"
-    iters: int = 300
-    learning_rate: float | None = None
+    # S33 (#35): guard rails mirror the S17 UI clamps, and the advanced panel's
+    # LoRA rank/alpha get sane bounds (rank is what costs memory; alpha is a
+    # scaling factor, classically 2x rank). Out-of-range requests 422.
+    iters: int = Field(300, ge=1, le=5000)
+    learning_rate: float | None = Field(None, gt=0, le=1)
+    lora_rank: int = Field(8, ge=1, le=128)
+    lora_alpha: int = Field(16, ge=1, le=256)
 
 
 class LossPoint(BaseModel):
@@ -32,6 +37,8 @@ class TrainingRunOut(BaseModel):
     method: str
     iters: int
     learning_rate: float | None = None
+    lora_rank: int = 8
+    lora_alpha: int = 16
     status: str
     error_message: str | None = None
     created_at: datetime

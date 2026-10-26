@@ -37,9 +37,14 @@ def build_lora_command(
     adapter_dir: Path,
     iters: int,
     learning_rate,
+    lora_rank: int = 8,
+    lora_alpha: int = 16,
 ) -> list[str]:
     """Assemble the mlx_lm.lora argument list. A 4-bit base_model makes this QLoRA
-    automatically; --mask-prompt trains on the answer, not the question."""
+    automatically; --mask-prompt trains on the answer, not the question.
+    rank/alpha (S33, #35) are passed explicitly — they equal mlx's own defaults
+    for runs that never touched the advanced panel, and train.log then records
+    the real width every run trained at."""
     command = [
         "mlx_lm.lora",
         "--model", base_model,
@@ -48,6 +53,8 @@ def build_lora_command(
         "--adapter-path", str(adapter_dir),
         "--iters", str(iters),
         "--batch-size", str(BATCH_SIZE),
+        "--lora-rank", str(lora_rank),
+        "--lora-alpha", str(lora_alpha),
         "--mask-prompt",
     ]
     if learning_rate is not None:
@@ -114,7 +121,8 @@ def run_training(run_id: int) -> None:
         build_training_files(pairs, data_dir)
 
         command = build_lora_command(
-            run.base_model, data_dir, adapter_dir, run.iters, run.learning_rate
+            run.base_model, data_dir, adapter_dir, run.iters, run.learning_rate,
+            run.lora_rank, run.lora_alpha,
         )
 
         # S11 (issue #4): stream stdout+stderr into train.log line by line
