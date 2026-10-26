@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Play, HelpCircle } from "lucide-react";
+import { Play, HelpCircle, SlidersHorizontal } from "lucide-react";
 import { apiFetch } from "../api";
 import { displayStatus } from "../statusText";
 import LossChart from "../components/LossChart";
@@ -17,6 +17,16 @@ const ITERS_PRESETS = [
     { value: 1000, label: "full run" },
 ];
 
+// S34 (#35): advanced hyperparameter panel. Defaults mirror the backend's
+// (mlx_lm.lora's own 8/16 rank/alpha; learning rate left unset = mlx picks).
+// Bounds mirror the S33 schema, so the UI never sends a value 422s on.
+const DEFAULT_LORA_RANK = 8;
+const DEFAULT_LORA_ALPHA = 16;
+const clampRank = (v: number) => Math.min(128, Math.max(1, Math.round(v)));
+const clampAlpha = (v: number) => Math.min(256, Math.max(1, Math.round(v)));
+const RANK_PRESETS = [4, 8, 16, 32];
+const ALPHA_PRESETS = [8, 16, 32, 64];
+
 // Map a run's status to its badge color.
 const STATUS_CLASS: Record<string, string> = {
     queued: "badge-neutral",
@@ -31,6 +41,10 @@ export default function Train() {
     const [datasets, setDatasets] = useState<Dataset[]>([]);
     const [datasetId, setDatasetId] = useState<number | "">("");
     const [iters, setIters] = useState(DEFAULT_ITERS);
+    const [loraRank, setLoraRank] = useState(DEFAULT_LORA_RANK);
+    const [loraAlpha, setLoraAlpha] = useState(DEFAULT_LORA_ALPHA);
+    const [lrText, setLrText] = useState(""); // empty = let mlx pick
+    const [advancedOpen, setAdvancedOpen] = useState(false);
 
     const [run, setRun] = useState<TrainingRun | null>(null);
     const [losses, setLosses] = useState<LossPoint[]>([]);
@@ -108,10 +122,28 @@ export default function Train() {
         setStarting(true);
         setError(null);
         setLosses([]); // fresh curve for the fresh run
+        // S34: validate the learning rate client-side (mirrors the S33 schema
+        // bound 0 < lr <= 1) so a typo shows our words, not FastAPI's.
+        let learningRate: number | null = null;
+        if (lrText.trim() !== "") {
+            const v = Number(lrText);
+            if (!Number.isFinite(v) || v <= 0 || v > 1) {
+                setError("Learning rate must be a number between 0 and 1 (e.g. 0.00002), or leave it blank.");
+                setStarting(false);
+                return;
+            }
+            learningRate = v;
+        }
         try {
             const created = await apiFetch<TrainingRun>("/training-runs", {
                 method: "POST",
-                body: { dataset_id: datasetId, iters },
+                body: {
+                    dataset_id: datasetId,
+                    iters,
+                    lora_rank: loraRank,
+                    lora_alpha: loraAlpha,
+                    ...(learningRate !== null ? { learning_rate: learningRate } : {}),
+                },
             });
             setRun(created);
             startPolling(created.id); // walk queued -> running -> completed/failed live
@@ -226,6 +258,118 @@ export default function Train() {
                         <Play size={16} /> {starting ? "Starting…" : "Start training"}
                     </button>
                 </div>
+
+                {/* S34 (#35): advanced hyperparameters, closed by default so the
+                    one-line flow stays one line. Every field carries a hint
+                    bubble (S17/S30 pattern) and clamps to the S33 bounds. */}
+                <div className="advanced">
+                    <button
+                        type="button"
+                        className="advanced-toggle"
+                        aria-expanded={advancedOpen}
+                        onClick={() => setAdvancedOpen((open) => !open)}
+                    >
+                        <SlidersHorizontal size={13} /> Advanced hyperparameters
+                    </button>
+                    {advancedOpen && (
+                        <div className="advanced-grid">
+                            <div className="field">
+                                <label className="label" htmlFor="train-rank">
+                                    LoRA rank
+                                    <span className="hint" tabIndex={0} aria-label="About LoRA rank">
+                                        <HelpCircle size={13} />
+                                        <span className="hint-bubble">
+                                            How much the adapter can hold. Higher rank learns more but uses more
+                                            memory and time. 8 is the safe default; reach for 16–32 when the model
+                                            still ignores your examples.
+                                        </span>
+                                    </span>
+                                </label>
+                                <input
+                                    id="train-rank"
+                                    className="input"
+                                    type="number"
+                                    value={loraRank}
+                                    onChange={(e) => {
+                                        const v = Number(e.target.value);
+                                        setLoraRank(Number.isFinite(v) ? clampRank(v) : DEFAULT_LORA_RANK);
+                                    }}
+                                    min={1}
+                                    max={128}
+                                />
+                                <div className="iters-presets" role="group" aria-label="LoRA rank presets">
+                                    {RANK_PRESETS.map((p) => (
+                                        <button
+                                            key={p}
+                                            type="button"
+                                            className={`chip${loraRank === p ? " chip-active" : ""}`}
+                                            onClick={() => setLoraRank(p)}
+                                        >
+                                            {p}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="field">
+                                <label className="label" htmlFor="train-alpha">
+                                    LoRA alpha
+                                    <span className="hint" tabIndex={0} aria-label="About LoRA alpha">
+                                        <HelpCircle size={13} />
+                                        <span className="hint-bubble">
+                                            Scales how hard each update hits. The classic choice is 2× the rank —
+                                            raise both together to learn more per step.
+                                        </span>
+                                    </span>
+                                </label>
+                                <input
+                                    id="train-alpha"
+                                    className="input"
+                                    type="number"
+                                    value={loraAlpha}
+                                    onChange={(e) => {
+                                        const v = Number(e.target.value);
+                                        setLoraAlpha(Number.isFinite(v) ? clampAlpha(v) : DEFAULT_LORA_ALPHA);
+                                    }}
+                                    min={1}
+                                    max={256}
+                                />
+                                <div className="iters-presets" role="group" aria-label="LoRA alpha presets">
+                                    {ALPHA_PRESETS.map((p) => (
+                                        <button
+                                            key={p}
+                                            type="button"
+                                            className={`chip${loraAlpha === p ? " chip-active" : ""}`}
+                                            onClick={() => setLoraAlpha(p)}
+                                        >
+                                            {p}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="field">
+                                <label className="label" htmlFor="train-lr">
+                                    Learning rate
+                                    <span className="hint" tabIndex={0} aria-label="About the learning rate">
+                                        <HelpCircle size={13} />
+                                        <span className="hint-bubble">
+                                            Step size per iteration. Leave blank for mlx's default (0.00002).
+                                            If the loss curve bounces around, try half what you set.
+                                        </span>
+                                    </span>
+                                </label>
+                                <input
+                                    id="train-lr"
+                                    className="input"
+                                    type="text"
+                                    inputMode="decimal"
+                                    placeholder="default (0.00002)"
+                                    value={lrText}
+                                    onChange={(e) => setLrText(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    )}
+                </div>
             </form>
 
             {error && <p className="form-error" role="alert">{error}</p>}
@@ -241,6 +385,9 @@ export default function Train() {
                     </div>
                     <div className="run-meta">
                         {run.base_model} · {run.method} · {run.iters} iters
+                        {/* S34: echo the panel's choices when the run carries them. */}
+                        {run.lora_rank != null && ` · LoRA r${run.lora_rank} α${run.lora_alpha}`}
+                        {run.learning_rate != null && ` · lr ${Number(run.learning_rate)}`}
                     </div>
                     <LossChart points={losses} iters={run.iters} />
                     {run.status === "failed" && (

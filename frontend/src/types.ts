@@ -21,6 +21,8 @@ export type TrainingRun = {
     method: string;
     iters: number;
     learning_rate: number | null;
+    lora_rank?: number;    // S33 (#35); absent on runs predating the panel
+    lora_alpha?: number;
     status: string; // queued | running | completed | failed
     error_message?: string | null; // set when status is failed (#42)
     created_at: string;
