@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
 import {
-    SlidersHorizontal, Route, Database, Cpu, Box, Columns3, Sparkles, Cable, Library,
+    SlidersHorizontal, Route, Database, Cpu, Box, Columns3, Sparkles, Cable, Library, History,
     PanelLeftClose, PanelLeft, Moon, Sun,
 } from "lucide-react";
 import UserMenu from "./UserMenu";
@@ -19,6 +19,7 @@ const NAV = [
     { to: "/get-started", label: "Get started", Icon: Route, color: "var(--accent-guide)" },
     { to: "/datasets", label: "Datasets", Icon: Database, color: "var(--info)" },
     { to: "/train", label: "Train", Icon: Cpu, color: "var(--warning)" },
+    { to: "/history", label: "History", Icon: History, color: "var(--info)" },
     { to: "/models", label: "Models", Icon: Box, color: "var(--success)" },
     { to: "/compare", label: "Compare", Icon: Columns3, color: "var(--primary)" },
     { to: "/library", label: "Library", Icon: Library, color: "var(--info)" },

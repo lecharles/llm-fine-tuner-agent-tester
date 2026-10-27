@@ -2171,3 +2171,81 @@ label.btn:focus-within {
 .advanced-grid .input[type="text"] {
   font-family: var(--font-mono);
 }
+
+/* ---------- S36 (#36): run history page ---------- */
+
+.hist-row {
+  cursor: pointer;
+}
+
+.hist-row-active,
+.hist-row-active:hover {
+  background: var(--surface);
+  box-shadow: inset 3px 0 0 var(--info);
+}
+
+.hist-cell-run {
+  width: 64px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+
+.hist-cell-model {
+  width: 170px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hist-cell-num {
+  width: 92px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  text-align: right;
+}
+
+.hist-cell-status {
+  width: 110px;
+}
+
+.hist-view-label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hist-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.hist-detail {
+  margin-top: 16px;
+}
+
+.hist-detail .hist-close {
+  margin-left: auto;
+}
+
+.hist-section-title {
+  margin-top: 14px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.hist-log-note {
+  margin-top: 4px;
+  padding: 10px 12px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-card);
+  color: var(--text-muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}

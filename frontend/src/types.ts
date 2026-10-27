@@ -29,6 +29,22 @@ export type TrainingRun = {
     completed_at: string | null;
 };
 
+// S35/S36 (#36): run history — one summary row per run from
+// GET /api/training-runs/history (dataset name denormalized, final loss =
+// last train.log point; null until a run logs its first iteration).
+export type TrainingRunHistory = {
+    id: number;
+    dataset_id: number;
+    dataset_name: string;
+    base_model: string;
+    method: string;
+    iters: number;
+    status: string; // queued | running | completed | failed
+    final_loss: number | null;
+    created_at: string;
+    completed_at: string | null;
+};
+
 // S29 (issue #33): one human-readable reading of a failed run's error text,
 // from GET /api/training-runs/{id}/explain.
 export type ErrorExplanation = {

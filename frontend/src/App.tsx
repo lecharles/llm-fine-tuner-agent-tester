@@ -12,6 +12,7 @@ import Signup from "./pages/Signup";
 import DatasetDetail from "./pages/DatasetDetail";
 import Bridge from "./pages/Bridge";
 import Library from "./pages/Library";
+import History from "./pages/History";
 
 // App skeleton: login and signup render bare; every authenticated page is
 // guarded by ProtectedRoute and rendered inside the sidebar shell (Layout),
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="/datasets" element={<Datasets />} />
         <Route path="/datasets/:datasetId" element={<DatasetDetail />} />
         <Route path="/train" element={<Train />} />
+        <Route path="/history" element={<History />} />
         <Route path="/models" element={<Models />} />
         <Route path="/compare" element={<Compare />} />
         <Route path="/library" element={<Library />} />
