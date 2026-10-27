@@ -10,6 +10,7 @@ from schemas.training_run import (
     ErrorExplanationOut,
     LossPoint,
     TrainingRunCreate,
+    TrainingRunHistoryOut,
     TrainingRunOut,
 )
 from core.security import get_current_user
@@ -80,6 +81,43 @@ def list_training_runs(
         .all()
     )
     return runs
+
+
+@router.get("/history", response_model=list[TrainingRunHistoryOut])
+def list_run_history(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # S35 (#36): run history 1. Declared BEFORE /{run_id} so "history" is not
+    # swallowed by the int path param (which would 422 instead of matching).
+    # One row per run, newest first, owner-scoped — the history page's data.
+    rows = (
+        db.query(TrainingRun, Dataset.name)
+        .outerjoin(Dataset, Dataset.id == TrainingRun.dataset_id)
+        .filter(TrainingRun.user_id == current_user.id)
+        .order_by(TrainingRun.created_at.desc(), TrainingRun.id.desc())
+        .all()
+    )
+    history = []
+    for run, dataset_name in rows:
+        # Final loss = last parsed point of the run's train.log (S11 parser).
+        # Queued/running runs with no log yet report None, not 0.
+        points = read_losses(run.id)
+        history.append(
+            TrainingRunHistoryOut(
+                id=run.id,
+                dataset_id=run.dataset_id,
+                dataset_name=dataset_name or "(deleted dataset)",
+                base_model=run.base_model,
+                method=run.method,
+                iters=run.iters,
+                status=run.status,
+                final_loss=points[-1]["loss"] if points else None,
+                created_at=run.created_at,
+                completed_at=run.completed_at,
+            )
+        )
+    return history
 
 
 @router.get("/{run_id}", response_model=TrainingRunOut)

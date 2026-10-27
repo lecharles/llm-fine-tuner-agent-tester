@@ -29,6 +29,23 @@ class ErrorExplanationOut(BaseModel):
     fix: str
 
 
+class TrainingRunHistoryOut(BaseModel):
+    # S35 (#36): run history 1 — one summary row per run for the history list:
+    # dataset name (denormalized via a LEFT JOIN so runs whose dataset was
+    # deleted still show), base model, iters, and the final train loss (last
+    # point parsed from the run's train.log; None while no log/points exist).
+    id: int
+    dataset_id: int
+    dataset_name: str
+    base_model: str
+    method: str
+    iters: int
+    status: str
+    final_loss: float | None = None
+    created_at: datetime
+    completed_at: datetime | None = None
+
+
 class TrainingRunOut(BaseModel):
     id: int
     user_id: int
