@@ -53,21 +53,31 @@ def ordered_tags() -> list[str]:
     return [recipe.tag for recipe in LOCAL_MODEL_REGISTRY]
 
 
-def _repo(tag: str) -> str:
-    """Normalise an ollama tag to its repo key: lower case, no :tag, no org prefix.
+def _norm(tag: str) -> str:
+    """Lower-case, trimmed, org prefix dropped: "microsoft/phi4-mini" -> "phi4-mini"."""
+    return tag.strip().lower().split("/", 1)[-1]
 
-    "microsoft/phi4-mini:latest" -> "phi4-mini"; "Gemma3:4b" -> "gemma3".
+
+def _candidate_keys(tag: str) -> set[str]:
+    """Keys an installed model name can match a registry tag by.
+
+    For "phi4-mini:latest" -> {"phi4-mini:latest", "phi4-mini"};
+    for "llama3.2:1b:latest" -> {"llama3.2:1b:latest", "llama3.2:1b", "llama3.2"}.
+    Registry tags are matched exactly (after _norm), so size-qualified tags
+    like llama3.2:1b never collide with llama3.2:3b.
     """
-    name = tag.strip().lower()
-    name = name.rsplit(":", 1)[0] if ":" in name else name
-    return name.split("/", 1)[-1]
+    name = _norm(tag)
+    keys = {name, name.split(":", 1)[0]}
+    if name.endswith(":latest"):
+        keys.add(name[: -len(":latest")])
+    return keys
 
 
 def recipe_for(tag: str) -> LocalModelRecipe | None:
     """Registry entry matching a (possibly qualified) model tag, else None."""
-    key = _repo(tag)
+    keys = _candidate_keys(tag)
     for recipe in LOCAL_MODEL_REGISTRY:
-        if _repo(recipe.tag) == key:
+        if _norm(recipe.tag) in keys:
             return recipe
     return None
 
@@ -81,5 +91,14 @@ def prefer_order(installed: list[str]) -> list[str]:
     matched by repo key but returned unchanged, so callers talk to Ollama in
     exactly the names Ollama knows.
     """
-    ranks = {_repo(tag): i for i, tag in enumerate(ordered_tags())}
-    return sorted(installed, key=lambda tag: ranks.get(_repo(tag), len(ranks)))
+    exact = {_norm(recipe.tag): i for i, recipe in enumerate(LOCAL_MODEL_REGISTRY)}
+    unranked = len(exact)
+
+    def rank(tag: str) -> int:
+        keys = _candidate_keys(tag)
+        for key, i in exact.items():
+            if key in keys:
+                return i
+        return unranked
+
+    return sorted(installed, key=rank)
