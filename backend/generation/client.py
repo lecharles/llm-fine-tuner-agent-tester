@@ -23,6 +23,7 @@ from anthropic import Anthropic
 from openai import OpenAI
 
 from config import settings
+from generation.local_registry import prefer_order
 
 # Provider ladder, tried in order. The first tier that returns a usable tool
 # call wins. Splitting by provider lets us give each its own tool-forcing shape
@@ -133,15 +134,20 @@ def _ollama_available() -> bool:
 
 
 def _ollama_local_models() -> list[str]:
-    """Prefer generation_local_models if set, else every installed model."""
+    """Prefer generation_local_models if set; else every installed model,
+
+    ordered by the S37 local registry (llama3.2:1b -> phi4-mini -> gemma3:4b)
+    with unknown families keeping their installed order after the known ones.
+    """
     configured = [m.strip() for m in settings.generation_local_models.split(",") if m.strip()]
     if configured:
         return configured
     try:
         tags = _ollama_http("/api/tags", timeout=3).get("models", [])
-        return [t["name"] for t in tags if t.get("name")]
+        installed = [t["name"] for t in tags if t.get("name")]
     except Exception:
         return []
+    return prefer_order(installed)
 
 
 def _call_ollama(model, system, user, input_schema, max_tokens):
@@ -225,7 +231,10 @@ def call_json_tool(
     if _ollama_available():
         local_models = _ollama_local_models()
         if not local_models:
-            failures.append("ollama: reachable but no models installed (run `ollama pull llama3.1`)")
+            failures.append(
+                "ollama: reachable but no models installed (run `ollama pull llama3.2:1b`,"
+                " `ollama pull phi4-mini` or `ollama pull gemma3:4b` — see docs/RESEARCH_DATASETS.md §6)"
+            )
         for model in local_models:
             try:
                 return _call_ollama(model, system, user, input_schema, max_tokens)
@@ -238,6 +247,7 @@ def call_json_tool(
         raise RuntimeError(
             "No generator backend available. Add ANTHROPIC_API_KEY and/or "
             "OPENAI_API_KEY to ~/.llmtuner/.env, or start Ollama and pull a "
-            "model (e.g. `ollama pull llama3.1`). Then restart `llmtuner up`."
+            "model (e.g. `ollama pull llama3.2:1b`, `ollama pull phi4-mini` "
+            "or `ollama pull gemma3:4b`). Then restart `llmtuner up`."
         )
     raise RuntimeError("All generator models failed: " + "; ".join(failures))

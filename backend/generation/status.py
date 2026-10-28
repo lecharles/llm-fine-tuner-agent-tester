@@ -41,7 +41,7 @@ def _probe_ollama() -> dict:
     if not models:
         return {
             "ready": False,
-            "reason": "reachable but no models installed (run: ollama pull llama3.1)",
+            "reason": "reachable but no models installed (run: ollama pull llama3.2:1b, phi4-mini or gemma3:4b)",
             "models": [],
         }
     return {"ready": True, "reason": f"{len(models)} model(s) installed", "models": models}

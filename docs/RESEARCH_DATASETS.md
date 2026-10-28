@@ -199,6 +199,32 @@ should be Opus 4.8 or Sonnet 5, with Fable as an opt-in.
 - New accounts get small trial credits; there is no permanent free API tier on either provider, so real
   generation needs a funded key. Fine for the demo.
 
+## 6. Local model registry (S37 — more families beyond Llama)
+
+The generation ladder's last tier is free, on-device Ollama. The registry
+lives in `backend/generation/local_registry.py` and now names three
+supported families. The ladder tries installed models in this preference
+order, and anything else installed keeps its `/api/tags` order behind them:
+
+| Priority | Family              | `ollama pull` target | ~Size | Why it is in the ladder                                   |
+|----------|---------------------|----------------------|-------|-----------------------------------------------------------|
+| 1        | Llama 3.2 (1B)      | `llama3.2:1b`        | 1.3GB | VPS default since S3; fastest, solid schema-following.    |
+| 2        | Phi-4 mini (3.8B)   | `phi4-mini`          | 2.5GB | Clearly stronger reasoning than the 1B at modest size.    |
+| 3        | Gemma 3 (4B)        | `gemma3:4b`          | 3.3GB | Best structured-output quality when RAM allows.           |
+
+Mechanics:
+
+- Tags match by repo key, so `phi4-mini:latest` counts as `phi4-mini`; the
+  caller still asks Ollama by the exact installed name.
+- `GENERATION_LOCAL_MODELS` (comma list in `~/.llmtuner/.env`) overrides the
+  registry entirely — explicit config always wins (issue #3's escape hatch).
+- Adding a family = one `LocalModelRecipe` entry at the wanted rank; the
+  ladder, `/api/generation/status` hints and S38 tests pick it up. New
+  families should also be added to the table above.
+
+On the VPS the default stays `llama3.2:1b` (S3). phi-4 / gemma-3 pulls are a
+per-machine choice — on the Mac they run comfortably via the Ollama app.
+
 ## Recommended Phase 3 build order
 
 1. Provider client module with the fallback ladder (Fable -> Opus 4.8 -> OpenAI) and JSON-schema output.
