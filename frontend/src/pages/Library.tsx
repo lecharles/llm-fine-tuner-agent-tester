@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Box, Database } from "lucide-react";
+import { Box, Database, Library as LibraryIcon } from "lucide-react";
 import { apiFetch } from "../api";
 import { displayStatus } from "../statusText";
 import VuMeter from "../components/VuMeter";
+import EmptyState from "../components/EmptyState";
 import type { LibraryPayload } from "../types";
 
 // S32 (sharing 2): the public library. Everything the community shared via the
@@ -40,10 +41,12 @@ export default function Library() {
             )}
             {error && <p className="form-error" role="alert">{error}</p>}
             {empty && (
-                <p className="empty">
-                    Nothing shared yet. Flip the <strong>Share</strong> toggle on one of your datasets or models and
-                    it will appear here for everyone.
-                </p>
+                <EmptyState
+                    icon={LibraryIcon}
+                    tint="info"
+                    title="Nothing shared yet"
+                    hint={<>Flip the <strong>Share</strong> toggle on one of your datasets or models and it will appear here for everyone.</>}
+                />
             )}
 
             {lib && lib.datasets.length > 0 && (

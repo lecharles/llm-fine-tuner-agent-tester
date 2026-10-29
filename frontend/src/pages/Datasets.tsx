@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Database, Plus, Pencil, Trash2 } from "lucide-react";
 import { apiFetch } from "../api";
 import { displayStatus } from "../statusText";
 import type { Dataset } from "../types";
@@ -8,6 +8,7 @@ import DatasetFormModal, { type DatasetFormValues } from "../components/DatasetF
 import ConfirmDialog from "../components/ConfirmDialog";
 import ShareToggle, { type Visibility } from "../components/ShareToggle";
 import VuMeter from "../components/VuMeter";
+import EmptyState from "../components/EmptyState";
 
 // Datasets: read (list) + create + edit + delete. Each mutation updates local
 // state so the list re-renders immediately, no refetch and no page reload.
@@ -85,7 +86,17 @@ export default function Datasets() {
             )}
             {error && <p className="form-error" role="alert">{error}</p>}
             {!loading && !error && datasets.length === 0 && (
-                <p className="empty">No datasets yet. Create your first one.</p>
+                <EmptyState
+                    icon={Database}
+                    tint="info"
+                    title="No datasets yet"
+                    hint="A dataset is a set of question/answer pairs the model rehearses on. Create one, then add pairs by hand, generate, or import a file."
+                    action={
+                        <button className="btn btn-primary" onClick={openCreate}>
+                            <Plus size={16} /> New dataset
+                        </button>
+                    }
+                />
             )}
 
             {!loading && !error && datasets.length > 0 && (

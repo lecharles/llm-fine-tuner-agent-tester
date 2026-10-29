@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Sparkles, Download, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Upload, HelpCircle, Wand2 } from "lucide-react";
+import { ArrowLeft, Sparkles, Download, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Upload, HelpCircle, Wand2, MessagesSquare } from "lucide-react";
 import { apiFetch, apiUpload } from "../api";
 import { displayStatus } from "../statusText";
 import type { Dataset, QAPair } from "../types";
 import QAPairModal, { type QAPairValues } from "../components/QAPairModal";
 import ConfirmDialog from "../components/ConfirmDialog";
 import VuMeter from "../components/VuMeter";
+import EmptyState from "../components/EmptyState";
 import { GenerationStatusLine } from "../components/GenerationStatus";
 
 const PAGE_SIZE = 10;
@@ -311,7 +312,17 @@ export default function DatasetDetail() {
                     </div>
 
                     {pairs.length === 0 ? (
-                        <p className="empty">No pairs yet. Add one, generate from a prompt, or import a preset.</p>
+                        <EmptyState
+                            icon={MessagesSquare}
+                            tint="info"
+                            title="No pairs yet"
+                            hint="Each pair is one training example. Add one by hand, generate a batch from a prompt, or import a CSV/JSONL file."
+                            action={
+                                <button className="btn btn-primary btn-sm" onClick={openCreatePair}>
+                                    <Plus size={15} /> Add pair
+                                </button>
+                            }
+                        />
                     ) : (
                         <>
                             <div className="table">

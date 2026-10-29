@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Box } from "lucide-react";
 import { apiFetch } from "../api";
 import { displayStatus } from "../statusText";
 import ShareToggle, { type Visibility } from "../components/ShareToggle";
 import VuMeter from "../components/VuMeter";
+import EmptyState from "../components/EmptyState";
 import type { FineTunedModel } from "../types";
 
 // Model status -> badge color (a model lands "ready" once it is fused).
@@ -44,7 +46,17 @@ export default function Models() {
             )}
             {error && <p className="form-error" role="alert">{error}</p>}
             {!loading && !error && models.length === 0 && (
-                <p className="empty">No fine-tuned models yet. Train one to see it here.</p>
+                <EmptyState
+                    icon={Box}
+                    tint="success"
+                    title="No fine-tuned models yet"
+                    hint="Finish a training run and its fused model lands here, ready to compare."
+                    action={
+                        <Link className="btn btn-primary" to="/train">
+                            Go to Train
+                        </Link>
+                    }
+                />
             )}
 
             {!loading && !error && models.length > 0 && (

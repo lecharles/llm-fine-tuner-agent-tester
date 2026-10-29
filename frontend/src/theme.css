@@ -447,8 +447,7 @@ button {
   margin: 0;
 }
 
-.loading,
-.empty {
+.loading {
   color: var(--text-muted);
   font-size: 14px;
 }
@@ -2248,4 +2247,67 @@ label.btn:focus-within {
   color: var(--text-muted);
   font-size: 12.5px;
   line-height: 1.5;
+}
+
+/* ---------- S39: brand empty states ---------- */
+/* One treatment for every empty list: accent-tinted icon chip (same family as
+   .model-icon), plain title, one-line hint, optional CTA. All token-driven so
+   light/dark flip with zero per-theme overrides. */
+.empty-state {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin: 18px 0;
+  padding: 20px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-card);
+}
+
+.empty-state-icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.es-info .empty-state-icon {
+  background: var(--info-tint);
+  color: var(--info);
+}
+
+.es-success .empty-state-icon {
+  background: var(--success-tint);
+  color: var(--success);
+}
+
+.es-primary .empty-state-icon {
+  background: var(--primary-tint);
+  color: var(--primary);
+}
+
+.es-hosted .empty-state-icon {
+  background: var(--hosted-tint);
+  color: var(--hosted);
+}
+
+.empty-state-title {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.empty-state-hint {
+  margin: 3px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-muted);
+  max-width: 62ch;
+}
+
+.empty-state-action {
+  margin-top: 12px;
 }

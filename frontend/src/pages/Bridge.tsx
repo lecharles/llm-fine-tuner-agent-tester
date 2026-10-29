@@ -6,6 +6,7 @@ import { apiFetch } from "../api";
 import type { BridgeProbeResult, BridgePermission, BridgePermissionCreated } from "../types";
 import ConfirmDialog from "../components/ConfirmDialog";
 import VuMeter from "../components/VuMeter";
+import EmptyState from "../components/EmptyState";
 
 // S25 (issue #28) — the opt-in bridge. The web shell is the consent surface:
 // a Mac can only ever touch this account's hardware through one of these
@@ -235,8 +236,12 @@ export default function Bridge() {
             )}
 
             {!loading && perms.length === 0 && !error && (
-                <p className="empty">No devices paired yet. Nothing on the hosted side can reach
-                    your Mac until you grant it above.</p>
+                <EmptyState
+                    icon={Cable}
+                    tint="primary"
+                    title="No devices paired yet"
+                    hint="Nothing on the hosted side can reach your Mac until you grant a pairing above. Grants are scoped and revocable."
+                />
             )}
 
             {perms.map((p) => {

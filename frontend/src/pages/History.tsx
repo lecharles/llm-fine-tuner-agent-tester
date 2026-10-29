@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { Link } from "react-router-dom";
+import { History as HistoryIcon, X } from "lucide-react";
 import { apiFetch } from "../api";
 import { displayStatus } from "../statusText";
 import LossChart from "../components/LossChart";
 import VuMeter from "../components/VuMeter";
+import EmptyState from "../components/EmptyState";
 import type { LossPoint, TrainingRun, TrainingRunHistory } from "../types";
 
 // S36 (#36): run history 2 — the history page. The list comes from the S35
@@ -81,7 +83,17 @@ export default function History() {
                 <p className="hist-loading">Loading runs&hellip; <VuMeter bars={4} /></p>
             )}
             {!loading && !error && rows.length === 0 && (
-                <p className="empty">No training runs yet. Start one on the Train page.</p>
+                <EmptyState
+                    icon={HistoryIcon}
+                    tint="info"
+                    title="No training runs yet"
+                    hint="Every run you start lands here — pick one later to replay its loss curve and read the log."
+                    action={
+                        <Link className="btn btn-primary" to="/train">
+                            Start a run
+                        </Link>
+                    }
+                />
             )}
 
             {!loading && !error && rows.length > 0 && (

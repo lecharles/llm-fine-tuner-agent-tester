@@ -8,9 +8,14 @@ but is superseded by the shots below as they get captured.
 
 | File | Page | Captured | Source | Fresh? |
 |------|------|----------|--------|--------|
-| `docs/screenshots/00-login.png` | Sign in, VPS :8090 | 2026-09-29 | headless chromium, 1440×900 | ✅ fresh |
-| `docs/screenshots/01-signup.png` | Sign up, VPS :8090 | 2026-09-29 | headless chromium, 1440×900 | ✅ fresh |
+| `docs/screenshots/00-login.png` | Sign in, VPS :8090 | 2026-10-29 (S39 re-shoot) | headless chromium, 1440×900 | ✅ fresh |
+| `docs/screenshots/01-signup.png` | Sign up, VPS :8090 | 2026-10-29 (S39 re-shoot) | headless chromium, 1440×900 | ✅ fresh |
 | `screenshots/1..6-llm-tuner.png` | Sept-14 demo storyboard | 2026-09-14 | manual | ⚠️ stale — pre-dates `/welcome` (S4), live loss curve (S11), CSV/JSONL import (S12), compare model pickers + Ollama column (S13) |
+
+> S39 (10-25, brand pass) re-shot the two VPS-public pages against the current
+> build (shared `EmptyState` cards, unified icon system). The data-dependent
+> shots (2–10) still need a signed-in session on the Mac or seeded VPS account
+> per the original 09-29 pass notes.
 
 ## Shot list for the full pass (issue #16 acceptance)
 
