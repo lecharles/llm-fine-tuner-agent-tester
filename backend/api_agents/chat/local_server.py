@@ -1,7 +1,7 @@
 """On-demand mlx_lm.server management for the local compare columns.
 
 The compare view's two local columns expect mlx_lm.server to be listening on
-the ports baked into chat/compare.py: the user's fused model on 8081 and its
+the ports baked into api_agents/chat/compare.py: the user's fused model on 8081 and its
 untuned base on 8082. Nothing in the app ever started those processes, so
 local columns silently connection-refused. This module starts them the first
 time a chat turn needs them, waits for readiness, restarts them if the pinned
@@ -19,7 +19,7 @@ import urllib.request
 from pathlib import Path
 from urllib.parse import urlparse
 
-from chat.compare import FINE_TUNED_BASE_URL, VANILLA_BASE_URL
+from api_agents.chat.compare import FINE_TUNED_BASE_URL, VANILLA_BASE_URL
 from config import llmtuner_home
 
 # mlx_lm.server startup loads the weights: a 2+GB fused bf16 model can take a

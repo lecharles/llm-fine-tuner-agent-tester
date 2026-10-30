@@ -22,8 +22,8 @@ status_router = APIRouter(prefix="/api/generation", tags=["generation"])
 def get_generation_status(current_user: User = Depends(get_current_user)):
     """Which generation tiers are reachable right now. Booleans and reasons only,
     never key material. Powers the pre-flight warning on the dataset page."""
-    from generation.status import generation_status
-    return generation_status()
+    from api_agents import local_model_status
+    return local_model_status()
 
 
 @router.post(

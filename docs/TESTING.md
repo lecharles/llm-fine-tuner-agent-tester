@@ -192,25 +192,25 @@ and each command prints only the model reply, so they are safe to keep here.
 
 Import and SDK check (confirms openai is installed and the module imports):
 
-    pipenv run python -c "from chat.client import chat_completion; print('import ok')"
+    pipenv run python -c "from api_agents import chat_completion; print('import ok')"
 
 Expected: import ok
 
 OpenAI column, live (proves key, SDK, endpoint, and response parsing end to end):
 
-    pipenv run python -c "from chat.client import chat_completion; from config import settings; print(chat_completion('https://api.openai.com/v1', settings.openai_api_key, 'gpt-4o-mini', [{'role':'user','content':'Reply with exactly: pipeline works'}]))"
+    pipenv run python -c "from api_agents import chat_completion; from config import settings; print(chat_completion('https://api.openai.com/v1', settings.openai_api_key, 'gpt-4o-mini', [{'role':'user','content':'Reply with exactly: pipeline works'}]))"
 
 Expected: pipeline works
 
 Anthropic column, live, via the OpenAI-compat endpoint (same function, Anthropic base URL and a Claude model):
 
-    pipenv run python -c "from chat.client import chat_completion; from config import settings; print(chat_completion('https://api.anthropic.com/v1/', settings.anthropic_api_key, 'claude-opus-4-8', [{'role':'user','content':'Reply with exactly: pipeline works'}]))"
+    pipenv run python -c "from api_agents import chat_completion; from config import settings; print(chat_completion('https://api.anthropic.com/v1/', settings.anthropic_api_key, 'claude-opus-4-8', [{'role':'user','content':'Reply with exactly: pipeline works'}]))"
 
 Expected: the model echoes the exact instruction back. Note: the base URL needs the trailing
 slash, and the compat layer does not require max_tokens (the raw Anthropic API does), so
 chat_completion serves Anthropic unchanged.
 
-## Compare fan-out (chat/compare.py)
+## Compare fan-out (api_agents/chat/compare.py)
 
 fan_out sends one prompt to a list of Backend configs through chat_completion and returns a
 labeled Reply per column, isolating a failure to its own column. Two hosted columns for now;
@@ -218,7 +218,7 @@ the Llama columns append to the list later. Run from the backend/ folder.
 
 Two-way fan-out, live (both hosted columns answer the same prompt):
 
-    pipenv run python -c "from chat.compare import hosted_backends, fan_out; from pprint import pprint; pprint(fan_out(hosted_backends('gpt-4o-mini', 'claude-opus-4-8'), [{'role':'user','content':'In one word, what is the capital of France?'}]))"
+    pipenv run python -c "from api_agents import hosted_backends, fan_out; from pprint import pprint; pprint(fan_out(hosted_backends('gpt-4o-mini', 'claude-opus-4-8'), [{'role':'user','content':'In one word, what is the capital of France?'}]))"
 
 Expected: two Reply objects, label 'openai' and 'anthropic', each with content set and error None.
 A bad key or unreachable provider shows up as error on that one column, the other still returns.
@@ -240,7 +240,7 @@ a second terminal:
 
 With both servers up, fan one prompt to all four:
 
-    pipenv run python -c "from chat.compare import hosted_backends, local_backends, fan_out; from pprint import pprint; pprint(fan_out(local_backends('_training_runs/4/fused_model', 'mlx-community/Llama-3.2-1B-Instruct-bf16') + hosted_backends('gpt-4o-mini', 'claude-opus-4-8'), [{'role':'user','content':'In one word, what is the capital of France?'}]))"
+    pipenv run python -c "from api_agents import hosted_backends, local_backends, fan_out; from pprint import pprint; pprint(fan_out(local_backends('_training_runs/4/fused_model', 'mlx-community/Llama-3.2-1B-Instruct-bf16') + hosted_backends('gpt-4o-mini', 'claude-opus-4-8'), [{'role':'user','content':'In one word, what is the capital of France?'}]))"
 
 Expected: four Reply objects, labels fine_tuned, vanilla, openai, anthropic, each with content and
 error None. If a local column errors, that server tab is down or still loading; the other three

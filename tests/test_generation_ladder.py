@@ -1,6 +1,6 @@
 """Fallback-ladder tests for S9 (issue #12) with every provider faked.
 
-generation.client walks Anthropic -> OpenAI -> local Ollama. These tests pin
+api_agents.generation.client walks Anthropic -> OpenAI -> local Ollama. These tests pin
 the walking order, the account-error tier fast-fail, and the actionable errors
 for "nothing configured" and "everything failed". No network, no keys.
 """
@@ -9,8 +9,8 @@ import json
 
 import pytest
 
-import generation.client as gc
-from generation.client import ANTHROPIC_LADDER, OPENAI_LADDER, call_json_tool
+import api_agents.generation.client as gc
+from api_agents.generation.client import ANTHROPIC_LADDER, OPENAI_LADDER, call_json_tool
 
 
 class FakeResponse:

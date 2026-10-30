@@ -19,7 +19,7 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 
-from chat.client import chat_completion
+from api_agents.chat.client import chat_completion
 from config import settings
 
 # Fixed endpoints per column. Two hosted providers, plus the two local Llama

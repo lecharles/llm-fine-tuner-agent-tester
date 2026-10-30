@@ -13,7 +13,7 @@ from config import settings
 
 
 def _probe_anthropic() -> dict:
-    from generation.client import _get_anthropic_client
+    from api_agents.generation.client import _get_anthropic_client
 
     if _get_anthropic_client() is None:
         return {"ready": False, "reason": "no ANTHROPIC_API_KEY configured"}
@@ -21,7 +21,7 @@ def _probe_anthropic() -> dict:
 
 
 def _probe_openai() -> dict:
-    from generation.client import _get_openai_client
+    from api_agents.generation.client import _get_openai_client
 
     if _get_openai_client() is None:
         return {"ready": False, "reason": "no OPENAI_API_KEY configured"}
@@ -29,7 +29,7 @@ def _probe_openai() -> dict:
 
 
 def _probe_ollama() -> dict:
-    from generation.client import _ollama_local_models
+    from api_agents.generation.client import _ollama_local_models
 
     url = settings.ollama_base_url.rstrip("/") + "/api/version"
     try:

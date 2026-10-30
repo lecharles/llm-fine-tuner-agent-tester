@@ -13,8 +13,8 @@ import threading
 
 import pytest
 
-from chat import compare as compare_module
-from chat.compare import Backend, fan_out
+from api_agents.chat import compare as compare_module
+from api_agents.chat.compare import Backend, fan_out
 
 
 def _backend(label):

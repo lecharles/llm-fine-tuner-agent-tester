@@ -1,6 +1,6 @@
 """Local mlx_lm.server lifecycle tests for S9 (issue #12), fully faked.
 
-chat/local_server.py is about process bookkeeping: start once, reuse while the
+api_agents/chat/local_server.py is about process bookkeeping: start once, reuse while the
 pinned model is unchanged, restart when the model changes, trust a port someone
 else already serves, and reap children on exit. subprocess.Popen and the port
 probe are fakes, so these run in milliseconds on any OS.
@@ -8,7 +8,7 @@ probe are fakes, so these run in milliseconds on any OS.
 
 import pytest
 
-import chat.local_server as ls
+import api_agents.chat.local_server as ls
 
 
 class FakePopen:

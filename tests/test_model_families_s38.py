@@ -2,7 +2,7 @@
 
 Registry unit tests pin the S37 recipe data (phi-4 + gemma-3 + llama), the
 repo-key tag matching and the stable preference sort. The ladder fakes then
-prove `generation.client` walks installed Ollama models in registry order
+prove `api_agents.generation.client` walks installed Ollama models in registry order
 and that an explicit GENERATION_LOCAL_MODELS setting still overrides it.
 No network, no keys — same hermetic rules as the S9 suite.
 """
@@ -12,8 +12,8 @@ import json
 import pytest
 
 import config
-import generation.client as gc
-from generation.local_registry import (
+import api_agents.generation.client as gc
+from api_agents.generation.local_registry import (
     LOCAL_MODEL_REGISTRY,
     LocalModelRecipe,
     ordered_tags,

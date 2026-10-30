@@ -14,8 +14,14 @@ from schemas.chat import (
     ChatTurnOut,
 )
 from core.security import get_current_user
-from chat.compare import hosted_backends, local_backends, ollama_backend, fan_out, installed_ollama_models
-from chat.local_server import ensure_local_servers
+from api_agents import (
+    hosted_backends,
+    local_backends,
+    ollama_backend,
+    fan_out,
+    installed_ollama_models,
+)
+from api_agents.chat.local_server import ensure_local_servers
 
 router = APIRouter(prefix="/api/chat-sessions", tags=["chat"])
 

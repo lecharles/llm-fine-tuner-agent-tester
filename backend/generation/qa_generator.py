@@ -6,7 +6,7 @@ on our side by normalizing the question text. If a call returns fewer unique pai
 top up with more calls, up to a cap.
 """
 
-from generation.client import call_json_tool
+from api_agents import call_json_tool
 
 TOOL_NAME = "emit_qa_pairs"
 MAX_ATTEMPTS = 3

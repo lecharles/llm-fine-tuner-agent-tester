@@ -23,7 +23,7 @@ from anthropic import Anthropic
 from openai import OpenAI
 
 from config import settings
-from generation.local_registry import prefer_order
+from api_agents.generation.local_registry import prefer_order
 
 # Provider ladder, tried in order. The first tier that returns a usable tool
 # call wins. Splitting by provider lets us give each its own tool-forcing shape
