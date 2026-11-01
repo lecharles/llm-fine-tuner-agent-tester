@@ -15,10 +15,10 @@ async def lifespan(_app: FastAPI):
 
 
 # S16 (#18): version is surfaced here (FastAPI/openapi.json -> /docs) and in
-# the CLI (`llmtuner --version`); keep in lockstep with the v0.1.0 git tag.
+# the CLI (`llmtuner --version`); keep in lockstep with the v0.1.1 git tag.
 app = FastAPI(
     title="LLM Fine Tuner & Agent Tester API",
-    version="0.1.0",
+    version="0.1.1",
     lifespan=lifespan,
 )
 
