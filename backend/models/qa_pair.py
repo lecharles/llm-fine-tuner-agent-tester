@@ -9,7 +9,7 @@ class QAPair(Base):
     __tablename__ = "qa_pairs"
 
     id = Column(Integer, primary_key=True, index=True)
-    dataset_id = Column(Integer, ForeignKey("datasets.id"), nullable=False)
+    dataset_id = Column(Integer, ForeignKey("datasets.id"), nullable=False, index=True)  # S44
     question = Column(Text, nullable=False)
     answer = Column(Text, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.current_timestamp())

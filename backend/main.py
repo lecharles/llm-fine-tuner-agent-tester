@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from routers import auth, dataset, qa_pair, training_run, generation, chat, fine_tuned_model, status, bridge, library
 from static_serve import mount_spa
 from core import bind_guard
+from core import security_headers
 
 
 @asynccontextmanager
@@ -22,6 +23,10 @@ app = FastAPI(
 )
 
 bind_guard.register(app)
+
+# S44: CSP + baseline security headers on every http response. Added after
+# bind_guard so it is the OUTER layer and also decorates the guard's 403s.
+security_headers.register(app)
 
 app.include_router(auth.router)
 app.include_router(status.router)

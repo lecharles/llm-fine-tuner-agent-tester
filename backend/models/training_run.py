@@ -9,8 +9,10 @@ class TrainingRun(Base):
     __tablename__ = "training_runs"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    dataset_id = Column(Integer, ForeignKey("datasets.id"), nullable=False)
+    # S44: the runs list/history query filters by user (newest first) and the
+    # detail paths filter by dataset — both were unindexed scans.
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    dataset_id = Column(Integer, ForeignKey("datasets.id"), nullable=False, index=True)
     base_model = Column(String, nullable=False)
     method = Column(String, nullable=False, default="qlora")
     iters = Column(Integer, nullable=False, default=300)

@@ -9,7 +9,8 @@ class FineTunedModel(Base):
     __tablename__ = "fine_tuned_models"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    # S44: indexed for the models list + library queries (owner rows; public rows).
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     training_run_id = Column(Integer, ForeignKey("training_runs.id"), unique=True, nullable=False)
     name = Column(String, nullable=False)
     base_model = Column(String, nullable=False)
@@ -25,7 +26,7 @@ class FineTunedModel(Base):
     status = Column(String, nullable=False, default="training")
     # S31: public models appear in the shared library and are readable by
     # anyone signed in. Training, chat, and deletion stay owner-only.
-    visibility = Column(String, nullable=False, default="private", server_default="private")
+    visibility = Column(String, nullable=False, default="private", server_default="private", index=True)  # S44
     created_at = Column(DateTime(timezone=True), server_default=func.current_timestamp())
 
     user = relationship("User", back_populates="fine_tuned_models")

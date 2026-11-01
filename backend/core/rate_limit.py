@@ -37,6 +37,11 @@ class SlidingWindowLimiter:
             window.append(now)
             return True, 0.0
 
+    def clear(self, key: str) -> None:
+        """Forget a key's window (S44: a successful login resets its counter)."""
+        with self._lock:
+            self._hits.pop(key, None)
+
     def reset(self) -> None:
         with self._lock:
             self._hits.clear()
@@ -44,3 +49,9 @@ class SlidingWindowLimiter:
 
 # Shared limiter for POST /api/auth/signup. Keyed by client IP.
 signup_limiter = SlidingWindowLimiter()
+
+# S44: shared limiter for POST /api/auth/login. Keyed by client IP + lowercased
+# email. Unlike signup, callers only burn the window on FAILED attempts (see
+# auth.login), so a correct password never queues behind an attacker hammering
+# the same pair; a success clears the key outright.
+login_limiter = SlidingWindowLimiter()

@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     # it. See docs/CREDENTIALS.md.
     signup_rate_limit_per_hour: int = 1
 
+    # S44: failed logins allowed per (client IP, email) per rolling minute
+    # before a 429. Successful logins never burn the window and clear it.
+    # 0 disables. Generous by design — this throttles guessing, not typos.
+    login_failed_limit_per_minute: int = 10
+
     def resolved_database_url(self) -> str:
         return self.database_url or f"sqlite:///{llmtuner_home() / 'app.db'}"
 

@@ -7,7 +7,7 @@ from database import get_db
 from models.user import User
 from schemas.user import UserCreate, UserOut
 from schemas.token import Token
-from core.rate_limit import signup_limiter
+from core.rate_limit import signup_limiter, login_limiter
 from core.security import hash_password, verify_password, create_access_token
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -54,13 +54,33 @@ def signup(user_in: UserCreate, request: Request, db: Session = Depends(get_db))
 
 
 @router.post("/login", response_model=Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login(
+    request: Request,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
+):
+    # S44: credential-stuffing pass. Only FAILED attempts burn the window, so
+    # a legitimate user is never locked out by someone else hammering the same
+    # (IP, email); a success clears the key. Same no-XFF-trust rationale as
+    # signup above — this box is not behind a proxy.
+    peer = request.client.host if request.client else "unknown-peer"
+    key = f"{peer}|{(form_data.username or '').lower()}"
     user = db.query(User).filter(User.email == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
+        allowed, retry_after = login_limiter.allow(
+            key, settings.login_failed_limit_per_minute, 60.0
+        )
+        if not allowed:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too many failed login attempts. Try again later.",
+                headers={"Retry-After": str(int(retry_after))},
+            )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
         )
+    login_limiter.clear(key)
     access_token = create_access_token(subject=str(user.id))
     return {"access_token": access_token, "token_type": "bearer"}
 

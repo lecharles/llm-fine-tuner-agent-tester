@@ -9,7 +9,7 @@ class ChatMessage(Base):
     __tablename__ = "chat_messages"
 
     id = Column(Integer, primary_key=True, index=True)
-    chat_session_id = Column(Integer, ForeignKey("chat_sessions.id"), nullable=False)
+    chat_session_id = Column(Integer, ForeignKey("chat_sessions.id"), nullable=False, index=True)  # S44
     role = Column(String, nullable=False)
     model_label = Column(String)
     content = Column(Text, nullable=False)

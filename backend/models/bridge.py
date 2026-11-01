@@ -18,7 +18,7 @@ class BridgePermission(Base):
     __tablename__ = "bridge_permissions"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)  # S44
     name = Column(String(60), nullable=False)
     scopes = Column(Text, nullable=False, default="[]")
     token_hash = Column(String(64), nullable=False, unique=True, index=True)

@@ -9,8 +9,9 @@ class ChatSession(Base):
     __tablename__ = "chat_sessions"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    fine_tuned_model_id = Column(Integer, ForeignKey("fine_tuned_models.id"), nullable=False)
+    # S44: sessions are always listed per user (and per model in the compare UI).
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    fine_tuned_model_id = Column(Integer, ForeignKey("fine_tuned_models.id"), nullable=False, index=True)
     title = Column(String)
     compare_model_a = Column(String)
     compare_model_b = Column(String)
