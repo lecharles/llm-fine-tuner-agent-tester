@@ -50,6 +50,13 @@ class SlidingWindowLimiter:
 # Shared limiter for POST /api/auth/signup. Keyed by client IP.
 signup_limiter = SlidingWindowLimiter()
 
+# S49: shared limiter for POST /api/bridge/pair (the CLI pastes a pairing
+# token here before dialing the WS hub). This endpoint has no user JWT — the
+# token IS the consent proof — so anonymous token-guessing must be throttled.
+# Callers only burn the window on FAILED redemptions (a successful pair clears
+# the key), same shape as the login limiter above.
+pair_limiter = SlidingWindowLimiter()
+
 # S44: shared limiter for POST /api/auth/login. Keyed by client IP + lowercased
 # email. Unlike signup, callers only burn the window on FAILED attempts (see
 # auth.login), so a correct password never queues behind an attacker hammering

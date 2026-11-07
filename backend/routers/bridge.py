@@ -8,6 +8,8 @@ through the REST endpoints below. Nothing in this module opens a device path.
 
 REST surface (JWT-authenticated, per-user rows):
     POST /api/bridge/permissions              consent act; token returned once
+    POST /api/bridge/pair                     S49 redemption pre-flight (token
+                                              in the body, no JWT, throttled)
     GET  /api/bridge/permissions              list mine (+ online flag)
     POST /api/bridge/permissions/{id}/revoke  revoke *and* drop the live socket
     POST /api/bridge/permissions/{id}/probe   scoped `status` round-trip
@@ -28,17 +30,19 @@ core/bridge.py for the multi-worker caveat.
 import json
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
+from fastapi import (APIRouter, Depends, HTTPException, Request, WebSocket,
+                     WebSocketDisconnect, status)
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from core import bridge
+from core.rate_limit import pair_limiter
 from core.security import get_current_user
 from database import get_db
 from models.bridge import BridgePermission
 from models.device_artifact import DeviceArtifact
 from models.user import User
-from schemas.bridge import ArtifactsFrame, BridgePermissionCreate
+from schemas.bridge import ArtifactsFrame, BridgePairRequest, BridgePermissionCreate
 
 MAX_ACTIVE_PERMISSIONS = 20
 
@@ -46,6 +50,12 @@ router = APIRouter(prefix="/api/bridge", tags=["bridge"])
 ws_router = APIRouter(tags=["bridge"])
 
 PROBE_TIMEOUT_S = 20.0
+
+# S49: anonymous redemption attempts per peer before the window fills.
+# A 32-char urlsafe token is not guessable at 12/min, and a legitimate
+# user never redeems more than a handful per session.
+PAIR_ATTEMPTS_PER_WINDOW = 12
+PAIR_WINDOW_S = 60.0
 
 
 def _serialize(perm: BridgePermission) -> dict:
@@ -182,6 +192,62 @@ async def probe_permission(
         "status": finished.status,
         "data": finished.result,
         "detail": finished.detail,
+    }
+
+
+# ── S49: the redemption check for `llmtuner companion --pair` ──────────────
+#
+# The web shell already mints tokens (that is the S25 consent act). This
+# endpoint is the CLI's pre-flight: paste the token, POST it here (body only,
+# never the URL), get back *what you are about to grant the Mac* — name,
+# scopes, online flag — or a crisp 401 instead of a silent reconnect loop.
+# No user JWT: the pairing token is the consent proof, exactly like the WS
+# hello frame. Which means it is anonymous by design, so failed redemptions
+# burn a sliding window per peer and the answer never distinguishes
+# "unknown token" from "revoked token".
+
+@router.post("/pair")
+def redeem_pairing_token(
+    body: BridgePairRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    peer = request.client.host if request.client else "unknown-peer"
+    key = f"pair:{peer}"
+    allowed, retry_after = pair_limiter.allow(
+        key, PAIR_ATTEMPTS_PER_WINDOW, PAIR_WINDOW_S)
+    if not allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="too many failed pairing attempts — wait before retrying",
+            headers={"Retry-After": str(int(retry_after))},
+        )
+
+    perm = (
+        db.query(BridgePermission)
+        .filter(BridgePermission.token_hash == bridge.hash_token(body.token))
+        .first()
+    )
+    if perm is None or perm.status != "active":
+        # Same wording as the hub's hello rejection; no oracle here either.
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="pairing token rejected — no active bridge permission matches",
+        )
+    pair_limiter.clear(key)  # success frees the honest user from their past typos
+
+    try:
+        scopes = json.loads(perm.scopes or "[]")
+    except json.JSONDecodeError:
+        scopes = []
+    return {
+        "paired": True,
+        "permission_id": perm.id,
+        "name": perm.name,
+        "granted_scopes": scopes,
+        "protocol": bridge.PROTOCOL,
+        "ws_path": "/companion/ws",
+        "already_online": perm.id in bridge.SESSIONS,
     }
 
 

@@ -6,6 +6,8 @@ Usage:
     python -m llmtuner app [--port 8000] [--size 1200x800] [--position 100x100]
     python -m llmtuner bundle [--out ~/Applications] [--port 8000]
     python -m llmtuner menubar [--port 8000]   # macOS only; needs `pip install rumps`
+    python -m llmtuner companion --pair --hub https://HOST   # S49: paste the Bridge-page token
+    python -m llmtuner companion [--status]                   # dial out with the saved pair
 """
 
 import argparse
@@ -437,6 +439,23 @@ def main():
     )
     menubar_parser.add_argument("--port", type=int, default=8000, help="Server port to watch (default: 8000)")
 
+    # companion command (S49 — Phase 6 bridge pairing from the terminal)
+    comp_parser = subparsers.add_parser(
+        "companion",
+        help="Pair this Mac with the hosted hub (paste the web-shell token) and run the companion",
+    )
+    comp_parser.add_argument(
+        "--pair", action="store_true",
+        help="Paste the one-time pairing token from the Bridge page and save it (~/.llmtuner/pair.json)",
+    )
+    comp_parser.add_argument("--hub", default=os.environ.get("LLMTUNER_HUB", ""),
+                             help="Hub URL, e.g. https://host or wss://host/companion/ws (env LLMTUNER_HUB)")
+    comp_parser.add_argument("--name", default="", help="Companion display name (default: saved/paired name)")
+    comp_parser.add_argument("--status", action="store_true", help="Show the saved pairing (token masked) and exit")
+    comp_parser.add_argument("--no-run", action="store_true", help="With --pair: save only, don't dial out yet")
+    comp_parser.add_argument("--no-start-backend", action="store_true",
+                             help="Companion must not auto-start the local uvicorn (assume `llmtuner up` ran)")
+
     args = parser.parse_args()
 
     if args.command == "up":
@@ -459,6 +478,14 @@ def main():
         from llmtuner.menubar import menubar as run_menubar
 
         sys.exit(run_menubar(port=args.port))
+    elif args.command == "companion":
+        from llmtuner.companion import companion_command
+
+        sys.exit(companion_command(
+            pair_flag=args.pair, hub=args.hub, name=args.name,
+            do_status=args.status, no_run=args.no_run,
+            no_start_backend=args.no_start_backend,
+        ))
     else:
         parser.print_help()
         sys.exit(1)

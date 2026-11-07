@@ -52,6 +52,26 @@ class ArtifactsFrame(BaseModel):
         return v
 
 
+class BridgePairRequest(BaseModel):
+    """POST /api/bridge/pair body (S49, the CLI redemption half of the bridge).
+
+    `llmtuner companion --pair` pastes the one-time token here *before* it
+    dials the WS hub, so the user gets a clear one-shot error instead of a
+    silent reconnect loop. The token travels in the body only — never in a
+    URL — matching the hello-frame design; only its sha256 exists server-side.
+    """
+
+    token: str = Field(min_length=6, max_length=200)
+
+    @field_validator("token")
+    @classmethod
+    def shaped_like_a_token(cls, v: str) -> str:
+        v = v.strip()
+        if not v.startswith("br1-"):
+            raise ValueError("pairing tokens start with 'br1-' (copy the whole token from the Bridge page)")
+        return v
+
+
 class BridgePermissionCreate(BaseModel):
     """POST /api/bridge/permissions body (S25, issue #28).
 

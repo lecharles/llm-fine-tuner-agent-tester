@@ -27,6 +27,11 @@ function hubUrl(): string {
     return `${proto}://${window.location.host}/companion/ws`;
 }
 
+// S49: the CLI wants the plain https base; it derives /companion/ws itself.
+function hubBase(): string {
+    return `${window.location.protocol}//${window.location.host}`;
+}
+
 function fmtSeen(iso: string | null): string {
     if (!iso) return "never";
     const t = new Date(iso).getTime();
@@ -47,6 +52,7 @@ export default function Bridge() {
     const [busy, setBusy] = useState(false);
     const [created, setCreated] = useState<BridgePermissionCreated | null>(null);
     const [copied, setCopied] = useState(false);
+    const [cmdCopied, setCmdCopied] = useState(false);
 
     // Per-row actions.
     const [probing, setProbing] = useState<number | null>(null);
@@ -103,6 +109,18 @@ export default function Bridge() {
             setTimeout(() => setCopied(false), 1500);
         } catch {
             /* clipboard blocked (http + no permission): the code is on screen anyway */
+        }
+    }
+
+    // S49: the pair command carries no secret — the token is pasted at the
+    // CLI prompt — so copying it to the clipboard is safe.
+    async function copyCommand() {
+        try {
+            await navigator.clipboard.writeText(`llmtuner companion --pair --hub ${hubBase()}`);
+            setCmdCopied(true);
+            setTimeout(() => setCmdCopied(false), 1500);
+        } catch {
+            /* same story: it is printed on the page */
         }
     }
 
@@ -221,9 +239,22 @@ export default function Bridge() {
                         </span>
                     </p>
                     <p className="run-explainer-item">
-                        <strong>Run on the Mac</strong>
+                        <strong>Run on the Mac — S49 pairing flow</strong>
                         <p>
-                            In the llm-fine-tuner checkout (or <code>~/.llmtuner</code>):<br />
+                            In the llmtuner checkout (or <code>~/.llmtuner</code>), the CLI asks for the
+                            token — paste it at the prompt, it is never echoed or stored in shell history:
+                        </p>
+                        <p>
+                            <code>llmtuner companion --pair --hub {hubBase()}</code>
+                            <button className="btn btn-ghost btn-sm" onClick={copyCommand} aria-label="Copy pair command">
+                                <Copy size={13} /> {cmdCopied ? "Copied" : "Copy"}
+                            </button>
+                        </p>
+                        <p>
+                            Then dial out whenever you like with <code>llmtuner companion</code>.
+                            Raw fallback (no CLI installed):
+                        </p>
+                        <p>
                             <code>LLMTUNER_PAIRING_TOKEN=*** python companion/companion.py --hub {hubUrl()} --name {created.name}</code>
                         </p>
                     </p>
