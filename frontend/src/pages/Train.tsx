@@ -1,9 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { Play, HelpCircle, SlidersHorizontal } from "lucide-react";
+import { Play, HelpCircle, SlidersHorizontal, Cable } from "lucide-react";
 import { apiFetch } from "../api";
 import { displayStatus } from "../statusText";
 import LossChart from "../components/LossChart";
-import type { Dataset, ErrorExplanation, LossPoint, TrainingRun } from "../types";
+import type {
+    BridgePermission,
+    BridgeTrainAccepted,
+    BridgeTrainJob,
+    Dataset,
+    ErrorExplanation,
+    LossPoint,
+    TrainingRun,
+} from "../types";
 
 const TERMINAL = ["completed", "failed"];
 
@@ -53,6 +61,14 @@ export default function Train() {
     const [starting, setStarting] = useState(false);
     const [attachId, setAttachId] = useState("");
 
+    // S50: the train handoff — "Train on this Mac" button + live job card.
+    const [macPerms, setMacPerms] = useState<BridgePermission[]>([]);
+    const [macPermId, setMacPermId] = useState<number | "">("");
+    const [macJob, setMacJob] = useState<BridgeTrainJob | null>(null);
+    const [macStarting, setMacStarting] = useState(false);
+    const macJobIdRef = useRef<string | null>(null);
+    const macPollRef = useRef<number | null>(null);
+
     // A ref holds the interval id across renders without triggering re-renders.
     const pollRef = useRef<number | null>(null);
 
@@ -63,10 +79,27 @@ export default function Train() {
             .catch((err) => setError(err instanceof Error ? err.message : "Failed to load datasets"));
     }, []);
 
+    // S50: load online bridge permissions with train scope for the Mac picker.
+    useEffect(() => {
+        apiFetch<BridgePermission[]>("/bridge/permissions")
+            .then((perms) => {
+                const online = perms.filter(
+                    (p) => p.status === "active" && p.online && p.scopes.includes("train")
+                );
+                setMacPerms(online);
+                if (online.length > 0 && macPermId === "") {
+                    setMacPermId(online[0].id);
+                }
+            })
+            .catch(() => undefined); // bridge is optional; swallow
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     // Cleanup: if the component unmounts mid-poll, stop the interval.
     useEffect(() => {
         return () => {
             if (pollRef.current !== null) clearInterval(pollRef.current);
+            if (macPollRef.current !== null) clearInterval(macPollRef.current);
         };
     }, []);
 
@@ -165,6 +198,72 @@ export default function Train() {
         startPolling(id);
     }
 
+    // S50: the Mac train handoff. POST the job, then poll the hub for the
+    // streamed events + loss curve until the companion reports a terminal
+    // result (done/failed) or the user navigates away.
+    function stopMacPolling() {
+        if (macPollRef.current !== null) {
+            clearInterval(macPollRef.current);
+            macPollRef.current = null;
+        }
+    }
+
+    function pollMacJob(jobId: string) {
+        apiFetch<BridgeTrainJob>(`/bridge/jobs/${jobId}`)
+            .then((job) => {
+                setMacJob(job);
+                if (job.status === "done" || job.status === "failed") {
+                    stopMacPolling();
+                }
+            })
+            .catch(() => undefined);
+    }
+
+    function startMacPolling(jobId: string) {
+        stopMacPolling();
+        macJobIdRef.current = jobId;
+        pollMacJob(jobId);
+        macPollRef.current = window.setInterval(() => pollMacJob(jobId), 4000);
+    }
+
+    async function handleMacTrain(e: React.FormEvent) {
+        e.preventDefault();
+        if (datasetId === "" || macPermId === "") return;
+        setMacStarting(true);
+        setError(null);
+        setMacJob(null);
+        let learningRate: number | null = null;
+        if (lrText.trim() !== "") {
+            const v = Number(lrText);
+            if (!Number.isFinite(v) || v <= 0 || v > 1) {
+                setError("Learning rate must be a number between 0 and 1 (e.g. 0.00002), or leave it blank.");
+                setMacStarting(false);
+                return;
+            }
+            learningRate = v;
+        }
+        try {
+            const accepted = await apiFetch<BridgeTrainAccepted>(
+                `/bridge/permissions/${macPermId}/train`,
+                {
+                    method: "POST",
+                    body: {
+                        dataset_id: datasetId,
+                        iters,
+                        lora_rank: loraRank,
+                        lora_alpha: loraAlpha,
+                        ...(learningRate !== null ? { learning_rate: learningRate } : {}),
+                    },
+                }
+            );
+            startMacPolling(accepted.job_id);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to queue the Mac job");
+        } finally {
+            setMacStarting(false);
+        }
+    }
+
     return (
         <div className="page">
             <div className="page-eyebrow" style={{ color: "var(--warning)" }}>Fine-tune</div>
@@ -257,6 +356,32 @@ export default function Train() {
                     <button type="submit" className="btn btn-primary" disabled={starting || datasetId === ""}>
                         <Play size={16} /> {starting ? "Starting…" : "Start training"}
                     </button>
+                    {/* S50: the train handoff — only shown when a Mac is online with train scope. */}
+                    {macPerms.length > 0 && (
+                        <>
+                            {macPerms.length > 1 && (
+                                <select
+                                    className="select"
+                                    value={macPermId}
+                                    onChange={(e) => setMacPermId(Number(e.target.value))}
+                                    style={{ maxWidth: 180 }}
+                                >
+                                    {macPerms.map((p) => (
+                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                    ))}
+                                </select>
+                            )}
+                            <button
+                                type="button"
+                                className="btn btn-ghost"
+                                disabled={macStarting || datasetId === "" || macPermId === ""}
+                                onClick={handleMacTrain}
+                                title="Queue this training on the paired Mac"
+                            >
+                                <Cable size={16} /> {macStarting ? "Queueing…" : "Train on this Mac"}
+                            </button>
+                        </>
+                    )}
                 </div>
 
                 {/* S34 (#35): advanced hyperparameters, closed by default so the
@@ -411,6 +536,45 @@ export default function Train() {
                     )}
                     {run.completed_at && (
                         <div className="run-meta">Completed {new Date(run.completed_at).toLocaleString()}</div>
+                    )}
+                </div>
+            )}
+
+            {/* S50: the Mac train job card — live status + streamed loss curve. */}
+            {macJob && (
+                <div className="card run-card" style={{ marginTop: 12 }}>
+                    <div className="run-head">
+                        <span className="run-id">
+                            <Cable size={14} style={{ verticalAlign: -2, marginRight: 4 }} />
+                            Mac job · {macJob.summary}
+                        </span>
+                        <span className={`badge ${
+                            macJob.status === "done" ? "badge-success" :
+                            macJob.status === "failed" ? "badge-danger" :
+                            "badge-warning"
+                        }`}>
+                            {(macJob.status === "awaiting_result" || macJob.status === "sent") && <span className="pulse-dot" />}
+                            {macJob.status === "done" ? "completed" : macJob.status === "failed" ? "failed" : "running"}
+                        </span>
+                    </div>
+                    <div className="run-meta">
+                        {macJob.elapsed_s}s elapsed · {macJob.online ? "companion online" : "companion offline"}
+                    </div>
+                    {macJob.events.length > 0 && (
+                        <div className="run-meta" style={{ marginTop: 6 }}>
+                            {macJob.events[macJob.events.length - 1].stage}: {macJob.events[macJob.events.length - 1].detail}
+                        </div>
+                    )}
+                    {macJob.losses.length > 0 && (
+                        <LossChart points={macJob.losses} />
+                    )}
+                    {macJob.status === "done" && macJob.result && (
+                        <div className="run-explainer-fix" style={{ marginTop: 8 }}>
+                            Adapter ready on device · run #{String(macJob.result.run_id ?? "?")}
+                        </div>
+                    )}
+                    {macJob.status === "failed" && macJob.detail && (
+                        <pre className="run-error" style={{ marginTop: 8 }}>{macJob.detail}</pre>
                     )}
                 </div>
             )}

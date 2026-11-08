@@ -51,6 +51,7 @@ OLLAMA_DEFAULT = "http://127.0.0.1:11434"
 TERMINAL_STATUSES = {"completed", "failed"}
 POLL_DEFAULT = 5.0
 TRAIN_DEADLINE_S = 2 * 60 * 60  # two hours is plenty for a 1B LoRA run
+LOSS_CHUNK_POINTS = 80  # S50: loss frames are bounded so the 1 MiB ws cap is never at risk
 
 
 def log(msg: str) -> None:
@@ -274,8 +275,12 @@ class Companion:
     async def _result(self, ws, job_id: str, ok: bool, data: dict) -> None:
         await self._send(ws, {"type": "result", "id": job_id, "ok": ok, "data": data})
 
-    async def _event(self, ws, job_id: str, stage: str, detail: str = "") -> None:
-        await self._send(ws, {"type": "event", "id": job_id, "stage": stage, "detail": detail[:500]})
+    async def _event(self, ws, job_id: str, stage: str, detail: str = "",
+                     data: dict | None = None) -> None:
+        frame: dict = {"type": "event", "id": job_id, "stage": stage, "detail": detail[:500]}
+        if data:
+            frame["data"] = data
+        await self._send(ws, frame)
 
     async def _handle_job(self, ws, msg: dict) -> None:
         job_id, kind = str(msg.get("id", "?")), str(msg.get("kind", ""))
@@ -300,9 +305,27 @@ class Companion:
                            {"capabilities": caps, "api": self.api, "backend_up": up})
 
     async def job_train(self, ws, job_id: str, payload: dict) -> None:
+        """S50: the train handoff. Two input shapes:
+          - legacy: payload.dataset_id (int) — the local DB already has the dataset.
+          - bridge handoff: payload.hosted_dataset = {name, pairs:[{question,answer}]}
+            — the companion materializes it in the local DB first, then trains.
+        Hyperparameters ride through unchanged. Loss points stream back to the
+        hub in bounded chunks via `event` frames with `data.points`."""
+        # Materialize a hosted dataset if the hub shipped one.
+        hosted = payload.get("hosted_dataset")
         dataset_id = payload.get("dataset_id")
+        if isinstance(hosted, dict) and hosted.get("pairs"):
+            await self._event(ws, job_id, "materializing",
+                              f"{len(hosted['pairs'])} QA pairs from the hub")
+            local_id, detail = await asyncio.to_thread(
+                self._local_dataset_from_hosted, hosted)
+            if local_id is None:
+                await self._result(ws, job_id, False, {"detail": detail})
+                return
+            dataset_id = local_id
         if not isinstance(dataset_id, int) or dataset_id < 1:
-            await self._result(ws, job_id, False, {"detail": "payload.dataset_id (int) required"})
+            await self._result(ws, job_id, False, {
+                "detail": "payload.dataset_id (int) or hosted_dataset (web train handoff) required"})
             return
         iters = payload.get("iters", 300)
         try:
@@ -314,10 +337,26 @@ class Companion:
                                {"detail": f"local backend not reachable at {self.api} "
                                           "and auto-start failed (try `llmtuner up`)"})
             return
-        await self._event(ws, job_id, "submitting", f"dataset {dataset_id}, {iters} iters")
+
+        # Build the run body. The local API accepts the S33 hyperparameter
+        # fields; forward them only when the hub payload carried them, so the
+        # legacy direct-call path still works unchanged.
+        run_body: dict = {"dataset_id": dataset_id, "iters": iters}
+        for key in ("lora_rank", "lora_alpha"):
+            v = payload.get(key)
+            if isinstance(v, int) and v >= 1:
+                run_body[key] = v
+        lr = payload.get("learning_rate")
+        if isinstance(lr, (int, float)) and 0 < float(lr) <= 1:
+            run_body["learning_rate"] = float(lr)
+        base = payload.get("base_model")
+        if isinstance(base, str) and base.strip():
+            run_body["base_model"] = base.strip()
+
+        await self._event(ws, job_id, "submitting",
+                          f"dataset {dataset_id}, {iters} iters")
         code, created = await asyncio.to_thread(
-            http_json, "POST", f"{self.api}/api/training-runs",
-            {"dataset_id": dataset_id, "iters": iters})
+            http_json, "POST", f"{self.api}/api/training-runs", run_body)
         if code != 201 or not isinstance(created, dict):
             detail = created.get("detail", str(created)) if isinstance(created, dict) else str(created)
             await self._result(ws, job_id, False,
@@ -328,6 +367,7 @@ class Companion:
         deadline = loop.time() + self.deadline_s
         status = created.get("status", "queued")
         run: dict = created
+        sent_losses = 0
         while status not in TERMINAL_STATUSES:
             if loop.time() > deadline:
                 await self._result(ws, job_id, False,
@@ -343,8 +383,19 @@ class Companion:
             status = run.get("status", status)
             _, losses = await asyncio.to_thread(
                 http_json, "GET", f"{self.api}/api/training-runs/{run_id}/losses", None, 10.0)
-            n_loss = len(losses) if isinstance(losses, list) else 0
-            await self._event(ws, job_id, status, f"run {run_id} · {n_loss} loss points")
+            if isinstance(losses, list) and len(losses) > sent_losses:
+                # Stream only the NEW points since the last poll, in chunks
+                # small enough to fit comfortably under the companion's 1 MiB
+                # inbound cap even on a giant burst.
+                new_points = losses[sent_losses:]
+                for i in range(0, len(new_points), LOSS_CHUNK_POINTS):
+                    chunk = new_points[i:i + LOSS_CHUNK_POINTS]
+                    await self._event(ws, job_id, "loss",
+                                      f"{len(chunk)} new points",
+                                      {"points": chunk})
+                sent_losses = len(losses)
+            await self._event(ws, job_id, status,
+                              f"run {run_id} · {len(losses) if isinstance(losses, list) else 0} loss points")
         if status == "completed":
             await self._result(ws, job_id, True,
                                {"run_id": run_id, "status": status,
@@ -354,6 +405,30 @@ class Companion:
             await self._result(ws, job_id, False,
                                {"run_id": run_id, "status": status,
                                 "detail": str(run.get("error_message") or "failed")[:500]})
+
+    def _local_dataset_from_hosted(self, hosted: dict) -> tuple[int | None, str]:
+        """S50: write the hub's dataset into the local DB so the local
+        trainer can see it. Sync helper (runs in a thread). Returns
+        (dataset_id, detail) — detail is empty on success."""
+        name = str(hosted.get("name") or "bridge dataset")[:100]
+        pairs = hosted.get("pairs") or []
+        code, created = http_json(
+            "POST", f"{self.api}/api/datasets",
+            {"name": name, "source": "bridge"})
+        if code != 201 or not isinstance(created, dict) or "id" not in created:
+            detail = created.get("detail", str(created)) if isinstance(created, dict) else str(created)
+            return None, f"local dataset create failed (HTTP {code}): {detail}"[:500]
+        dataset_id = created["id"]
+        for i, pair in enumerate(pairs):
+            q = str(pair.get("question", ""))[:4000]
+            a = str(pair.get("answer", ""))[:4000]
+            code, out = http_json(
+                "POST", f"{self.api}/api/datasets/{dataset_id}/qa-pairs",
+                {"question": q, "answer": a})
+            if code != 201:
+                detail = out.get("detail", str(out)) if isinstance(out, dict) else str(out)
+                return None, f"pair {i + 1}/{len(pairs)} rejected (HTTP {code}): {detail}"[:500]
+        return dataset_id, ""
 
     async def job_fuse(self, ws, job_id: str, payload: dict) -> None:
         run_id = payload.get("run_id")
@@ -432,7 +507,9 @@ async def self_test() -> int:
     import websockets
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-    state = {"runs_seen": 0, "get_count": 0}
+    state = {"runs_seen": 0, "get_count": 0,
+             "datasets_created": 0, "pairs_seen": 0,
+             "run_bodies": []}
 
     class FakeAPI(BaseHTTPRequestHandler):
         def _send(self, code: int, obj) -> None:
@@ -446,10 +523,10 @@ async def self_test() -> int:
             if self.path == "/health":
                 self._send(200, {"status": "ok"})
             elif self.path.startswith("/api/training-runs/") and self.path.endswith("/losses"):
-                self._send(200, [{"it": 1, "loss": 2.0}])
+                self._send(200, [{"step": 1, "loss": 2.0}, {"step": 2, "loss": 1.5}])
             elif self.path.startswith("/api/training-runs/"):
                 state["get_count"] += 1
-                status = "running" if state["get_count"] == 1 else "completed"
+                status = "running" if state["get_count"] <= 1 else "completed"
                 self._send(200, {"id": 7, "status": status, "base_model": "fake/base",
                                  "iters": 20, "error_message": None})
             else:
@@ -457,10 +534,21 @@ async def self_test() -> int:
 
         def do_POST(self):
             length = int(self.headers.get("Content-Length", 0))
-            json.loads(self.rfile.read(length) or b"{}")
-            state["runs_seen"] += 1
-            self._send(201, {"id": 7, "status": "queued", "base_model": "fake/base",
-                             "iters": 20, "error_message": None})
+            body = json.loads(self.rfile.read(length) or b"{}")
+            if self.path == "/api/datasets":
+                state["datasets_created"] += 1
+                self._send(201, {"id": 42, "name": body.get("name"), "source": body.get("source")})
+            elif self.path.startswith("/api/datasets/") and self.path.endswith("/qa-pairs"):
+                state["pairs_seen"] += 1
+                self._send(201, {"id": state["pairs_seen"], "question": body.get("question"),
+                                 "answer": body.get("answer")})
+            elif self.path == "/api/training-runs":
+                state["runs_seen"] += 1
+                state["run_bodies"].append(body)
+                self._send(201, {"id": 7, "status": "queued", "base_model": "fake/base",
+                                 "iters": body.get("iters", 20), "error_message": None})
+            else:
+                self._send(404, {"detail": "no"})
 
         def log_message(self, *args):  # quiet
             pass
@@ -483,6 +571,12 @@ async def self_test() -> int:
             {"type": "job", "id": "j1", "kind": "status", "payload": {}},
             {"type": "job", "id": "j2", "kind": "train", "payload": {"dataset_id": 3, "iters": 20}},
             {"type": "job", "id": "j3", "kind": "bogus", "payload": {}},
+            # S50: the bridge handoff — hosted_dataset materialization + hyperparameters.
+            {"type": "job", "id": "j4", "kind": "train",
+             "payload": {"hosted_dataset": {"name": "hb",
+                                            "pairs": [{"question": "q", "answer": "a"},
+                                                      {"question": "q2", "answer": "a2"}]},
+                         "iters": 30, "lora_rank": 4, "lora_alpha": 8}},
         ]
         for j in jobs:
             await ws.send(json.dumps(j))
@@ -491,7 +585,7 @@ async def self_test() -> int:
             if msg["type"] == "result":
                 hub_out["results"][msg["id"]] = msg
                 hub_out["welcome"] = True
-                if set(hub_out["results"]) == {"j1", "j2", "j3"}:
+                if set(hub_out["results"]) == {"j1", "j2", "j3", "j4"}:
                     break
             elif msg["type"] == "event":
                 hub_out["events"].append(msg)
@@ -509,15 +603,27 @@ async def self_test() -> int:
         res = hub_out["results"]
         assert res["j1"]["ok"] and res["j1"]["data"]["capabilities"]["python"], "j1 status"
         assert res["j2"]["ok"] and res["j2"]["data"]["run_id"] == 7, "j2 train"
-        assert any(e["stage"] == "running" for e in hub_out["events"]), "progress events"
+        assert res["j4"]["ok"] and res["j4"]["data"]["run_id"] == 7, "j4 bridge train"
         assert not res["j3"]["ok"], "unknown kind rejected"
-        assert state["runs_seen"] == 1, "one run submitted"
+        assert state["runs_seen"] == 2, "two runs submitted (j2 + j4)"
+        assert state["datasets_created"] == 1, "j4 materialized one dataset"
+        assert state["pairs_seen"] == 2, "j4 posted two QA pairs"
+        assert any(e["stage"] == "materializing" for e in hub_out["events"]), "j4 materializing event"
+        loss_events = [e for e in hub_out["events"] if e["stage"] == "loss" and "data" in e]
+        assert loss_events, "j4 streamed loss points"
+        points = loss_events[0]["data"]["points"]
+        assert points and "step" in points[0] and "loss" in points[0], "loss points have step/loss"
+        # j4's run body must carry the hyperparameters it received.
+        j4_body = next(b for b in state["run_bodies"] if b.get("lora_rank") == 4)
+        assert j4_body["lora_alpha"] == 8 and j4_body["iters"] == 30, "j4 hyperparameters forwarded"
+        assert j4_body["dataset_id"] == 42, "j4 trained on the materialized dataset"
 
         rejected = Companion(hub_url, "wrong-token", "self-test",
                              api=f"http://127.0.0.1:{api_port}")
         rc2 = await asyncio.wait_for(rejected.run(), timeout=15)
         assert rc2 == 2, f"bad token rc={rc2}"
         print("SELF-TEST PASS — handshake, status, train (events + result), "
+              "bridge handoff (materialize + hyperparams + loss stream), "
               "unknown-kind rejection, bad-token exit")
         return 0
     finally:

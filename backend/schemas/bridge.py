@@ -93,3 +93,20 @@ class BridgePermissionCreate(BaseModel):
         if unknown:
             raise ValueError(f"unknown scope(s): {', '.join(unknown)}")
         return cleaned
+
+
+class BridgeTrainRequest(BaseModel):
+    """POST /api/bridge/permissions/{id}/train body (S50, train handoff).
+
+    Mirrors the S33 TrainingRunCreate bounds so the hosted form and the
+    bridge ask cannot mean different things; `iters` etc. ride to the
+    companion's payload unchanged. base_model is optional — on a Mac the
+    installer's mlx defaults apply when it is absent.
+    """
+
+    dataset_id: int = Field(ge=1)
+    iters: int = Field(300, ge=1, le=5000)
+    lora_rank: int = Field(8, ge=1, le=128)
+    lora_alpha: int = Field(16, ge=1, le=256)
+    learning_rate: float | None = Field(None, gt=0, le=1)
+    base_model: str | None = Field(None, max_length=200)

@@ -13,6 +13,11 @@ REST surface (JWT-authenticated, per-user rows):
     GET  /api/bridge/permissions              list mine (+ online flag)
     POST /api/bridge/permissions/{id}/revoke  revoke *and* drop the live socket
     POST /api/bridge/permissions/{id}/probe   scoped `status` round-trip
+    POST /api/bridge/permissions/{id}/train   S50 handoff: queue a `train` job
+                                              on the Mac, returns a job id now
+    GET  /api/bridge/jobs                     S50: my recent hub jobs (slim)
+    GET  /api/bridge/jobs/{job_id}            S50: one job — status + streamed
+                                              events + loss curve
     GET  /api/bridge/artifacts                device-artifact metadata ledger (mine)
     DELETE /api/bridge/artifacts/{id}         forget one pointer (bytes never lived here)
 
@@ -28,6 +33,7 @@ core/bridge.py for the multi-worker caveat.
 """
 
 import json
+import time
 from datetime import datetime, timezone
 
 from fastapi import (APIRouter, Depends, HTTPException, Request, WebSocket,
@@ -40,9 +46,16 @@ from core.rate_limit import pair_limiter
 from core.security import get_current_user
 from database import get_db
 from models.bridge import BridgePermission
+from models.dataset import Dataset
 from models.device_artifact import DeviceArtifact
+from models.qa_pair import QAPair
 from models.user import User
-from schemas.bridge import ArtifactsFrame, BridgePairRequest, BridgePermissionCreate
+from schemas.bridge import (
+    ArtifactsFrame,
+    BridgePairRequest,
+    BridgePermissionCreate,
+    BridgeTrainRequest,
+)
 
 MAX_ACTIVE_PERMISSIONS = 20
 
@@ -50,6 +63,19 @@ router = APIRouter(prefix="/api/bridge", tags=["bridge"])
 ws_router = APIRouter(tags=["bridge"])
 
 PROBE_TIMEOUT_S = 20.0
+
+# S50: the companion's own train deadline is 2h (companion TRAIN_DEADLINE_S);
+# the hub waits that plus slack, then fails the job itself. A dead companion
+# is failed on disconnect long before this — see bridge.dispatch_job.
+TRAIN_RESULT_TIMEOUT_S = 2 * 3600 + 600
+
+# Train payloads carry the dataset CONTENT to the Mac (the device trains on
+# its own copy; S26's byte rule is device→host, this is user data the user
+# asked to train with). The companion's inbound frame cap is 1 MiB, so the
+# hosted side enforces honest caps instead of letting a giant dataset fail
+# mid-frame at the socket.
+MAX_BRIDGE_TRAIN_PAIRS = 400
+MAX_BRIDGE_TRAIN_CHARS = 500_000
 
 # S49: anonymous redemption attempts per peer before the window fills.
 # A 32-char urlsafe token is not guessable at 12/min, and a legitimate
@@ -193,6 +219,143 @@ async def probe_permission(
         "data": finished.result,
         "detail": finished.detail,
     }
+
+
+# ── S50: the train handoff ─────────────────────────────────────────────────
+#
+# "Train on this Mac", end to end: the web shell POSTs here, the hub pushes a
+# `train` job frame down the already-paired companion socket, the companion
+# materializes the dataset on the device and runs its local MLX pipeline,
+# and its `event` frames (stage lines + loss chunks) fold into the hub's job
+# record while it goes. The HTTP side never waits for the run — the browser
+# polls GET /api/bridge/jobs/{job_id}. Scope/consent checks follow the probe
+# path exactly: DB scopes decide, live session required, nothing runs on a
+# revoked grant.
+
+@router.post("/permissions/{permission_id}/train", status_code=status.HTTP_202_ACCEPTED)
+async def train_on_companion(
+    permission_id: int,
+    body: BridgeTrainRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    perm = _get_own_permission(db, current_user, permission_id)
+    if perm.status != "active":
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail="Bridge permission is revoked")
+    try:
+        scopes = json.loads(perm.scopes or "[]")
+    except json.JSONDecodeError:
+        scopes = []
+    if "train" not in scopes:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This bridge permission does not include the 'train' scope",
+        )
+
+    dataset = (
+        db.query(Dataset)
+        .filter(Dataset.id == body.dataset_id, Dataset.user_id == current_user.id)
+        .first()
+    )
+    if dataset is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dataset not found")
+
+    pairs = (
+        db.query(QAPair)
+        .filter(QAPair.dataset_id == dataset.id)
+        .order_by(QAPair.id)
+        .all()
+    )
+    if not pairs:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Dataset has no QA pairs to train on")
+    if len(pairs) > MAX_BRIDGE_TRAIN_PAIRS:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(f"bridge training carries up to {MAX_BRIDGE_TRAIN_PAIRS} QA pairs "
+                    f"(this dataset has {len(pairs)}) — slim it or run `llmtuner up` on the Mac"),
+        )
+    total_chars = sum(len(p.question or "") + len(p.answer or "") for p in pairs)
+    if total_chars > MAX_BRIDGE_TRAIN_CHARS:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(f"dataset too large for one bridge job ({total_chars} chars > "
+                    f"{MAX_BRIDGE_TRAIN_CHARS}) — slim it or run `llmtuner up` on the Mac"),
+        )
+
+    payload: dict = {
+        # dataset_id stays for information/logging; hosted_dataset is the
+        # content the companion writes into its own local DB before training.
+        "dataset_id": dataset.id,
+        "iters": body.iters,
+        "lora_rank": body.lora_rank,
+        "lora_alpha": body.lora_alpha,
+        "hosted_dataset": {
+            "hosted_id": dataset.id,
+            "name": dataset.name[:120],
+            "pairs": [{"question": p.question, "answer": p.answer} for p in pairs],
+        },
+    }
+    if body.learning_rate is not None:
+        payload["learning_rate"] = body.learning_rate
+    if body.base_model:
+        payload["base_model"] = body.base_model.strip()
+
+    summary = f"{dataset.name} · {body.iters} iters"
+    try:
+        record = await bridge.dispatch_job(
+            perm.id, "train", payload, summary=summary,
+            timeout_s=TRAIN_RESULT_TIMEOUT_S,
+        )
+    except LookupError:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail="No live companion on this permission (is it running?)")
+    except PermissionError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="The paired session does not carry the 'train' scope")
+    return {
+        "job_id": record.job_id,
+        "kind": record.kind,
+        "status": record.status,
+        "companion": perm.name,
+        "summary": summary,
+    }
+
+
+def _slim_job_view(record: bridge.JobRecord) -> dict:
+    return {
+        "job_id": record.job_id,
+        "permission_id": record.permission_id,
+        "kind": record.kind,
+        "status": record.status,
+        "detail": record.detail,
+        "summary": record.summary,
+        "started_at": record.started_at,
+        "elapsed_s": round(time.time() - record.started_at, 1),
+        "online": record.permission_id in bridge.SESSIONS,
+        "loss_points": len(record.losses),
+    }
+
+
+@router.get("/jobs")
+def list_bridge_jobs(current_user: User = Depends(get_current_user)):
+    """My recent hub jobs (newest first). The table is in-process by design
+    — restart clears it, the same as the sessions beside it."""
+    return [_slim_job_view(r) for r in bridge.list_jobs_for_user(current_user.id)]
+
+
+@router.get("/jobs/{job_id}")
+def read_bridge_job(
+    job_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    record = bridge.JOBS.get(job_id)
+    if record is None or record.user_id != current_user.id:
+        # Same 404 wording either way: other users' job ids are not leaked.
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bridge job not found")
+    return bridge.get_job_view(record)
 
 
 # ── S49: the redemption check for `llmtuner companion --pair` ──────────────

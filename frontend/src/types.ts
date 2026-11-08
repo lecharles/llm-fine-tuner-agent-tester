@@ -132,6 +132,50 @@ export type BridgeProbeResult = {
     detail: string;
 };
 
+// S50: the train handoff. The POST accepts and returns a job id; the browser
+// polls GET /api/bridge/jobs/{id} for the streamed events + loss curve.
+export type BridgeTrainAccepted = {
+    job_id: string;
+    kind: string;
+    status: string;
+    companion: string;
+    summary: string;
+};
+
+export type BridgeJobEvent = {
+    stage: string;
+    detail: string;
+    ts: number;
+};
+
+export type BridgeTrainJob = {
+    job_id: string;
+    permission_id: number;
+    kind: string;
+    status: string; // sent | awaiting_result | done | failed
+    detail: string;
+    summary: string;
+    started_at: number;
+    elapsed_s: number;
+    online: boolean;
+    events: BridgeJobEvent[];
+    losses: LossPoint[];
+    result: Record<string, unknown>;
+};
+
+export type BridgeJobSlim = {
+    job_id: string;
+    permission_id: number;
+    kind: string;
+    status: string;
+    detail: string;
+    summary: string;
+    started_at: number;
+    elapsed_s: number;
+    online: boolean;
+    loss_points: number;
+};
+
 // S32 (sharing 2): GET /api/library — read-only view of everything S31 made
 // public. Owner is a display label, never an email or ID.
 export type LibraryDataset = {
