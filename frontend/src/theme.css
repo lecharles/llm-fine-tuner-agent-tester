@@ -1044,6 +1044,17 @@ button {
   fill: var(--warning);
 }
 
+/* S51: invisible hover targets over loss points (native <title> tooltip) */
+.loss-hover {
+  fill: var(--warning);
+  fill-opacity: 0;
+  cursor: pointer;
+}
+
+.loss-hover:hover {
+  fill-opacity: 0.25;
+}
+
 .loss-tick {
   fill: var(--text-muted);
   font-family: var(--font-mono);

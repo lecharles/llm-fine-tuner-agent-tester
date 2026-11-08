@@ -50,12 +50,26 @@ export default function LossChart({ points, iters }: Props) {
                 {/* axes */}
                 <line x1={PAD_L} y1={H - PAD_B} x2={W - PAD_R} y2={H - PAD_B} className="loss-axis" />
                 <line x1={PAD_L} y1={PAD_T} x2={PAD_L} y2={H - PAD_B} className="loss-axis" />
-                {/* y range labels: top + bottom of the observed window */}
+                {/* S51: axis titles + a mid y tick so the curve is readable un-zoomed */}
+                <text x={(PAD_L + W - PAD_R) / 2} y={H - 2} textAnchor="middle" className="loss-tick">
+                    iteration
+                </text>
+                <text transform={`translate(10 ${(PAD_T + H - PAD_B) / 2}) rotate(-90)`} textAnchor="middle" className="loss-tick">
+                    loss
+                </text>
+                {/* y range labels: top + middle + bottom of the observed window */}
                 <text x={PAD_L - 6} y={PAD_T + 4} textAnchor="end" className="loss-tick">{maxY.toFixed(2)}</text>
+                <text x={PAD_L - 6} y={(PAD_T + H - PAD_B) / 2 + 3} textAnchor="end" className="loss-tick">{((minY + maxY) / 2).toFixed(2)}</text>
                 <text x={PAD_L - 6} y={H - PAD_B} textAnchor="end" className="loss-tick">{minY.toFixed(2)}</text>
                 {/* the curve (and a dot when there is only one point) */}
                 {points.length > 1 && <polyline points={polyline} className="loss-line" />}
                 <circle cx={sx(last.step)} cy={sy(last.loss)} r={3} className="loss-dot" />
+                {/* S51: fat invisible hit targets, native <title> gives the browser tooltip */}
+                {points.map((p, i) => (
+                    <circle key={i} cx={sx(p.step)} cy={sy(p.loss)} r={7} className="loss-hover">
+                        <title>{`iter ${p.step} · loss ${p.loss.toFixed(4)}`}</title>
+                    </circle>
+                ))}
                 {/* latest values */}
                 <text x={W - PAD_R} y={PAD_T + 4} textAnchor="end" className="loss-current">
                     iter {last.step} · loss {last.loss.toFixed(3)}
