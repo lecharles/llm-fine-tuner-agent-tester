@@ -46,8 +46,6 @@ export default function Compare() {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [sending, setSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    // Columns that could not answer the most recent turn: label -> reason.
-    const [colErrors, setColErrors] = useState<Record<string, string>>({});
     // Hosted-column model pickers (S13, #15): which model each hosted column
     // uses. Applied when the session is created; changing one starts a new
     // session, same rule as swapping the fine-tuned model.
@@ -125,8 +123,11 @@ export default function Compare() {
                 `/chat-sessions/${sessionId}/messages`,
                 { method: "POST", body: { content: prompt } }
             );
+            // S75: failed columns now arrive inside turn.messages as
+            // status="error" rows (persisted, survive reload), so the
+            // transcript itself is the error display — no separate live-only
+            // error state to juggle.
             setMessages((prev) => [...prev, ...turn.messages]);
-            setColErrors(turn.errors ?? {});
             setPrompt("");
         } catch (err) {
             setError(err instanceof Error ? err.message : "Send failed");
@@ -224,6 +225,13 @@ export default function Compare() {
                                     <div className="msg msg-user" key={m.id}>
                                         <div className="bubble bubble-user">{m.content}</div>
                                     </div>
+                                ) : m.status === "error" ? (
+                                    // S75: persisted failure row — the same
+                                    // ⚠ bubble the live turn used to show,
+                                    // but now it survives a reload.
+                                    <div className="msg msg-model" key={m.id}>
+                                        <div className="bubble bubble-error">⚠ {m.content}</div>
+                                    </div>
                                 ) : (
                                     <div className="msg msg-model" key={m.id}>
                                         <div className="bubble bubble-model">{m.content}</div>
@@ -237,11 +245,6 @@ export default function Compare() {
                                     <div className="thinking" style={{ color: COL_COLOR[label] }}>
                                         <VuMeter bars={4} />
                                     </div>
-                                </div>
-                            )}
-                            {!sending && colErrors[label] && (
-                                <div className="msg msg-model">
-                                    <div className="bubble bubble-error">⚠ {colErrors[label]}</div>
                                 </div>
                             )}
                         </div>

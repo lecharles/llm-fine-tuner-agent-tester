@@ -155,9 +155,9 @@ This repo is the flagship. Later, extract dedicated showcase repos.
 Enhancements to the test-agent chat, captured post-MVP.
 
 - [x] Multi-turn conversation: each column threads its own history (shared user turns plus only its own replies) so the compare is a real chat, not one-shot prompts. DONE; context-window management is the remaining refinement.
-- [ ] Surface per-column errors in the response and UI instead of silently skipping a failed column (needs an error or status field on chat_messages)
+- [x] Surface per-column errors in the response and UI instead of silently skipping a failed column (needs an error or status field on chat_messages). DONE (S75: status column + persisted error rows excluded from history replay; ⚠ bubble now survives reload).
 - [ ] Per-session model choice surfaced in the UI (compare_model_a and compare_model_b are already stored on the session)
-- [ ] Parallelize the fan-out: call the four backends concurrently instead of sequentially, to cut response latency
+- [x] Parallelize the fan-out: call the four backends concurrently instead of sequentially, to cut response latency. DONE (S28 — ThreadPoolExecutor in api_agents/chat/compare.py; this box was stale).
 
 ### Training error explainer
 

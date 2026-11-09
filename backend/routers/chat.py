@@ -161,15 +161,23 @@ def send_message(
         for msg in prior:
             if msg.role == "user":
                 history.append({"role": "user", "content": msg.content})
-            elif msg.model_label == backend.label:
+            elif msg.model_label == backend.label and msg.status != "error":
+                # S75: persisted error rows show in the transcript but must
+                # never replay into the model's own context.
                 history.append({"role": "assistant", "content": msg.content})
         history.append({"role": "user", "content": body.content})
         histories[backend.label] = history
     replies = fan_out(backends, histories)
 
-    # Persist the user turn, then each column's reply. fan_out isolates failures,
-    # so a column that errored has no content and is skipped here while the others
-    # still land.
+    # Surface every column that could not answer: a startup failure carries
+    # more context than the downstream connection error, so it wins.
+    errors: dict[str, str] = {k: v for k, v in startup_errors.items() if v}
+
+    # Persist the user turn, then each column's reply. fan_out isolates
+    # failures, so the columns that answered always land. S75: a column that
+    # failed no longer vanishes — it lands as a status="error" row carrying
+    # the same reason the live errors map shows, so the transcript survives a
+    # reload (and the errors map itself stays unchanged for live callers).
     created = [ChatMessage(chat_session_id=session.id, role="user", content=body.content)]
     for reply in replies:
         if reply.content is not None:
@@ -181,18 +189,24 @@ def send_message(
                     content=reply.content,
                 )
             )
+        else:
+            reason = errors.get(reply.label) or reply.error or "no reply"
+            errors.setdefault(reply.label, reason)
+            created.append(
+                ChatMessage(
+                    chat_session_id=session.id,
+                    role="assistant",
+                    model_label=reply.label,
+                    content=reason,
+                    status="error",
+                )
+            )
 
     db.add_all(created)
     db.commit()
     for obj in created:
         db.refresh(obj)
 
-    # Surface every column that could not answer: a startup failure carries
-    # more context than the downstream connection error, so it wins.
-    errors: dict[str, str] = {k: v for k, v in startup_errors.items() if v}
-    for reply in replies:
-        if reply.content is None and reply.label not in errors:
-            errors[reply.label] = reply.error or "no reply"
     return {"messages": created, "errors": errors}
 
 

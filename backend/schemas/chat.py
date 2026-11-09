@@ -40,6 +40,10 @@ class ChatMessageOut(BaseModel):
     role: str
     model_label: str | None = None
     content: str
+    # S75: "error" = persisted per-column failure row (content is the reason);
+    # None = a normal reply. The UI renders these as the error bubble so a
+    # failed column stays visible after a reload instead of vanishing.
+    status: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -47,7 +51,9 @@ class ChatMessageOut(BaseModel):
 
 class ChatTurnOut(BaseModel):
     # One send's result: the persisted messages plus per-column failure
-    # reasons. Errors are deliberately NOT persisted rows: a failed column
-    # must not leak its error text into the model's own future history.
+    # reasons. S75 changed the persistence story: failures now DO land as
+    # status="error" rows (surviving reload), but the history rebuild skips
+    # those rows, so a failed column never leaks its error text into the
+    # model's own future context. The errors map is kept for live callers.
     messages: list[ChatMessageOut]
     errors: dict[str, str] = {}

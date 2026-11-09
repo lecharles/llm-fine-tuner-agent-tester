@@ -91,6 +91,7 @@ export type ChatMessage = {
     role: string;
     model_label: string | null; // fine_tuned | vanilla | openai | anthropic | ollama (null for user)
     content: string;
+    status?: string | null; // S75: "error" = persisted per-column failure (content is the reason); null = normal reply
     created_at: string;
 };
 
