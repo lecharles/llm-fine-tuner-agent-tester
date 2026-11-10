@@ -12,6 +12,7 @@ import Signup from "./pages/Signup";
 import DatasetDetail from "./pages/DatasetDetail";
 import Bridge from "./pages/Bridge";
 import Library from "./pages/Library";
+import LibraryDatasetDetail from "./pages/LibraryDatasetDetail";
 import History from "./pages/History";
 
 // App skeleton: login and signup render bare; every authenticated page is
@@ -37,6 +38,8 @@ export default function App() {
         <Route path="/models" element={<Models />} />
         <Route path="/compare" element={<Compare />} />
         <Route path="/library" element={<Library />} />
+        {/* S53: read-only public detail; never the owner's DatasetDetail. */}
+        <Route path="/library/datasets/:datasetId" element={<LibraryDatasetDetail />} />
         <Route path="/bridge" element={<Bridge />} />
       </Route>
     </Routes>

@@ -202,3 +202,29 @@ export type LibraryPayload = {
     datasets: LibraryDataset[];
     models: LibraryModel[];
 };
+
+// S53 (library 2): GET /api/library/datasets/{id} — read-only community
+// detail view of one public dataset. Bounded Q&A preview (pair_count is the
+// true total; truncated says the preview was trimmed) plus the owner
+// profile line. No contact fields, no mutation affordances.
+export type LibraryOwner = {
+    name: string;
+    public_datasets: number;
+    public_models: number;
+    member_since: string;
+};
+
+export type LibraryDatasetDetail = {
+    dataset: {
+        id: number;
+        name: string;
+        description: string | null;
+        source: string;
+        use_case_prompt: string | null;
+        created_at: string;
+    };
+    pairs: { id: number; question: string; answer: string }[];
+    pair_count: number;
+    truncated: boolean;
+    owner: LibraryOwner;
+};

@@ -8,8 +8,9 @@ import EmptyState from "../components/EmptyState";
 import type { LibraryPayload } from "../types";
 
 // S32 (sharing 2): the public library. Everything the community shared via the
-// S31 toggles, read-only. Datasets link to their detail page (the backend's
-// owner-or-public read lets non-owners see metadata + Q&A pairs); models stay
+// S31 toggles, read-only. Datasets link to the S53 read-only detail view
+// (/library/datasets/:id) — the owner's own /datasets/:id page is full of
+// mutation affordances that would only 404 for a viewer; models stay
 // metadata cards — chatting with someone else's model is deliberately not a
 // public action.
 export default function Library() {
@@ -58,7 +59,7 @@ export default function Library() {
                         {lib.datasets.map((d) => (
                             <div className="card" key={d.id}>
                                 <div className="library-row">
-                                    <Link to={`/datasets/${d.id}`} className="row-name">
+                                    <Link to={`/library/datasets/${d.id}`} className="row-name">
                                         {d.name}
                                     </Link>
                                     <span className="badge badge-neutral">{displayStatus(d.source)}</span>
