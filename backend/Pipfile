@@ -11,11 +11,10 @@ psycopg2-binary = "*"
 alembic = "*"
 pydantic-settings = "*"
 python-dotenv = "*"
-passlib = {extras = ["bcrypt"], version = "*"}
+bcrypt = "*"
 python-jose = {extras = ["cryptography"], version = "*"}
 pydantic = {extras = ["email"], version = "*"}
 python-multipart = "*"
-bcrypt = "==4.0.1"
 mlx-lm = {extras = ["train"], version = "*"}
 anthropic = "*"
 datasets = "*"

@@ -22,11 +22,20 @@ requests 2.34.2, urllib3 2.8.0, aiohttp 3.14.5, python-multipart 0.0.32.
 
 ## Follow-ups (backlog, not this slice)
 
-- Bump filelock past 4.2.1 at the next `pipenv lock` refresh (needs network +
-  pipenv on the Mac or VPS; smoke venv has no pip).
-- passlib 1.7.4 is unmaintained; the `bcrypt==4.0.1` pin in Pipfile exists only
+- ~~Bump filelock past 4.2.1 at the next `pipenv lock` refresh~~ — DONE in S54
+  (2026-11-11): `Pipfile.lock` filelock entry moved 3.29.5 → 4.2.10 (targeted
+  entry edit with PyPI-hashed sha256s; full `pipenv lock` not runnable on the
+  VPS — no pipenv, system Python 3.12 vs the lock's required 3.14). Runtime
+  smoke venv upgraded to match; datasets (unbounded constraint) and
+  huggingface_hub (`>=3.10.0`) both accept 4.2.10, suite green.
+- ~~passlib 1.7.4 is unmaintained; the `bcrypt==4.0.1` pin in Pipfile exists only
   for passlib compatibility. Replace CryptContext with direct bcrypt calls in a
-  future slice, then unpin bcrypt.
+  future slice, then unpin bcrypt.~~ — DONE in S54 (2026-11-11): `core/security.py`
+  now calls `bcrypt.hashpw/checkpw` directly; `passlib` removed from Pipfile/lock;
+  `bcrypt` unpinned and runtime moved to 5.0.0. Legacy `$2b$12$` rows stay
+  valid (bidirectional verify proven before the swap). The installer scripts
+  and CI still name `passlib[bcrypt]` — harmless (nothing imports it, it still
+  provides bcrypt), but they should drop it when someone touches those files.
 - Re-check python-jose when GHSA-3qf3-8w2g-rqmx ships a fix; if the team ever
   enables asymmetric JWTs, this becomes a real blocker and the swap to PyJWT or
   authlib should happen first.

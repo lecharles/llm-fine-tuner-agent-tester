@@ -2,27 +2,59 @@ import hmac
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
+import bcrypt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
-from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from config import settings
 from database import get_db
 from models.user import User
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
+
+# S54: passlib retirement. CryptContext was a thin wrapper over the same
+# `bcrypt` package we now call directly; passlib 1.7.4 is unmaintained and
+# imports the stdlib `crypt` module (removed in 3.13), so its pin of
+# bcrypt==4.0.1 held us off current bcrypt releases.
+#
+# Hash-compatibility with existing users rows (all `$2b$12$...`, produced by
+# passlib's bcrypt handler): bcrypt.gensalt() defaults to the ident "2b" and
+# round cost 12 — byte-for-byte the same shape passlib emitted, verified
+# round-trip both directions (passlib hash -> bcrypt.checkpw, bcrypt hash ->
+# passlib verify) before the swap. bcrypt.checkpw accepts any $2a/$2b/$2y hash.
+#
+# passlib's handler silently truncated passwords to bcrypt's 72-byte input
+# cap; we keep that behavior explicitly so long-password hashes match the
+# legacy rows AND we don't inherit bcrypt 4.1+'s stricter ValueError (nor the
+# reverse: bcrypt 4.0.1 truncated silently, 5.x raises — pinning the truncate
+# in our own code makes behavior stable across bcrypt versions). NULL bytes
+# are rejected outright, like passlib did, so "abc\0def" can never hash as
+# "abc".
+_BCRYPT_MAX_INPUT_BYTES = 72
+
+
+def _bcrypt_input(password: str) -> bytes:
+    raw = password.encode("utf-8")
+    if b"\x00" in raw:
+        raise ValueError("password cannot contain NULL bytes")
+    return raw[:_BCRYPT_MAX_INPUT_BYTES]
 
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(_bcrypt_input(password), bcrypt.gensalt()).decode()
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        return bcrypt.checkpw(
+            _bcrypt_input(plain_password), hashed_password.encode()
+        )
+    except ValueError:
+        # Malformed/garbage stored hash: fail closed (login just fails)
+        # instead of surfacing a 500. passlib raised UnknownHashError here.
+        return False
 
 
 def create_access_token(subject: str) -> str:
