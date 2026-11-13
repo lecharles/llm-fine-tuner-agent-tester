@@ -1845,6 +1845,12 @@ button {
   margin-top: 8px;
 }
 
+/* S56: inline result notes next to buttons (dedupe/merge card). */
+.dd-note-inline {
+  margin-top: 0;
+  text-align: right;
+}
+
 .dd-pairs-head {
   display: flex;
   align-items: center;

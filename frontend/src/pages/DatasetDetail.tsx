@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Sparkles, Download, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Upload, HelpCircle, Wand2, MessagesSquare } from "lucide-react";
+import { ArrowLeft, Sparkles, Download, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Upload, HelpCircle, Wand2, MessagesSquare, Eraser, GitMerge } from "lucide-react";
 import { apiFetch, apiUpload } from "../api";
 import { displayStatus } from "../statusText";
-import type { Dataset, QAPair } from "../types";
+import type { Dataset, QAPair, DedupeResult, MergeResult } from "../types";
 import QAPairModal, { type QAPairValues } from "../components/QAPairModal";
 import ConfirmDialog from "../components/ConfirmDialog";
 import VuMeter from "../components/VuMeter";
@@ -34,6 +34,17 @@ export default function DatasetDetail() {
     const [importing, setImporting] = useState(false);
     const [fileImporting, setFileImporting] = useState(false);
 
+    // S56: dedupe + merge across datasets. Preview-then-act: every destructive
+    // write is first computed server-side with dry_run=true.
+    const [ownDatasets, setOwnDatasets] = useState<Dataset[]>([]);
+    const [dedupeBusy, setDedupeBusy] = useState(false);
+    const [dedupeNote, setDedupeNote] = useState<string | null>(null);
+    const [dedupePlan, setDedupePlan] = useState<DedupeResult | null>(null);
+    const [mergeSource, setMergeSource] = useState("");
+    const [mergeBusy, setMergeBusy] = useState(false);
+    const [mergeNote, setMergeNote] = useState<string | null>(null);
+    const [mergePreview, setMergePreview] = useState<MergeResult | null>(null);
+
     // Pair create/edit modal, delete confirmation, and the current page.
     const [pairForm, setPairForm] = useState<{ open: boolean; mode: "create" | "edit"; pair: QAPair | null }>({
         open: false,
@@ -55,6 +66,11 @@ export default function DatasetDetail() {
             })
             .catch((err) => setError(err instanceof Error ? err.message : "Failed to load"))
             .finally(() => setLoading(false));
+        // S56: the merge picker lists the account's other datasets; a failure
+        // here only empties the picker, it must not poison the page error.
+        apiFetch<Dataset[]>("/datasets")
+            .then((ds) => setOwnDatasets(ds))
+            .catch(() => setOwnDatasets([]));
     }, [datasetId]);
 
     // Save the dataset's use_case_prompt (generation reads it server-side).
@@ -170,6 +186,103 @@ export default function DatasetDetail() {
             setError(err instanceof Error ? err.message : "Delete failed");
         } finally {
             setConfirmTarget(null);
+        }
+    }
+
+    // S56: reload the pair list from the server after a dedupe or merge -
+    // rows were deleted and/or moved with fresh ids, so local state is stale.
+    async function reloadPairs() {
+        const p = await apiFetch<QAPair[]>(`/datasets/${datasetId}/qa-pairs`);
+        setPairs(p);
+        setPage(0);
+    }
+
+    // S56: dedupe preview -> confirmation dialog -> real run.
+    async function handleDedupe() {
+        setDedupeBusy(true);
+        setDedupeNote(null);
+        setError(null);
+        try {
+            const plan = await apiFetch<DedupeResult>(`/datasets/${datasetId}/dedupe`, {
+                method: "POST",
+                body: { dry_run: true },
+            });
+            if (plan.removed === 0) {
+                setDedupeNote("No duplicates found - every pair is unique.");
+            } else {
+                setDedupePlan(plan);
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Dedupe check failed");
+        } finally {
+            setDedupeBusy(false);
+        }
+    }
+
+    async function confirmDedupe() {
+        setDedupePlan(null);
+        setDedupeBusy(true);
+        try {
+            const res = await apiFetch<DedupeResult>(`/datasets/${datasetId}/dedupe`, { method: "POST", body: {} });
+            setDedupeNote(
+                res.removed === 0
+                    ? "No duplicates found - every pair is unique."
+                    : `Removed ${res.removed} duplicate ${res.removed === 1 ? "pair" : "pairs"} in ${res.duplicate_groups} ${res.duplicate_groups === 1 ? "group" : "groups"} (oldest kept).`,
+            );
+            await reloadPairs();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Dedupe failed");
+        } finally {
+            setDedupeBusy(false);
+        }
+    }
+
+    // S56: merge preview, then the real move. Picking another source or
+    // editing pairs invalidates the preview on purpose.
+    async function handleMergePreview() {
+        if (!mergeSource) return;
+        setMergeBusy(true);
+        setMergeNote(null);
+        setMergePreview(null);
+        setError(null);
+        try {
+            const res = await apiFetch<MergeResult>(`/datasets/${datasetId}/merge`, {
+                method: "POST",
+                body: { source_dataset_id: Number(mergeSource), dry_run: true },
+            });
+            setMergePreview(res);
+            setMergeNote(
+                res.moved === 0
+                    ? `Nothing to move - all ${res.skipped_duplicates} source ${res.skipped_duplicates === 1 ? "pair is" : "pairs are"} already here.`
+                    : `${res.moved} ${res.moved === 1 ? "pair would move" : "pairs would move"} here; ${res.skipped_duplicates} ${res.skipped_duplicates === 1 ? "duplicate stays" : "duplicates stay"} in the source.`,
+            );
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Merge preview failed");
+        } finally {
+            setMergeBusy(false);
+        }
+    }
+
+    async function handleMerge() {
+        if (!mergePreview) return;
+        setMergeBusy(true);
+        setError(null);
+        try {
+            const res = await apiFetch<MergeResult>(`/datasets/${datasetId}/merge`, {
+                method: "POST",
+                body: { source_dataset_id: mergePreview.source_dataset_id },
+            });
+            const src = ownDatasets.find((d) => d.id === res.source_dataset_id)?.name ?? "source";
+            setMergeNote(
+                `Moved ${res.moved} ${res.moved === 1 ? "pair" : "pairs"} from "${src}"; left ${res.skipped_duplicates} ${res.skipped_duplicates === 1 ? "duplicate" : "duplicates"} there.`,
+            );
+            setMergeSource("");
+            setMergePreview(null);
+            await reloadPairs();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Merge failed");
+        } finally {
+            setMergeBusy(false);
         }
     }
 
@@ -293,6 +406,58 @@ export default function DatasetDetail() {
                                 </div>
                             </div>
                         </div>
+
+                        {/* S56: remove exact-duplicate pairs here, or pull a
+                            sibling dataset's pairs in. Both flows are
+                            preview-first: nothing is written blindly. */}
+                        <div className="card">
+                            <div className="label">
+                                Duplicates &amp; merge
+                                <span className="hint" tabIndex={0} aria-label="About dedupe and merge">
+                                    <HelpCircle size={13} />
+                                    <span className="hint-bubble">
+                                        Two pairs with the same question and answer teach the example twice.
+                                        Matching ignores letter case and extra spaces. Merge pulls another
+                                        of your datasets' pairs in; ones already here stay in the source.
+                                    </span>
+                                </span>
+                            </div>
+                            <div className="dd-row">
+                                <button className="btn btn-ghost" onClick={handleDedupe} disabled={dedupeBusy}>
+                                    <Eraser size={15} /> {dedupeBusy ? "Working…" : "Find & remove duplicates"}
+                                </button>
+                                {dedupeNote && <span className="dd-hint dd-note-inline">{dedupeNote}</span>}
+                            </div>
+                            <div className="dd-row">
+                                <select
+                                    className="select"
+                                    aria-label="Source dataset to merge from"
+                                    value={mergeSource}
+                                    onChange={(e) => {
+                                        setMergeSource(e.target.value);
+                                        setMergePreview(null);
+                                        setMergeNote(null);
+                                    }}
+                                    disabled={mergeBusy}
+                                >
+                                    <option value="">Merge from…</option>
+                                    {ownDatasets
+                                        .filter((d) => String(d.id) !== datasetId)
+                                        .map((d) => (
+                                            <option key={d.id} value={d.id}>{d.name}</option>
+                                        ))}
+                                </select>
+                                <div className="dd-row-right">
+                                    <button className="btn btn-ghost" onClick={handleMergePreview} disabled={mergeBusy || !mergeSource}>
+                                        {mergeBusy ? "Working…" : "Preview"}
+                                    </button>
+                                    <button className="btn btn-primary" onClick={handleMerge} disabled={mergeBusy || !mergePreview}>
+                                        <GitMerge size={15} /> Merge
+                                    </button>
+                                </div>
+                            </div>
+                            {mergeNote && <div className="dd-hint">{mergeNote}</div>}
+                        </div>
                     </div>
 
                     <div className="dd-pairs-head">
@@ -369,6 +534,19 @@ export default function DatasetDetail() {
                         message="This deletes this Q&A pair. This can't be undone."
                         onConfirm={confirmDeletePair}
                         onCancel={() => setConfirmTarget(null)}
+                    />
+                    {/* S56: dedupe lands here only after a dry-run found dupes. */}
+                    <ConfirmDialog
+                        open={dedupePlan !== null}
+                        title="Remove duplicate pairs?"
+                        message={
+                            dedupePlan
+                                ? `${dedupePlan.removed} duplicate ${dedupePlan.removed === 1 ? "pair" : "pairs"} in ${dedupePlan.duplicate_groups} ${dedupePlan.duplicate_groups === 1 ? "group" : "groups"}. The oldest pair of each group is kept; the rest are deleted. This can't be undone.`
+                                : ""
+                        }
+                        confirmLabel="Remove"
+                        onConfirm={confirmDedupe}
+                        onCancel={() => setDedupePlan(null)}
                     />
                 </>
             )}

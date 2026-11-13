@@ -109,6 +109,33 @@ export type QAPair = {
     created_at: string;
 };
 
+// S56: dedupe + cross-dataset merge payloads (mirror schemas/dataset.py).
+export type DedupeGroup = {
+    question: string;
+    answer: string;
+    kept_id: number;
+    removed_ids: number[];
+};
+
+export type DedupeResult = {
+    dry_run: boolean;
+    total_pairs: number;
+    unique_pairs: number;
+    removed: number;
+    duplicate_groups: number;
+    groups_preview: DedupeGroup[];
+    preview_truncated: boolean;
+};
+
+export type MergeResult = {
+    dry_run: boolean;
+    target_dataset_id: number;
+    source_dataset_id: number;
+    moved: number;
+    skipped_duplicates: number;
+    source_remaining: number;
+};
+
 // S25 (issue #28): one explicit, scoped, revocable grant of the user's Mac
 // hardware. `token` exists only on the create response (shown once); the
 // server keeps just its hash. `online` reflects the live hub session.
