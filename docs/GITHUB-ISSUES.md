@@ -1,377 +1,103 @@
 # GitHub Issues — Full List
 
-All bugs, features, and infrastructure work identified during the Sept 15 demo run-through.
-
-## Bugs (Priority: Fix before v0.1.0)
-
-### #1 VPS team instance: login returns 401 despite valid credentials
-**Severity:** Critical  
-**Component:** Backend / Auth  
-**Status:** Investigating  
-**Description:**  
-Signup succeeds (201), password verifies correctly in Python, but `/api/auth/login` returns 401 when called via the browser. Works via curl with form-encoded data. Suspect frontend is sending JSON instead of form-encoded, or a CORS/preflight issue.
-
-**Steps to reproduce:**
-1. Start VPS instance on port 8090
-2. Navigate to `http://76.13.122.86:8090/login`
-3. Enter credentials `team@teamox.dev` / `<rotated 09-15; operator credentials file>`
-4. Click Login → 401 Unauthorized
-
-**Expected:** Login succeeds, JWT stored, redirect to dashboard  
-**Actual:** 401 error, no redirect
-
-**Root cause hypothesis:** Frontend `apiFetch` sends JSON body, but OAuth2PasswordRequestForm expects `application/x-www-form-urlencoded`.
-
-**Fix:** Update frontend login handler to use URLSearchParams encoding.
-
----
-
-### #2 Compare: failed columns show errors but don't persist to history
-**Severity:** Medium  
-**Component:** Backend / Chat  
-**Status:** Fixed (commit 1d56f87)  
-**Description:**  
-When a column fails (out of credits, server died), the error is shown in the UI but not persisted. This is correct behavior — errors shouldn't pollute conversation history — but the UI should make it clearer that the column is "dead" for this session.
-
-**Current behavior:** Red error bubble appears, next send retries the column.  
-**Desired behavior:** After 2 consecutive failures, show a "column disabled" badge and stop retrying until the user clicks "Retry".
-
-**Workaround:** None needed; current behavior is acceptable.
-
----
-
-### #3 Generation: Ollama fallback doesn't auto-select a model
-**Severity:** Low  
-**Component:** Backend / Generation  
-**Status:** Open  
-**Description:**  
-When both Anthropic and OpenAI are out of credits, generation falls through to Ollama. If multiple models are installed, it tries them in alphabetical order. Should prefer a configured default or the most recently used model.
-
-**Current behavior:** Tries all installed models in `/api/tags` order.  
-**Desired behavior:** Use `GENERATION_LOCAL_MODELS` env var if set, else pick the first model with "instruct" in the name, else alphabetical.
-
-**Workaround:** Set `GENERATION_LOCAL_MODELS=llama3.1:8b` in `~/.llmtuner/.env`.
-
----
-
-### #4 Training: loss curve not shown in real-time
-**Severity:** Low  
-**Component:** Frontend / Train  
-**Status:** Open (planned for Sept 25)  
-**Description:**  
-Training runs show "running" status but no live loss curve. The train.log file is written, but the UI doesn't parse or display it.
-
-**Current behavior:** Status badge updates, but no chart.  
-**Desired behavior:** Poll `/api/training-runs/{id}/losses` every 5s, render a tiny line chart.
-
-**Workaround:** Tail the log file manually: `tail -f ~/.llmtuner/_training_runs/{id}/train.log`.
-
----
-
-### #5 Compare: hosted columns can't be swapped for local models
-**Severity:** Medium  
-**Component:** Frontend + Backend / Compare  
-**Status:** Open (planned for Sept 27)  
-**Description:**  
-When both hosted columns (OpenAI, Anthropic) are out of credits, the user should be able to swap them for additional local models (e.g., Fine-tuned 2, Fine-tuned 3, or any Ollama model). Currently the column labels are hardcoded.
-
-**Current behavior:** Four fixed columns: Fine-tuned, Vanilla, OpenAI, Anthropic.  
-**Desired behavior:** Column picker dropdown per column; default to the four, but allow swapping to any installed Ollama model or any previously trained fine-tuned model.
-
-**Workaround:** None; requires code change.
-
----
-
-## Features (Priority: Ship by Sept 30)
-
-### #6 Desktop app: `llmtuner app` opens floating browser window
-**Severity:** High  
-**Component:** CLI  
-**Status:** Open (planned for Sept 16)  
-**Description:**  
-Add a `llmtuner app` command that opens the web UI in a floating browser-app window (Chrome `--app=`), sized to the welcome page. Falls back to the default browser if Chrome isn't found.
-
-**Acceptance criteria:**
-- `llmtuner app` opens Chrome with `--app=http://localhost:8000`
-- Window is 1024×768, no address bar, no tabs
-- If Chrome not found, opens default browser to the same URL
-- `--size 800x600` flag overrides default dimensions
-
-**Reference:** Ollama's "Apps" modal shows the pattern (see screenshot).
-
----
-
-### #7 Desktop app: menu-bar integration (macOS)
-**Severity:** High  
-**Component:** CLI  
-**Status:** Open (planned for Sept 21)  
-**Description:**  
-Add a `llmtuner menubar` command that creates a menu-bar extra (top-right status icon) with: status dot (green=running, red=stopped), "Open window", "Start server", "Stop server", "Quit". Uses `rumps` library.
-
-**Acceptance criteria:**
-- Llama icon appears in menu bar when `llmtuner menubar` runs
-- Clicking icon shows dropdown with status + actions
-- "Open window" launches the floating browser window (issue #6)
-- "Quit" stops the server and exits the menu-bar app
-
-**Reference:** Ollama's menu-bar extra (see screenshot).
-
----
-
-### #8 Desktop app: icon pipeline (favicon.svg → AppIcon.icns)
-**Severity:** Medium  
-**Component:** Scripts  
-**Status:** Open (planned for Sept 19)  
-**Description:**  
-Create a script `scripts/make_app_icon.sh` that converts `frontend/public/favicon.svg` to `AppIcon.icns` using `sips` and `iconutil`. The icon is used for the `.app` bundle (issue #9) and the menu-bar extra (issue #7).
-
-**Acceptance criteria:**
-- Script reads `frontend/public/favicon.svg`
-- Generates 1024×1024 PNG, then 16/32/64/128/256/512/1024 sizes
-- Packages into `AppIcon.icns`
-- Script is idempotent (overwrites existing icon)
-
-**Workaround:** Use the SVG directly (browsers handle it fine).
-
----
-
-### #9 Desktop app: `.app` bundle for native macOS identity
-**Severity:** Medium  
-**Component:** CLI + Scripts  
-**Status:** Open (planned for Sept 20)  
-**Description:**  
-Add a `llmtuner bundle` command that generates `LLM Tuner.app` with:
-- `Info.plist` (bundle ID, version, icon)
-- Launcher script (starts the server, opens the window)
-- `AppIcon.icns` (from issue #8)
-
-**Acceptance criteria:**
-- `llmtuner bundle` creates `~/Applications/LLM Tuner.app`
-- Double-clicking the app starts the server and opens the window
-- App name appears in the top-left menu bar as "LLM Tuner"
-- Dock icon is the llama logo
-
-**Workaround:** Use `llmtuner up` + browser manually.
-
----
-
-### #10 Welcome/motivation page
-**Severity:** Medium  
-**Component:** Frontend  
-**Status:** Open (planned for Sept 18)  
-**Description:**  
-Add a `/welcome` route (and sidebar entry) that explains the project's motivation: one-click local fine-tuning, team collaboration, privacy-first. This is the landing page for the desktop app (issue #6).
-
-**Acceptance criteria:**
-- `/welcome` route renders a static page with:
-  - Project name + tagline
-  - 3-sentence pitch (local, team, privacy)
-  - Screenshot of the compare view
-  - "Get started" button → `/datasets`
-- Sidebar has a "Welcome" entry (first item, above "Get started")
-
-**Workaround:** None; content is static.
-
----
-
-### #11 Team lanes: service-token auth for agent lanes
-**Severity:** High  
-**Component:** Backend  
-**Status:** Open (planned for Sept 22)  
-**Description:**  
-Add a `API_SERVICE_TOKENS` env var (comma-separated list) that grants read/write access to the VPS instance without a user session. Each token is tied to a lane name (e.g., `tmux-hermes`, `tmux-opencode`).
-
-**Acceptance criteria:**
-- `API_SERVICE_TOKENS=hermes:abc123,openclaw:def456` in `env`
-- Requests with `Authorization: Bearer abc123` are treated as the "hermes" lane
-- Lane can create datasets, queue generation, list models
-- Lane cannot delete datasets or modify other lanes' data
-- `GET /api/status` returns lane name + permissions
-
-**Workaround:** Use the team user credentials manually.
-
----
-
-### #12 Pytest suite
-**Severity:** Medium  
-**Component:** Tests  
-**Status:** Open (planned for Sept 23)  
-**Description:**  
-Add a pytest suite covering:
-- Auth/me regression (local mode, JWT mode)
-- Env precedence (backend/.env vs ~/.llmtuner/.env)
-- Generation ladder (Anthropic → OpenAI → Ollama fakes)
-- Local server lifecycle (start, reuse, restart, reap)
-- Splash render (no UI build → status page)
-
-**Acceptance criteria:**
-- `pytest` runs in <10s
-- All tests pass on macOS + Linux
-- Coverage >80% for `backend/generation/`, `backend/chat/`, `backend/routers/auth.py`
-
-**Workaround:** Manual testing (current state).
-
----
-
-### #13 CI: GitHub Actions
-**Severity:** Low  
-**Component:** Infrastructure  
-**Status:** Open (planned for Sept 24)  
-**Description:**  
-Add `.github/workflows/ci.yml` that runs on every push:
-- Python compile check (all `.py` files)
-- Pytest suite (issue #12)
-- Frontend build (`npm run build`)
-- README badge
-
-**Acceptance criteria:**
-- CI runs on push to `main`
-- All checks pass
-- README shows "CI: passing" badge
-
-**Workaround:** Manual checks before push.
-
----
-
-### #14 Dataset import: CSV/JSONL upload
-**Severity:** Low  
-**Component:** Backend + Frontend  
-**Status:** Open (planned for Sept 26)  
-**Description:**  
-Add a "Import dataset" button on the Datasets page that accepts CSV or JSONL files. Each row becomes a Q&A pair.
-
-**Acceptance criteria:**
-- Upload button on `/datasets` page
-- Accepts `.csv` (columns: `question`, `answer`) or `.jsonl` (one JSON object per line)
-- Creates a new dataset with the uploaded pairs
-- Shows row count after import
-
-**Workaround:** Use the "Import preset" dropdown (limited to built-in presets).
-
----
-
-### #15 Compare: hosted-column model pickers
-**Severity:** Low  
-**Component:** Frontend + Backend  
-**Status:** Open (planned for Sept 27)  
-**Description:**  
-Allow the user to pick which hosted model each column uses (e.g., swap OpenAI `gpt-4o-mini` for `gpt-5.5`, or Anthropic `claude-opus-4-8` for `claude-sonnet-5`). Also allow swapping to any installed Ollama model.
-
-**Acceptance criteria:**
-- Each column has a dropdown (default: current model)
-- Dropdown lists: all installed Ollama models, all previously trained fine-tuned models, hardcoded hosted models
-- Selection persists for the session
-- Column label updates to reflect the chosen model
-
-**Workaround:** Edit `schemas/chat.py` defaults (requires restart).
-
----
-
-### #16 Docs: README rewrite + screenshots
-**Severity:** Low  
-**Component:** Documentation  
-**Status:** Open (planned for Sept 28)  
-**Description:**  
-Rewrite the README to reflect the current state:
-- One-paragraph pitch
-- Installation (Mac + VPS)
-- Quickstart (generate → train → compare)
-- Screenshots (compare view, train page, VPS instance)
-- Roadmap link
-
-**Acceptance criteria:**
-- README is <500 lines
-- All links work
-- Screenshots are in `docs/screenshots/`
-
-**Workaround:** Current README is functional but verbose.
-
----
-
-### #17 Shared-instance hardening
-**Severity:** Medium  
-**Component:** Backend  
-**Status:** Open (planned for Sept 29)  
-**Description:**  
-Harden the VPS instance for shared use:
-- Rate limit signup (1 per IP per hour)
-- Refuse `LOCAL_MODE=true` when binding to non-loopback
-- Credential rotation doc (how to change JWT secret, reset passwords)
-
-**Acceptance criteria:**
-- Signup returns 429 after 1 attempt per IP per hour
-- `LOCAL_MODE=true` + `--host 0.0.0.0` → startup error
-- `docs/CREDENTIALS.md` explains rotation steps
-
-**Workaround:** Trust the team not to abuse it (current state).
-
----
-
-### #18 v0.1.0 release
-**Severity:** High  
-**Component:** Release  
-**Status:** Open (planned for Sept 30)  
-**Description:**  
-Tag v0.1.0, write release notes, run final E2E demo.
-
-**Acceptance criteria:**
-- Git tag `v0.1.0` on `main`
-- Release notes in `docs/RELEASE-v0.1.0.md`
-- Demo script `docs/DEMO.md` runs end-to-end on Mac + VPS
-- All issues #1–#17 closed or deferred
-
-**Workaround:** None; this is the goal.
-
----
-
-## Infrastructure (Ongoing)
-
-### #19 Commit train automation
-**Severity:** Medium  
-**Component:** Automation  
-**Status:** Open (planned for Sept 16)  
-**Description:**  
-Automate the daily commit train (one slice per day, Sept 16–30). Use a cron job or Hermes lane to:
-- Check if today's slice is due
-- Implement the slice (or verify it's already done)
-- Commit with today's date
-- Push to `main`
-
-**Acceptance criteria:**
-- One commit per day, Sept 16–30
-- Each commit message references the slice (e.g., "feat: S2 — desktop app")
-- Push happens at 12:00 UTC
-- `PAUSE` file stops the train
-
-**Workaround:** Manual commits (current state).
-
----
-
-### #20 VPS keepalive cron
-**Severity:** Low  
-**Component:** Infrastructure  
-**Status:** Done (commit 19ee13d)  
-**Description:**  
-Cron job checks `/health` every 5 minutes, restarts the server if down.
-
-**Status:** Installed on VPS, running.
-
----
-
-## Summary
-
-- **Bugs:** 5 (1 critical, 1 fixed, 3 low/medium)
-- **Features:** 13 (3 high, 6 medium, 4 low)
-- **Infrastructure:** 2 (1 done, 1 ongoing)
-- **Total:** 20 issues
-
-**Priority order for Sept 16–30:**
-1. #1 (VPS login) — critical, blocks team use
-2. #6 (desktop app) — high, flagship feature
-3. #11 (team lanes) — high, blocks tmux-lane integration
-4. #18 (v0.1.0 release) — high, the goal
-5. #7, #8, #9 (desktop app parts 2–4) — high, complete the desktop experience
-6. #10 (welcome page) — medium, needed for desktop app landing
-7. #5, #15 (compare column swaps) — medium, improves UX
-8. #12, #13 (tests + CI) — medium, quality gate
-9. #2, #3, #4, #14, #16, #17 (polish) — low/medium, nice-to-have
+All bugs, features, and infrastructure work identified during the Sept 15 demo
+run-through (#1–#20, plus the same-day reports #42–#46) and the ROADMAP Phase 5/6
+decomposition (#21–#41).
+
+**Reconciled 2026-11-14 (S57 lane run)** against three sources: the live GitHub
+issue state (`api.github.com/repos/lecharles/llm-fine-tuner-agent-tester/issues`,
+all 46 issues), the commit-train ledgers (`docs/COMMIT-TRAIN.md`,
+`docs/COMMIT-TRAIN-NOVEMBER.md`), and repo records (MAC-VERIFY board, ROADMAP
+checkboxes, commit bodies). This file is the index; issue bodies live at
+`https://github.com/lecharles/llm-fine-tuner-agent-tester/issues/<N>`.
+
+## State legend
+
+- **CLOSED (GitHub)** — already closed upstream.
+- **CLOSED (signed off)** — work shipped and browser-verified; Carlos signed off
+  on the H1/H3 checks (recorded on the S57 row of the November ledger). GitHub
+  flip is a manual step — see *Bookkeeping* below (the lane has no issue-write token).
+- **RESOLVED** — shipped by a train slice; GitHub issue still open upstream, flip pending.
+- **MAC VERIFY PENDING** — code shipped and VPS-verified; the Apple-Silicon half
+  waits on `docs/MAC-VERIFY.md` board #N.
+- **PARTIAL / IN PROGRESS / DEFERRED / OPEN** — genuinely unfinished; the note says what remains.
+
+## Index
+
+| # | Title | State | Shipped in | Notes |
+|---|-------|-------|-----------|-------|
+| 1 | VPS login 401 despite valid credentials | **CLOSED (signed off)** | H1 (ledger `docs/COMMIT-TRAIN.md`) | Root cause was the stale :8090 process hanging browser-shaped POSTs carrying `Origin:` — NOT the original JSON-vs-form theory. Restart fixed it; form login 200 in ~0.24 s with and without Origin; Carlos browser-verified with hard refresh and signed off. GitHub flip pending (see Bookkeeping). |
+| 2 | Compare: failed columns don't persist to history | RESOLVED | `1d56f87` + S75 (`a15e1ac`) | S75 added `chat_messages.status` (rev `b7d3f2a8c5e1`): failed columns persist as ⚠ rows, survive reload, and are excluded from history replay. The "column disabled after 2 fails" badge remains a ROADMAP compare-depth idea. |
+| 3 | Ollama fallback doesn't auto-select a model | RESOLVED | S37 (`local_registry.py`) | 3-family recipe order (llama3.2 → phi4-mini → gemma3:4b); "fixed #3". `GENERATION_LOCAL_MODELS` override still honored. |
+| 4 | Loss curve not shown in real-time | RESOLVED | S11 (+S51 polish) | train.log → `GET /api/training-runs/{id}/losses` → live dependency-free SVG on Train; axis labels + per-point tooltips in S51. |
+| 5 | Compare: hosted columns can't swap for local models | RESOLVED | S13 | 5th optional "ollama" column (session `compare_ollama_model`, migration `5c8f2a1e9d34`) + hosted pickers. |
+| 6 | Desktop app: `llmtuner app` floating window | MAC VERIFY PENDING | S2 (cli/) | `CODED — AWAIT MAC VERIFY` on the ledger; ⚠ not on the MAC-VERIFY board — flagged for the S63 checkpoint to add a recipe. |
+| 7 | Desktop app: menu-bar integration (rumps) | MAC VERIFY PENDING | S7 | Board #3. |
+| 8 | Desktop app: icon pipeline (favicon → icns) | MAC VERIFY PENDING | S5 (`e0070ea`) | Board #1. |
+| 9 | Desktop app: `.app` bundle identity | MAC VERIFY PENDING | S6 (`2eb9b32`) | Board #2. |
+| 10 | Welcome/motivation page | RESOLVED | S4 (+S39) | `/welcome` + sidebar; empty-state/icon polish in S39. |
+| 11 | Team lanes: service-token auth | RESOLVED | S8 | `API_SERVICE_TOKENS`, `GET /api/status`, `docs/TMUX-LANES.md`; the lane 403 rule still guards writes today (reused by S56). |
+| 12 | Pytest suite | RESOLVED | S9 | 37 tests then; **176 today (~20 s)** — the original <10 s budget is exceeded by backlog growth; S66 (11-16) pins a timing-budget assertion. |
+| 13 | CI: GitHub Actions | RESOLVED | S10 | `.github/workflows` compileall + `import main` + pytest + npm build; README badge. Polish = S66. |
+| 14 | Dataset import: CSV/JSONL upload | RESOLVED | S12 | multipart upload endpoint + "Import from file" on Dataset detail (2 MB/5000-pair caps). |
+| 15 | Compare: hosted-column model pickers | RESOLVED | S13 | gpt-4o / gpt-5.5 / claude-sonnet-5 offered; per-session model choice surfaced in UI stays a ROADMAP box. |
+| 16 | Docs: README rewrite + screenshots | RESOLVED | S14 (+S39) | README rewritten; `docs/screenshots/00+01` re-shot (S39). The 6 legacy Sept-14 storyboard shots in `screenshots/` stay stale (see `docs/SCREENSHOTS.md`); S73 (11-29) refreshes after a Mac session. |
+| 17 | Shared-instance hardening | RESOLVED | S15 + S44 | signup limiter, local_mode refusal, `docs/CREDENTIALS.md`, CSP headers, login throttle — all LIVE on :8090 since the S55 restart. |
+| 18 | v0.1.0 release | **CLOSED (GitHub)** | `0d2a2a5` | tag v0.1.0 + notes; v0.1.1 followed (S45 `2697a48`); v0.2.0-rc scheduled as S74. |
+| 19 | Commit train automation | ACTIVE (umbrella) | the lane itself | One-commit-per-day streak held since 09-16; October closed; November train ARMED 11-06 with Carlos's GO. Keep open until the S74 month close. |
+| 20 | VPS keepalive cron | **CLOSED (GitHub)** | H2 | `scripts/keepalive.sh`, flock-guarded 10-min tick; runbook + drift detector documented in S55. |
+| 21 | Phase 5: theme pass + styled components | RESOLVED | S17 + S18 | theme.css tokens, sentence-cased statuses, iters stepper/chips, ConfirmDialog, VuMeter. |
+| 22 | Phase 5: accessibility (WCAG AA) | RESOLVED | S19 | AA contrast both themes, `:focus-visible`, skip link, label associations, `role="alert"`. |
+| 23 | Phase 5: logged-in user display | RESOLVED | S20 | `UserMenu` via `/api/auth/me`, Linear-style popover. |
+| 24 | Phase 5: deploy web shell online | **CLOSED (GitHub)** | S21 (`9ffec1a`) | Live at :8090; post-restart checklist (S55) re-verified health/UI/SPA/CSP. |
+| 25 | Phase 6 ADR: hybrid vs local-first | OPEN — sign-off pending | S22 (ADR-001 `7373223`) | Status still **Proposed** even though Option A was implemented (S23–S26, S49–S50 all shipped hybrid). Formal sign-off gates platform expansion: S42/S43 findings land here, RN/Swift builds stay deferred until signed. |
+| 26 | Phase 6: macOS installer | MAC VERIFY PENDING | S23 (`01d66cf`) | Board #5. |
+| 27 | Phase 6: local companion runtime | **CLOSED (GitHub 10-13)** | S24 (`aa749ac`) | `--self-test` PASS on VPS; the real darwin/arm64 half still rides board #6 — note the early close. |
+| 28 | Phase 6: opt-in hardware bridge | MAC VERIFY PENDING | S25 (`f42a8de`) + S49 pairing + S50 train handoff | Board #7; S49/S50 recipes in the November ledger. |
+| 29 | Phase 6: data model split | MAC VERIFY PENDING | S26 (`5ae26cf`) | Board #8; device_artifacts ledger + `/api/bridge/artifacts`. |
+| 30 | Phase 6: fluid end-to-end path, no terminal | OPEN — in progress | components: S23–S26, S49–S50 | The full fresh-install path is proven piecewise only; blocked on the board #5→#8 verify chain (order 5 clean-machine → 6→8). S71 (11-27) seeds the first-run demo dataset. |
+| 31 | Generation UX: auto-fill use-case prompt | RESOLVED | S27 | Zero-LLM templates, owner-scoped, never writes; "Suggest" on Dataset detail. |
+| 32 | Compare: parallelize four-way fan-out | RESOLVED | S28 | ThreadPoolExecutor fan-out with a thread-barrier test; stale ROADMAP checkbox fixed by S75. |
+| 33 | Training error explainer | RESOLVED (rule map, not LLM) | S29 | 11 deterministic rules + generic fallback under failed runs (`GET /{id}/explain`); the ROADMAP LLM-summary upgrade stays backlog by choice. |
+| 34 | Sharing: public/private datasets + models | RESOLVED | S31 + S32 + S53 | visibility columns, ShareToggle UI, `/library`, read-only public detail at `/library/datasets/:id` with the 404-no-leak invariant. |
+| 35 | Advanced training mode (hyperparameters) | PARTIAL | S33 + S34 | LoRA rank/alpha + learning rate shipped with bounds + UI; batch/grad-accum/dropout/target-modules and the `advanced_config` JSON column stay ROADMAP backlog. |
+| 36 | Training run visibility + history | RESOLVED | S35 + S36 | `/history` page, per-run dataset/base/iters/final-loss, loss replay, log viewer. |
+| 37 | Brand pass: motif, Swagger theming, light/dark | PARTIAL | S39 | EmptyState family, icon sweep, light/dark verified; Swagger UI theming not started (ROADMAP brand). |
+| 38 | In-app guides | OPEN — in progress | S30 (Train + Dataset detail) | S65 (11-19) adds Library/History/Settings hints, reusing the S30 pattern. |
+| 39 | More model families beyond Llama 3.2 | RESOLVED | S37 + S38 | phi4-mini + gemma3:4b registry entries + 17 family/ladder tests. |
+| 40 | Repo extraction: API Agents + API Infrastructure | PARTIAL — deferred by ADR | S40 (ADR-002) + S41 | Landed as in-repo `backend/api_agents/` with the 4 import-cut rules + boundary tests; separate showcase repos deferred per the ADR. |
+| 41 | Platform expansion: RN, native macOS, Swift | DEFERRED | S42 + S43 spike notes | Boards #9–#10 for the spikes themselves; real builds gated on #25 sign-off per the November ledger. |
+| 42 | Training: failures are silent | **CLOSED (signed off)** | H3 + `b99776d` + S29 + S36 | `except Exception as e` + error column (migration `3b7c1d9f4a2e`) + 425 MLX preflight + red error box; fuse.log tail appended (`b99776d`); explain cards (S29) and log viewer (S36). Carlos eyeballed the red box on run #1 and signed off. GitHub flip pending. |
+| 43 | Compare: cap all columns at ~150 words | RESOLVED | H4 | Single `ANSWER_CAP` system prompt on all columns; the check rides board #4 ("every answer ≤ ~150 words" in DEMO Script A). |
+| 44 | Docs/UX: 200–400 iters recommended | RESOLVED | H4 + QUICKSTART | `docs/QUICKSTART.md` iteration tiers (10-20 smoke / 200-400 recommended / 500+ deep); S71 wires the Welcome CTA into it. |
+| 45 | Generation: pre-flight status + fast-fail dead providers | MAC VERIFY PENDING | `69b7d31` | `GET /api/generation/status` + ladder break on account-level errors + 60 s timeouts; VPS half live, the Mac check in the issue body still unrun (fold into board #4's E2E). |
+| 46 | Training: fuse stage fails (exit 1) silently | OPEN — RCA pending | `b99776d` (no longer silent) | fuse.log tail now persisted on failed runs + `scripts/collect-run-logs.sh`; awaiting Carlos's paste-safe diagnostics block from the Mac. |
+
+## Bookkeeping — GitHub flips owed
+
+The lane commits via SSH and has **no issue-write token**, so upstream flips are
+one-time manual steps for Carlos (or a future run with `gh auth`):
+
+```bash
+# the two signed-off browser-verify issues (this row's close-out):
+gh issue close 1  --comment "H1 browser-verified, signed off — see S57/docs/GITHUB-ISSUES.md"
+gh issue close 42 --comment "H3 browser-verified (red box on run #1), signed off — see S57/docs/GITHUB-ISSUES.md"
+# the 23 train-resolved issues:
+for i in 2 3 4 5 10 11 12 13 14 15 16 17 21 22 23 31 32 33 34 36 39 43 44; do
+  gh issue close $i --comment "Shipped by the commit train — see docs/GITHUB-ISSUES.md (S57 reconciliation)"
+done
+```
+
+## Summary (post-reconciliation, 2026-11-14)
+
+- **Closed upstream:** #18, #20, #24, #27 → 4
+- **Closed here (sign-off recorded, flip pending):** #1, #42 → 2
+- **RESOLVED by the train, flip pending:** 23 issues (see Bookkeeping)
+- **Shipped, Mac verify pending:** #6–#9, #26, #28, #29, #45 → 8 (board #1–#7; #6 has no board recipe yet)
+- **Genuinely open threads:** #19 (umbrella, until S74) · #25 (ADR sign-off — the month's gating decision) · #30 (E2E path) · #35, #37, #40 (partials) · #38 (until S65) · #41 (deferred) · #46 (RCA) → 9
+
+Sept's original "20 issues" estimate is superseded: #21–#41 were created as the
+ROADMAP decomposition, #42–#46 as same-day demo-run reports.
+
+**Priority order** (was: Sept 16–30 list) is now carried by
+`docs/COMMIT-TRAIN-NOVEMBER.md`; the remaining threads above map to S63/S65/S66/S71/S73/S74.
