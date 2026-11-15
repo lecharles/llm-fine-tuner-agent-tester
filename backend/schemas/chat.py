@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -44,9 +45,38 @@ class ChatMessageOut(BaseModel):
     # None = a normal reply. The UI renders these as the error bubble so a
     # failed column stays visible after a reload instead of vanishing.
     status: str | None = None
+    # S58: thumbs scoring. 1 = 👍, -1 = 👎, None = unrated. Only answered
+    # assistant rows can carry one (see routers/chat.py set_message_rating).
+    rating: int | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class RatingUpdate(BaseModel):
+    # Body of the per-message rating endpoint. Literal-typed so anything but
+    # up/down/clear is a 422 before we ever touch the DB.
+    rating: Literal[1, -1] | None = None
+
+
+class ColumnScore(BaseModel):
+    # S58: one leaderboard row for a compare column inside one session.
+    # "replies" counts answerable assistant rows (S75 error rows excluded),
+    # so "unrated" below is always a truthful gap-to-cover number.
+    label: str
+    up: int
+    down: int
+    net: int
+    replies: int
+    rated: int
+
+
+class SessionScores(BaseModel):
+    session_id: int
+    total_rated: int
+    # Ranked best-first: net score, then raw thumbs-up, then label for a
+    # stable order when models tie.
+    scores: list[ColumnScore]
 
 
 class ChatTurnOut(BaseModel):

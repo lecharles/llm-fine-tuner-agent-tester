@@ -92,7 +92,24 @@ export type ChatMessage = {
     model_label: string | null; // fine_tuned | vanilla | openai | anthropic | ollama (null for user)
     content: string;
     status?: string | null; // S75: "error" = persisted per-column failure (content is the reason); null = normal reply
+    rating?: number | null; // S58: 1 = 👍, -1 = 👎, null = unrated (only on answered replies)
     created_at: string;
+};
+
+// S58: session leaderboard — one row per compare column that has answered.
+export type ColumnScore = {
+    label: string;
+    up: number;
+    down: number;
+    net: number;
+    replies: number;
+    rated: number;
+};
+
+export type SessionScores = {
+    session_id: number;
+    total_rated: number;
+    scores: ColumnScore[];
 };
 
 export type ChatTurn = {

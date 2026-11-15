@@ -12,6 +12,9 @@ from schemas.chat import (
     ChatMessageCreate,
     ChatMessageOut,
     ChatTurnOut,
+    ColumnScore,
+    RatingUpdate,
+    SessionScores,
 )
 from core.security import get_current_user
 from api_agents import (
@@ -231,4 +234,113 @@ def list_messages(
         .filter(ChatMessage.chat_session_id == session.id)
         .order_by(ChatMessage.id)
         .all()
+    )
+
+
+def _owned_session(db: Session, session_id: int, current_user: User) -> ChatSession:
+    """Fetch a session or 404. A foreign session reads as missing — the S31
+    no-leak rule, same shape as every other owner-only query in this router."""
+    session = (
+        db.query(ChatSession)
+        .filter(ChatSession.id == session_id, ChatSession.user_id == current_user.id)
+        .first()
+    )
+    if session is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Chat session not found"
+        )
+    return session
+
+
+@router.put(
+    "/{session_id}/messages/{message_id}/rating", response_model=ChatMessageOut
+)
+def set_message_rating(
+    session_id: int,
+    message_id: int,
+    body: RatingUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """S58: thumbs a single compare reply. 1 = 👍, -1 = 👎, null = clear.
+
+    Only the session owner can rate (404 otherwise, no-leak), and only an
+    ANSWERED assistant row is rateable: user turns 400, and S75 error rows 400
+    too — scoring a column's connection failure is not feedback about the
+    model's answer. Re-rating the same thumb value is a no-op; null clears."""
+    session = _owned_session(db, session_id, current_user)
+    message = (
+        db.query(ChatMessage)
+        .filter(
+            ChatMessage.id == message_id,
+            ChatMessage.chat_session_id == session.id,
+        )
+        .first()
+    )
+    if message is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Message not found"
+        )
+    if message.role != "assistant" or message.model_label is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only model replies can be rated",
+        )
+    if message.status == "error":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed columns cannot be rated (the reply never happened)",
+        )
+    message.rating = body.rating
+    db.commit()
+    db.refresh(message)
+    return message
+
+
+@router.get("/{session_id}/scores", response_model=SessionScores)
+def session_scores(
+    session_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """S58: the session leaderboard — thumbs per column, ranked best-first.
+
+    Built by one pass over the session's answered assistant rows (S75 error
+    rows excluded from BOTH replies and rating counts, so a column that kept
+    failing is never punished with phantom thumbs-downs it never received).
+    Columns that replied but were never rated still appear with net 0 — the
+    board should show every live column, not only the judged ones."""
+    session = _owned_session(db, session_id, current_user)
+    rows = (
+        db.query(ChatMessage)
+        .filter(
+            ChatMessage.chat_session_id == session.id,
+            ChatMessage.role == "assistant",
+            ChatMessage.model_label.isnot(None),
+        )
+        .all()
+    )
+    tally: dict[str, ColumnScore] = {}
+    for row in rows:
+        entry = tally.setdefault(
+            row.model_label,
+            ColumnScore(label=row.model_label, up=0, down=0, net=0, replies=0, rated=0),
+        )
+        if row.status == "error":
+            continue  # never an answer: not a reply, not rateable, not scored
+        entry.replies += 1
+        if row.rating == 1:
+            entry.up += 1
+            entry.rated += 1
+        elif row.rating == -1:
+            entry.down += 1
+            entry.rated += 1
+        entry.net = entry.up - entry.down
+    ranked = sorted(
+        tally.values(), key=lambda s: (-s.net, -s.up, s.label)
+    )
+    return SessionScores(
+        session_id=session.id,
+        total_rated=sum(s.rated for s in ranked),
+        scores=ranked,
     )

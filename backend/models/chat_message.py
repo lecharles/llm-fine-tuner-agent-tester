@@ -20,6 +20,11 @@ class ChatMessage(Base):
     # rebuild guard in routers/chat.py) — the original schema comment's leak
     # concern is handled by exclusion, not by skipping the write.
     status = Column(String, nullable=True)
+    # S58: per-column thumbs scoring. +1 = 👍, -1 = 👎, NULL = unrated. Only
+    # answered assistant rows ever carry a rating (the rating endpoint refuses
+    # user rows and S75 error rows), so the leaderboard counts stay honest:
+    # every non-NULL rating here points at a real reply.
+    rating = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.current_timestamp())
 
     chat_session = relationship("ChatSession", back_populates="chat_messages")

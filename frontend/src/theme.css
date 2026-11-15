@@ -1305,6 +1305,133 @@ button {
   flex-shrink: 0;
 }
 
+/* ---------- S58: compare scoring (thumbs + session leaderboard) ---------- */
+
+/* Per-column running tally, parked in the column head between the name and
+   the category/picker. Mono digits so the counts don't jitter the layout. */
+.col-score {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* The run-card leaderboard strip above the columns. */
+.compare-scoreboard {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin: 0 0 10px;
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  font-size: 11.5px;
+}
+
+.sb-title {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.sb-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.sb-rank {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 15px;
+  height: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sb-name {
+  font-weight: 500;
+}
+
+.sb-up,
+.sb-down {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+.sb-net {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+.sb-net.pos {
+  color: var(--success);
+}
+
+.sb-net.neg {
+  color: var(--danger);
+}
+
+/* Thumbs under each answered bubble: quiet until hovered or lit. */
+.msg-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  max-width: 92%;
+  min-width: 0;
+}
+
+.thumbs {
+  display: inline-flex;
+  gap: 3px;
+  padding-left: 6px;
+}
+
+.thumb-btn {
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  border-radius: 6px;
+  color: var(--text-muted);
+  opacity: 0.45;
+  cursor: pointer;
+  transition: opacity 0.12s ease, color 0.12s ease;
+}
+
+.thumb-btn:hover {
+  opacity: 1;
+}
+
+.thumb-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+  opacity: 1;
+}
+
+.thumb-btn.on-up {
+  opacity: 1;
+  color: var(--success);
+}
+
+.thumb-btn.on-down {
+  opacity: 1;
+  color: var(--danger);
+}
+
 .compare-thread {
   flex: 1;
   min-height: 0;

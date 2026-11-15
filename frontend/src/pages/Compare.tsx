@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Send } from "lucide-react";
+import { Send, ThumbsDown, ThumbsUp } from "lucide-react";
 import { apiFetch } from "../api";
 import VuMeter from "../components/VuMeter";
-import type { FineTunedModel, ChatSession, ChatMessage, ChatTurn } from "../types";
+import type { FineTunedModel, ChatSession, ChatMessage, ChatTurn, SessionScores } from "../types";
 
 // The four always-on compare columns, in display order. The backend tags each
 // assistant reply with one of these model_label values. S13 (#15) adds a
@@ -54,6 +54,9 @@ export default function Compare() {
     // Optional fifth column: an installed Ollama model, or "" for off.
     const [ollamaModel, setOllamaModel] = useState("");
     const [ollamaModels, setOllamaModels] = useState<string[]>([]);
+    // S58: the session leaderboard (thumbs per column), refreshed after every
+    // rating and every turn. null = nothing fetched yet (no session).
+    const [scores, setScores] = useState<SessionScores | null>(null);
 
     // The session id lives in a ref: it persists across renders and we read it
     // synchronously inside the send handler. null means "no session yet".
@@ -88,6 +91,16 @@ export default function Compare() {
         });
     }, [messages, sending]);
 
+    // S58: pull the leaderboard. Best-effort by design — the board is a
+    // summary, and a failed refresh must never break the chat itself.
+    async function refreshScores(sessionId: number) {
+        try {
+            setScores(await apiFetch<SessionScores>(`/chat-sessions/${sessionId}/scores`));
+        } catch {
+            /* keep the last known board; the next rating/turn retries */
+        }
+    }
+
     // Lazy session: create one only when we first need it (or when the column
     // setup changed since the last session). Returns the session id to use.
     async function ensureSession(): Promise<number> {
@@ -107,6 +120,7 @@ export default function Compare() {
         sessionRef.current = session.id;
         sessionSetupRef.current = setup;
         setMessages([]); // a new session (first use or setup change) starts a fresh transcript
+        setScores(null); // and a fresh scoreboard — old session's ratings don't ride over
         return session.id;
     }
 
@@ -129,10 +143,31 @@ export default function Compare() {
             // error state to juggle.
             setMessages((prev) => [...prev, ...turn.messages]);
             setPrompt("");
+            await refreshScores(sessionId); // unrated columns → same counts, fresh replies appear
         } catch (err) {
             setError(err instanceof Error ? err.message : "Send failed");
         } finally {
             setSending(false);
+        }
+    }
+
+    // S58: thumb one reply. Clicking the thumb that's already lit CLEARS the
+    // vote (rating: null); the backend persists and we mirror it locally,
+    // then re-pull the board so ranks/counts come from the server (single
+    // source of truth — no client-side arithmetic to drift).
+    async function rate(m: ChatMessage, value: 1 | -1) {
+        const sessionId = sessionRef.current;
+        if (sessionId === null) return;
+        const next = m.rating === value ? null : value;
+        try {
+            const updated = await apiFetch<ChatMessage>(
+                `/chat-sessions/${sessionId}/messages/${m.id}/rating`,
+                { method: "PUT", body: { rating: next } }
+            );
+            setMessages((prev) => prev.map((x) => (x.id === updated.id ? updated : x)));
+            await refreshScores(sessionId);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Rating failed");
         }
     }
 
@@ -185,12 +220,44 @@ export default function Compare() {
 
             {error && <p className="form-error" role="alert">{error}</p>}
 
+            {/* S58: the run-card leaderboard. Ranks columns by persisted
+                session thumbs (net first, then raw 👍 count, then label) —
+                the order comes from the server, we just render it. Hidden
+                until the first vote so a fresh compare stays uncluttered. */}
+            {scores && scores.total_rated > 0 && (
+                <div className="compare-scoreboard" role="status"
+                     aria-label={`Session leaderboard, ${scores.total_rated} replies rated`}>
+                    <span className="sb-title">Session score</span>
+                    {scores.scores.filter((s) => s.replies > 0).map((s, i) => (
+                        <span className="sb-row" key={s.label}>
+                            <span className="sb-rank">{i + 1}</span>
+                            <span className="col-dot" style={{ background: COL_COLOR[s.label] }} />
+                            <span className="sb-name" style={{ color: COL_COLOR[s.label] }}>{COL_NAME[s.label]}</span>
+                            <span className="sb-up">👍 {s.up}</span>
+                            <span className="sb-down">👎 {s.down}</span>
+                            <span className={`sb-net${s.net > 0 ? " pos" : s.net < 0 ? " neg" : ""}`}>
+                                {s.net > 0 ? `+${s.net}` : s.net}
+                            </span>
+                        </span>
+                    ))}
+                </div>
+            )}
+
             <div className={`compare-cols${columns.length === 5 ? " cols-five" : ""}`} ref={colsRef}>
                 {columns.map((label) => (
                     <div className="compare-col" key={label}>
                         <div className="compare-col-head">
                             <span className="col-dot" style={{ background: COL_COLOR[label] }} />
                             <span className="col-name" style={{ color: COL_COLOR[label] }}>{COL_NAME[label]}</span>
+                            {/* S58: this column's running tally in its own head. */}
+                            {scores && (() => {
+                                const mine = scores.scores.find((s) => s.label === label);
+                                return mine && mine.rated > 0 ? (
+                                    <span className="col-score" title={`${mine.up} up, ${mine.down} down of ${mine.replies} replies`}>
+                                        👍{mine.up} 👎{mine.down}
+                                    </span>
+                                ) : null;
+                            })()}
                             {label === "openai" ? (
                                 <select
                                     className="select col-picker"
@@ -233,8 +300,35 @@ export default function Compare() {
                                         <div className="bubble bubble-error">⚠ {m.content}</div>
                                     </div>
                                 ) : (
+                                    // S58: an answered reply — thumb it. The
+                                    // stack keeps the thumbs anchored under
+                                    // the bubble, not beside it.
                                     <div className="msg msg-model" key={m.id}>
-                                        <div className="bubble bubble-model">{m.content}</div>
+                                        <div className="msg-stack">
+                                            <div className="bubble bubble-model">{m.content}</div>
+                                            <span className="thumbs">
+                                                <button
+                                                    type="button"
+                                                    className={`thumb-btn${m.rating === 1 ? " on-up" : ""}`}
+                                                    aria-label="Good answer"
+                                                    aria-pressed={m.rating === 1}
+                                                    title={m.rating === 1 ? "Rated 👍 — click to clear" : "Mark this answer good"}
+                                                    onClick={() => rate(m, 1)}
+                                                >
+                                                    <ThumbsUp size={12} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className={`thumb-btn${m.rating === -1 ? " on-down" : ""}`}
+                                                    aria-label="Bad answer"
+                                                    aria-pressed={m.rating === -1}
+                                                    title={m.rating === -1 ? "Rated 👎 — click to clear" : "Mark this answer bad"}
+                                                    onClick={() => rate(m, -1)}
+                                                >
+                                                    <ThumbsDown size={12} />
+                                                </button>
+                                            </span>
+                                        </div>
                                     </div>
                                 )
                             )}
