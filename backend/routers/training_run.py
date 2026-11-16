@@ -21,6 +21,43 @@ from training.runner import run_training
 
 router = APIRouter(prefix="/api/training-runs", tags=["training-runs"])
 
+# S59: the train queue serializes per user. A run is "active" while it is
+# queued or running; a second start for the same user answers 409 instead of
+# launching a concurrent mlx_lm.lora that would fight the first for the GPU.
+ACTIVE_STATUSES = ("queued", "running")
+
+
+def _blocking_run(db: Session, user_id: int) -> TrainingRun | None:
+    """The user's oldest active run, if any — the one a new POST collides with."""
+    return (
+        db.query(TrainingRun)
+        .filter(TrainingRun.user_id == user_id, TrainingRun.status.in_(ACTIVE_STATUSES))
+        .order_by(TrainingRun.created_at, TrainingRun.id)
+        .first()
+    )
+
+
+def _queue_positions(db: Session) -> dict[int, int]:
+    """run id -> 1-based FIFO position over ALL active runs (queued or running),
+    ordered by creation. Computed per request from the active set, which is a
+    handful of rows at this scale — no column, no migration."""
+    rows = (
+        db.query(TrainingRun.id)
+        .filter(TrainingRun.status.in_(ACTIVE_STATUSES))
+        .order_by(TrainingRun.created_at, TrainingRun.id)
+        .all()
+    )
+    return {row[0]: i + 1 for i, row in enumerate(rows)}
+
+
+def _run_out(run: TrainingRun, positions: dict[int, int]) -> TrainingRunOut:
+    out = TrainingRunOut.model_validate(run)
+    # Only a waiting run has a queue position; running/terminal rows report
+    # None so clients never render a stale spot in line.
+    if run.status == "queued":
+        out.queue_position = positions.get(run.id)
+    return out
+
 
 @router.post("", response_model=TrainingRunOut, status_code=status.HTTP_201_CREATED)
 def start_training_run(
@@ -50,6 +87,19 @@ def start_training_run(
     if not ok:
         raise HTTPException(status_code=425, detail=reason)
 
+    # S59: one active run per user — serialize instead of oversubscribing
+    # the single MLX engine. The client can poll that run for status.
+    blocker = _blocking_run(db, current_user.id)
+    if blocker is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f"A training run is already in progress (run {blocker.id}, "
+                f"status {blocker.status}). Runs are serialized per user — "
+                "wait for it to finish, then start another."
+            ),
+        )
+
     run = TrainingRun(
         user_id=current_user.id,
         dataset_id=run_in.dataset_id,
@@ -66,7 +116,7 @@ def start_training_run(
     db.refresh(run)
 
     background_tasks.add_task(run_training, run.id)
-    return run
+    return _run_out(run, _queue_positions(db))
 
 
 @router.get("", response_model=list[TrainingRunOut])
@@ -80,7 +130,9 @@ def list_training_runs(
         .order_by(TrainingRun.created_at.desc())
         .all()
     )
-    return runs
+    # S59: one position pass over the active set, then stamp each row.
+    positions = _queue_positions(db)
+    return [_run_out(run, positions) for run in runs]
 
 
 @router.get("/history", response_model=list[TrainingRunHistoryOut])
@@ -133,7 +185,7 @@ def read_training_run(
     )
     if run is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Training run not found")
-    return run
+    return _run_out(run, _queue_positions(db))
 
 
 @router.get("/{run_id}/losses", response_model=list[LossPoint])

@@ -58,6 +58,10 @@ class TrainingRunOut(BaseModel):
     lora_alpha: int = 16
     status: str
     error_message: str | None = None
+    # S59: 1-based FIFO position among the globally active (queued/running)
+    # runs, computed per request — not a column. Only set while the run is
+    # waiting (status "queued"); None once it starts running or ends.
+    queue_position: int | None = None
     created_at: datetime
     completed_at: datetime | None = None
 
