@@ -102,3 +102,39 @@ export async function apiUpload<T>(path: string, file: File): Promise<T> {
     }
     return response.json() as Promise<T>;
 }
+
+// S61 (Export 1): file download with the JWT attached. apiFetch parses JSON,
+// so binary/attachment responses need their own path: fetch -> blob -> a
+// temporary object URL clicked by a synthetic anchor. The server sets
+// Content-Disposition; the `fallback` name is only used if we can't read it.
+export async function apiDownload(path: string, fallback: string): Promise<void> {
+    const headers: Record<string, string> = {};
+    const token = getToken();
+    if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${BASE}${path}`, { headers });
+
+    if (response.status === 401) {
+        clearToken();
+        if (window.location.pathname !== "/login") {
+            window.location.href = "/login";
+        }
+        throw new Error("Unauthorized");
+    }
+    if (!response.ok) {
+        const err = await response.json().catch(() => null);
+        throw new Error(err?.detail ?? `Download failed: ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = fallback;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+}

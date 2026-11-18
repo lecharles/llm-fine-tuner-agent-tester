@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import json
+import re
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -289,4 +292,91 @@ def merge_dataset(
         moved=len(moved_ids),
         skipped_duplicates=skipped,
         source_remaining=len(source_pairs) - len(moved_ids),
+    )
+
+
+# ---------------------------------------------------------------------------
+# S61: Export 1 — dataset export (JSONL + ShareGPT shapes)
+# ---------------------------------------------------------------------------
+
+# The two shapes the export speaks:
+#   jsonl    — {"question": ..., "answer": ...} per line. Deliberately the
+#              same dialect `datasets_import._parse_jsonl` reads (S12), so an
+#              exported file re-imports byte-for-byte.
+#   sharegpt — {"conversations": [{"from": "human", ...}, {"from": "gpt",
+#              ...}]} per line, the ShareGPT schema the wider fine-tuning
+#              ecosystem (LLaMA-Factory, axolotl, ...) expects. mlx-lm's chat
+#              rows (`training/data.build_chat_record`) carry the same Q/A
+#              semantics under role names, so nothing is lost in the mapping.
+EXPORT_FORMATS = ("jsonl", "sharegpt")
+
+
+def _export_filename(dataset: Dataset) -> str:
+    """Attachment filename: slugified name + dataset id (ids disambiguate the
+    two datasets that both slug to `notes`), always .jsonl — both shapes are
+    JSON-lines files, the format query param records which one inside."""
+    slug = re.sub(r"[^a-z0-9]+", "-", (dataset.name or "").lower()).strip("-")
+    if not slug:
+        slug = "dataset"
+    return f"{slug[:60]}-d{dataset.id}.jsonl"
+
+
+@router.get("/{dataset_id}/export")
+def export_dataset(
+    dataset_id: int,
+    format: str = Query("jsonl", description="Export shape: jsonl | sharegpt"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """S61: stream the dataset's Q&A pairs as a downloadable JSONL file.
+
+    Reads follow the S31 owner-or-public rule (this is a read, not a write),
+    but a stranger exporting a public dataset gets the pairs only — no owner
+    metadata rides in the file. Empty datasets export as a valid empty file
+    (200, zero lines): refusing to download an empty dataset would make the
+    button a trap on the page a user is most likely to check it from.
+    Pairs come out in id order (oldest first) so two exports of the same
+    dataset diff cleanly.
+    """
+    fmt = (format or "").lower()
+    if fmt not in EXPORT_FORMATS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unknown export format '{format}' — expected one of: {', '.join(EXPORT_FORMATS)}",
+        )
+
+    dataset = (
+        db.query(Dataset)
+        .filter(
+            Dataset.id == dataset_id,
+            (Dataset.user_id == current_user.id) | (Dataset.visibility == "public"),
+        )
+        .first()
+    )
+    if dataset is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dataset not found")
+
+    pairs = _pairs_of(db, dataset_id)
+    if fmt == "jsonl":
+        records = ({"question": p.question, "answer": p.answer} for p in pairs)
+    else:
+        records = (
+            {
+                "conversations": [
+                    {"from": "human", "value": p.question},
+                    {"from": "gpt", "value": p.answer},
+                ]
+            }
+            for p in pairs
+        )
+
+    # ensure_ascii=False: content is user text; \uXXXX soup makes the file
+    # unreadable and needlessly larger. Trailing newline per line keeps the
+    # file POSIX-clean and matches write_jsonl (the trainer's own writer).
+    body = "".join(json.dumps(rec, ensure_ascii=False) + "\n" for rec in records)
+    filename = _export_filename(dataset)
+    return Response(
+        content=body,
+        media_type="application/x-ndjson",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )

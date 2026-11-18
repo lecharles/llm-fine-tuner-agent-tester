@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Sparkles, Download, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Upload, HelpCircle, Wand2, MessagesSquare, Eraser, GitMerge } from "lucide-react";
-import { apiFetch, apiUpload } from "../api";
+import { ArrowLeft, Sparkles, Download, FileDown, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Upload, HelpCircle, Wand2, MessagesSquare, Eraser, GitMerge } from "lucide-react";
+import { apiDownload, apiFetch, apiUpload } from "../api";
 import { displayStatus } from "../statusText";
 import type { Dataset, QAPair, DedupeResult, MergeResult } from "../types";
 import QAPairModal, { type QAPairValues } from "../components/QAPairModal";
@@ -44,6 +44,9 @@ export default function DatasetDetail() {
     const [mergeBusy, setMergeBusy] = useState(false);
     const [mergeNote, setMergeNote] = useState<string | null>(null);
     const [mergePreview, setMergePreview] = useState<MergeResult | null>(null);
+
+    // S61: export. Which shape is downloading right now ("" = idle).
+    const [exporting, setExporting] = useState<"" | "jsonl" | "sharegpt">("");
 
     // Pair create/edit modal, delete confirmation, and the current page.
     const [pairForm, setPairForm] = useState<{ open: boolean; mode: "create" | "edit"; pair: QAPair | null }>({
@@ -109,6 +112,31 @@ export default function DatasetDetail() {
             setError(err instanceof Error ? err.message : "Suggestion failed");
         } finally {
             setSuggesting(false);
+        }
+    }
+
+    // S61: download the whole dataset as a JSONL file. `jsonl` is the app's
+    // own import dialect (the file re-uploads as-is); `sharegpt` is the
+    // ecosystem conversations schema for other training tools. The server
+    // names the attachment; the fallback mirrors its slug for odd names.
+    async function handleExport(format: "jsonl" | "sharegpt") {
+        if (!dataset || exporting) return;
+        setExporting(format);
+        setError(null);
+        try {
+            const slug = (dataset.name || "dataset")
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/^-+|-+$/g, "")
+                .slice(0, 60) || "dataset";
+            await apiDownload(
+                `/datasets/${dataset.id}/export?format=${format}`,
+                `${slug}-d${dataset.id}.jsonl`,
+            );
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Export failed");
+        } finally {
+            setExporting("");
         }
     }
 
@@ -404,6 +432,32 @@ export default function DatasetDetail() {
                                         <Download size={15} /> {importing ? "Importing…" : "Import"}
                                     </button>
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* S61: take the dataset out of the app. Two shapes,
+                            one file format (JSON lines), server-side streaming
+                            of every pair in insertion order. */}
+                        <div className="card">
+                            <div className="label">
+                                Export
+                                <span className="hint" tabIndex={0} aria-label="About dataset export">
+                                    <HelpCircle size={13} />
+                                    <span className="hint-bubble">
+                                        JSONL is this app's own format - the file re-imports as-is. ShareGPT
+                                        (conversations/human/gpt) is what LLaMA-Factory and similar tools
+                                        expect. Both download every pair, oldest first.
+                                    </span>
+                                </span>
+                            </div>
+                            <div className="dd-hint">Download all {pairs.length} {pairs.length === 1 ? "pair" : "pairs"} as a .jsonl file.</div>
+                            <div className="dd-row dd-row-end">
+                                <button className="btn btn-ghost" onClick={() => handleExport("jsonl")} disabled={exporting !== ""}>
+                                    <FileDown size={15} /> {exporting === "jsonl" ? "Exporting…" : "JSONL"}
+                                </button>
+                                <button className="btn btn-ghost" onClick={() => handleExport("sharegpt")} disabled={exporting !== ""}>
+                                    <FileDown size={15} /> {exporting === "sharegpt" ? "Exporting…" : "ShareGPT"}
+                                </button>
                             </div>
                         </div>
 
