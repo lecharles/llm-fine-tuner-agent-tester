@@ -1,10 +1,13 @@
-# MAC-VERIFY — the 10 pending Mac verification slices
+# MAC-VERIFY — the 14 pending Mac verification slices
 
-S45 retro logged "10-slice Mac verify debt": every slice below is marked
-**DONE (Mac verify pending)** in the ledger — code shipped and VPS-verified,
-but the Apple-Silicon half has never been run. This doc turns each pending
-recipe into an exact checklist. Tick the date column (or reply with the step
-that diverged) and the lane flips the slice to plain DONE.
+S45 retro logged "10-slice Mac verify debt"; the board has since absorbed
+four more pending slices (S49, S50 — DONE with Mac-verify recipes in the
+November ledger — plus the S2 `llmtuner app` recipe this S63 checkpoint adds,
+and the S62 `serve` lane). Every slice below is marked **DONE (Mac verify
+pending)** (or `CODED — AWAIT MAC VERIFY`) in the ledger — code shipped and
+VPS-verified, but the Apple-Silicon half has never been run. This doc turns
+each pending recipe into an exact checklist. Tick the date column (or reply
+with the step that diverged) and the lane flips the slice to plain DONE.
 
 Recipe sources are the original commit bodies — commands reproduced verbatim
 where possible; `git log --grep <slice>` for full context.
@@ -23,6 +26,10 @@ where possible; `git log --grep <slice>` for full context.
 | 8 | S26 — data split | device artifact pointer ledger: artifacts stay local, hosted shows metadata | `5ae26cf` | ☐ |
 | 9 | S42 — React Native spike | Expo WebView shell loads :8090 with ATS exception | `c81bf5b` | ☐ |
 | 10 | S43 — Swift spike | swiftc menu-bar snippet + Process self-test + Keychain CLI check | `fb7579e` | ☐ |
+| 11 | S2 — floating app window | `llmtuner app`: Chrome `--app` frameless window + default-browser fallback | `2eb9b32` era (Sept) | ☐ |
+| 12 | S49 — companion pairing | Bridge-page token → `llmtuner companion --pair` redeem → online badge → revoke kills it | S49 (`docs/COMMIT-TRAIN-NOVEMBER.md` row) | ☐ |
+| 13 | S50 — Mac train handoff | "Train on this Mac" → WS job → loss stream back → kill/revoke failure paths | S50 (row) | ☐ |
+| 14 | S62 — `llmtuner serve` | Modelfile gen + offline smoke → real `ollama create` + `ollama list` confirm | S62 (row) | ☐ |
 
 Also carry over from S45 (`2697a48`): `git tag --list 'v0.1*'` shows v0.1.0 +
 v0.1.1, and `v0.1.1` resolves to the month-close commit. Fold into #4 below.
@@ -115,8 +122,8 @@ python companion/companion.py --self-test
 Expect: `[companion] paired as companion test-c1 on darwin/arm64 mlx=True
 ollama=True` then `SELF-TEST PASS — ...`; `echo $?` → 0. If mlx/ollama flags
 are False, run `llmtuner doctor` and fix first. Live half (pairing against a
-running backend, job frames) completes when S49/S50 tokens land — record
-self-test state here regardless.
+running backend, job frames) now rides #12 (S49) and #13 (S50) — those have
+shipped; run this self-test first, then #12/#13 with a real grant.
 
 ## 7. S25 — opt-in bridge (`f42a8de`)
 
@@ -169,9 +176,91 @@ security add-generic-password -s llmtuner-pair -a carlos -w testtoken && \
 Expect: item 2 proves option A (thin Swift shell over the S24 companion) is
 viable before any Gatekeeper/Developer-ID decision. Findings on #25.
 
+## 11. S2 — floating app window (`llmtuner app`)
+
+Added by the S63 checkpoint — this was the one Mac-await slice from the
+October board with no recipe (flagged in `docs/GITHUB-ISSUES.md` #6).
+
+```bash
+cd ~/llm-fine-tuner-agent-tester && git pull --ff-only
+PYTHONPATH=cli python3 -m llmtuner up --port 8000        # tab 1: local backend
+PYTHONPATH=cli python3 -m llmtuner app --size 1200x800 --position 100x100 --fresh
+```
+Expect (in order): if the backend tab isn't up yet, the cheap reachability
+warning `⚠️  Nothing answering on :8000 — start it with ...` and the window
+opening anyway; then `🪟 Opening http://localhost:8000 in app window
+(Google Chrome, 1200x800 @ 100,100)` and a **frameless, tabless** Chrome-app
+window at that exact geometry showing the web shell. `--fresh` isolates the
+profile (`~/.llmtuner/app-profile`) so a normal Chrome session already
+running doesn't swallow the window — re-run without `--fresh` while Chrome
+is open and check the window still appears (it may focus into the existing
+session instead — note which happened). Quit the app window, then kill
+Chrome entirely and test the fallback path: `mv`/quit Chrome, Edge, Chromium
+and Brave so none is in `/Applications`, re-run — Expect
+`🌐 No Chrome-family browser found — opening http://localhost:8000 in the
+default browser.` and Safari opening the shell. Findings → issue #6.
+
+## 12. S49 — companion pairing (`docs/COMMIT-TRAIN-NOVEMBER.md` S49 row)
+
+Recipes verbatim from the ledger row:
+```bash
+cd ~/llm-fine-tuner-agent-tester && git pull --ff-only
+python -m pip install -r companion/requirements.txt
+```
+Bridge page → grant a peer (e.g. `air-m1`) with `status`+`train` → copy the
+token, then:
+```bash
+PYTHONPATH=cli python3 -m llmtuner companion --pair --hub https://<host>
+```
+Paste the token at the hidden prompt → Expect `✅ Paired "air-m1"` and a
+0600 `~/.llmtuner/pair.json` (`ls -l` to confirm; the token must NOT appear
+in `ps aux | grep llmtuner` — paste beats argv). Then `PYTHONPATH=cli
+python3 -m llmtuner companion` → within one 15 s heartbeat the Bridge row
+flips to a `paired` online badge; run Probe → capabilities row renders.
+`python -m llmtuner companion --status` → pairing shown with token masked
+(tail-only). Revoke in the UI → Expect the live socket dies on the spot;
+re-running the companion must fail the paste pre-flight with the one-shot
+401 wording. Findings → issue #28 chain.
+
+## 13. S50 — Mac train handoff (`docs/COMMIT-TRAIN-NOVEMBER.md` S50 row)
+
+Prereq: #12 passed, and the Bridge grant includes `train`. On the Mac pull +
+`pip install -r companion/requirements.txt`, re-pair if the grant changed.
+Web → dataset → **"Train on this Mac"** button → job card shows
+`queued → running` and loss points stream in (S50 caps the stream at 80
+points so the 1 MiB WS frame limit is never hit). Failure halves: **(a)**
+kill the companion mid-job → job flips to failed with detail, and any second
+pending job on that peer flips too; **(b)** revoke the peer while a job is
+queued → live socket dies, queued jobs fail on the spot. `GET
+/api/bridge/jobs` (owner JWT) mirrors what the card shows. Findings → #28.
+
+## 14. S62 — `llmtuner serve` (`docs/COMMIT-TRAIN-NOVEMBER.md` S62 row)
+
+From the repo checkout (needs a real fused dir with a GGUF — after §4 of
+`docs/RESEARCH_MLX.md` converts one, or `--path` to any .gguf):
+```bash
+PYTHONPATH=cli python3 -m llmtuner serve --latest
+```
+Expect `📝 Modelfile → …/_training_runs/<N>/fused_model/Modelfile`,
+`FROM …-f16.gguf`, `✅ Offline import smoke passed`, the next-step line,
+exit 0. A safetensors-only fused dir must print the `convert_hf_to_gguf.py`
+hint, exit 1, and write NO Modelfile. Then the real import:
+```bash
+PYTHONPATH=cli python3 -m llmtuner serve --path <fused-dir> --quantize q4_K_M --create
+ollama list          # Expect the ft-… tag present
+ollama run ft-<tag> "hello"
+```
+Expect `🏗️ Creating ft-… (QUANTIZE Q4_K_M rides the Modelfile)...` then
+`✅ Import smoke confirmed`. Hosted half: `GET
+/api/fine-tuned-models/{id}/modelfile` with a JWT → `has_gguf:true` + the
+tag + create_command (owner-only, even for public rows; a stranger's token
+must 404). Findings feed the S70 checkpoint.
+
 ---
 
-Order to run them: 1 → 2 → 3 is one sitting on the repo checkout; 4 is the big
-E2E; 5 is best on a clean machine or disposable user; 6–8 build on each other
-(installed runtime → companion → bridge → artifacts); 9–10 are spike-only and
-don't block the v0.2 core.
+Order to run them: 1 → 2 → 3 is one sitting on the repo checkout; 11 fits
+the same sitting (needs only `llmtuner up`); 4 is the big E2E; 5 is best on
+a clean machine or disposable user; 6–8 build on each other (installed
+runtime → companion → bridge → artifacts) and 12 → 13 chain straight off 6–8
+(same grant, then train); 14 rides any completed S50-era run's fused dir +
+a local Ollama; 9–10 are spike-only and don't block the v0.2 core.

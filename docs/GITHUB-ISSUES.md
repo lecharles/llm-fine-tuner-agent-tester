@@ -31,7 +31,7 @@ checkboxes, commit bodies). This file is the index; issue bodies live at
 | 3 | Ollama fallback doesn't auto-select a model | RESOLVED | S37 (`local_registry.py`) | 3-family recipe order (llama3.2 → phi4-mini → gemma3:4b); "fixed #3". `GENERATION_LOCAL_MODELS` override still honored. |
 | 4 | Loss curve not shown in real-time | RESOLVED | S11 (+S51 polish) | train.log → `GET /api/training-runs/{id}/losses` → live dependency-free SVG on Train; axis labels + per-point tooltips in S51. |
 | 5 | Compare: hosted columns can't swap for local models | RESOLVED | S13 | 5th optional "ollama" column (session `compare_ollama_model`, migration `5c8f2a1e9d34`) + hosted pickers. |
-| 6 | Desktop app: `llmtuner app` floating window | MAC VERIFY PENDING | S2 (cli/) | `CODED — AWAIT MAC VERIFY` on the ledger; ⚠ not on the MAC-VERIFY board — flagged for the S63 checkpoint to add a recipe. |
+| 6 | Desktop app: `llmtuner app` floating window | MAC VERIFY PENDING | S2 (cli/) | `CODED — AWAIT MAC VERIFY` on the ledger; board recipe added by the S63 checkpoint — now **MAC-VERIFY #11** in `docs/MAC-VERIFY.md`. |
 | 7 | Desktop app: menu-bar integration (rumps) | MAC VERIFY PENDING | S7 | Board #3. |
 | 8 | Desktop app: icon pipeline (favicon → icns) | MAC VERIFY PENDING | S5 (`e0070ea`) | Board #1. |
 | 9 | Desktop app: `.app` bundle identity | MAC VERIFY PENDING | S6 (`2eb9b32`) | Board #2. |
