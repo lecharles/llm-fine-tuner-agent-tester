@@ -8,6 +8,7 @@ Usage:
     python -m llmtuner menubar [--port 8000]   # macOS only; needs `pip install rumps`
     python -m llmtuner companion --pair --hub https://HOST   # S49: paste the Bridge-page token
     python -m llmtuner companion [--status]                   # dial out with the saved pair
+    python -m llmtuner serve --path <gguf|fused-dir> [--create]  # S62: Ollama Modelfile + import smoke
 """
 
 import argparse
@@ -456,6 +457,29 @@ def main():
     comp_parser.add_argument("--no-start-backend", action="store_true",
                              help="Companion must not auto-start the local uvicorn (assume `llmtuner up` ran)")
 
+    # serve command (S62 — Modelfile generation + Ollama import smoke)
+    serve_parser = subparsers.add_parser(
+        "serve",
+        help="Generate an Ollama Modelfile for a fused model and smoke the import "
+             "(--create runs `ollama create` for real; needs Ollama on PATH)",
+    )
+    serve_parser.add_argument("--path", default="",
+                              help="GGUF file or fused-model directory to import")
+    serve_parser.add_argument("--run-id", type=int, default=0,
+                              help="Use the fused dir of backend/_training_runs/<id> instead of --path")
+    serve_parser.add_argument("--latest", action="store_true",
+                              help="Use the highest-numbered run's fused_model dir")
+    serve_parser.add_argument("--name", default="",
+                              help="Display name to slug into the Ollama tag (default: from the source dir/file)")
+    serve_parser.add_argument("--tag", default="",
+                              help="Exact Ollama tag, e.g. ft-refunds-1 (beats --name)")
+    serve_parser.add_argument("--quantize", default="",
+                              help="QUANTIZE the f16 GGUF at import (e.g. q4_K_M)")
+    serve_parser.add_argument("--out", default="",
+                              help="Where to write the Modelfile (default: alongside the GGUF)")
+    serve_parser.add_argument("--create", action="store_true",
+                              help="Run `ollama create` and confirm the tag in `ollama list`")
+
     args = parser.parse_args()
 
     if args.command == "up":
@@ -485,6 +509,14 @@ def main():
             pair_flag=args.pair, hub=args.hub, name=args.name,
             do_status=args.status, no_run=args.no_run,
             no_start_backend=args.no_start_backend,
+        ))
+    elif args.command == "serve":
+        from llmtuner.serve import serve_command
+
+        sys.exit(serve_command(
+            path=args.path, run_id=args.run_id, latest=args.latest,
+            name=args.name, tag=args.tag, quantize=args.quantize,
+            out=args.out, create=args.create,
         ))
     else:
         parser.print_help()
