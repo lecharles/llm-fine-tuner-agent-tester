@@ -272,3 +272,24 @@ export type LibraryDatasetDetail = {
     truncated: boolean;
     owner: LibraryOwner;
 };
+
+// S64 (Settings): GET /api/auth/session — what is this connection running
+// on. `mode` is the truth, not a guess: a signed user JWT, a service-lane
+// opaque token (S8), or the local-mode bypass (Phase 6). Never token bytes.
+export type SessionInfo = {
+    mode: "jwt" | "service_lane" | "local" | "other";
+    subject: string | null;
+    algorithm: string;
+    expires_at: string | null;
+    expires_in_seconds: number | null;
+    jwt_ttl_minutes: number;
+    local_mode: boolean;
+    lane: string | null;
+};
+
+// S64: POST /api/auth/password response. jwt_ttl_minutes carries the
+// honest "other devices stay signed in this long" window (stateless JWTs).
+export type PasswordChangeResult = {
+    changed: boolean;
+    jwt_ttl_minutes: number;
+};

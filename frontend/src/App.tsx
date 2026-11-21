@@ -14,6 +14,7 @@ import Bridge from "./pages/Bridge";
 import Library from "./pages/Library";
 import LibraryDatasetDetail from "./pages/LibraryDatasetDetail";
 import History from "./pages/History";
+import Settings from "./pages/Settings";
 
 // App skeleton: login and signup render bare; every authenticated page is
 // guarded by ProtectedRoute and rendered inside the sidebar shell (Layout),
@@ -41,6 +42,8 @@ export default function App() {
         {/* S53: read-only public detail; never the owner's DatasetDetail. */}
         <Route path="/library/datasets/:datasetId" element={<LibraryDatasetDetail />} />
         <Route path="/bridge" element={<Bridge />} />
+        {/* S64: account, session, and bridge-grant management. */}
+        <Route path="/settings" element={<Settings />} />
       </Route>
     </Routes>
   );

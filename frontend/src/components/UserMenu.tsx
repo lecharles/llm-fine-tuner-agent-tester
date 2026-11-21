@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogOut } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { apiFetch, clearToken } from "../api";
 
 // S20: who is signed in, and a small Linear-style user menu. The trigger sits
@@ -57,6 +57,12 @@ export default function UserMenu() {
         navigate("/login");
     }
 
+    // S64: the account seat. The popover stays a menu, not a second settings page.
+    function openSettings() {
+        setOpen(false);
+        navigate("/settings");
+    }
+
     const email = me?.email ?? "";
     const name = me?.display_name?.trim() || "";
     const label = name || email || "\u2026";
@@ -79,6 +85,9 @@ export default function UserMenu() {
                         </div>
                     </div>
                     <div className="user-menu-sep" />
+                    <button role="menuitem" className="user-menu-item" onClick={openSettings}>
+                        <Settings size={13} /> Settings
+                    </button>
                     <button role="menuitem" className="user-menu-item" onClick={logout}>
                         <LogOut size={13} /> Log out
                     </button>

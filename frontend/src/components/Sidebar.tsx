@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
 import {
-    SlidersHorizontal, Route, Database, Cpu, Box, Columns3, Sparkles, Cable, Library, History,
+    SlidersHorizontal, Route, Database, Cpu, Box, Columns3, Sparkles, Cable, Library, History, Settings,
     PanelLeftClose, PanelLeft, Moon, Sun,
 } from "lucide-react";
 import UserMenu from "./UserMenu";
@@ -24,6 +24,7 @@ const NAV = [
     { to: "/compare", label: "Compare", Icon: Columns3, color: "var(--primary)" },
     { to: "/library", label: "Library", Icon: Library, color: "var(--info)" },
     { to: "/bridge", label: "Bridge", Icon: Cable, color: "var(--accent-guide)" },
+    { to: "/settings", label: "Settings", Icon: Settings, color: "var(--info)" },
 ];
 
 export default function Sidebar({ collapsed, onToggleCollapse, theme, onToggleTheme }: Props) {
