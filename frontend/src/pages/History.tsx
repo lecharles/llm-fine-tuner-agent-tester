@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { History as HistoryIcon, X } from "lucide-react";
+import { History as HistoryIcon, HelpCircle, X } from "lucide-react";
 import { apiFetch } from "../api";
 import { displayStatus } from "../statusText";
 import LossChart from "../components/LossChart";
@@ -103,8 +103,29 @@ export default function History() {
                         <div className="cell cell-grow">Dataset</div>
                         <div className="cell hist-cell-model">Base model</div>
                         <div className="cell hist-cell-num">Iters</div>
-                        <div className="cell hist-cell-num">Final loss</div>
-                        <div className="cell hist-cell-status">Status</div>
+                        <div className="cell hist-cell-num">
+                            Final loss
+                            {/* S65 (#38): contextual help, reusing the S30 hint pattern. */}
+                            <span className="hint" tabIndex={0} aria-label="About final loss">
+                                <HelpCircle size={13} />
+                                <span className="hint-bubble">
+                                    The last loss the run recorded — lower means the model predicted the answers
+                                    better. Compare runs only over the same dataset; different data means a
+                                    different loss floor.
+                                </span>
+                            </span>
+                        </div>
+                        <div className="cell hist-cell-status">
+                            Status
+                            {/* S65 (#38): contextual help, reusing the S30 hint pattern. */}
+                            <span className="hint" tabIndex={0} aria-label="About run status">
+                                <HelpCircle size={13} />
+                                <span className="hint-bubble">
+                                    Runs serialize per user: while one of your runs is queued or running, a
+                                    second start is refused until it finishes.
+                                </span>
+                            </span>
+                        </div>
                         <div className="cell cell-date">Created</div>
                         <div className="cell cell-actions" />
                     </div>
@@ -164,7 +185,18 @@ export default function History() {
 
                     {!detailLoading && !detailError && (
                         <>
-                            <div className="hist-section-title">Loss replay</div>
+                            <div className="hist-section-title">
+                                Loss replay
+                                {/* S65 (#38): contextual help, reusing the S30 hint pattern. */}
+                                <span className="hint" tabIndex={0} aria-label="About loss replay">
+                                    <HelpCircle size={13} />
+                                    <span className="hint-bubble">
+                                        The curve is re-read from the run&rsquo;s saved train.log, not stored in the
+                                        database — hover any point for its iteration and loss (and note the axis
+                                        tips from S51).
+                                    </span>
+                                </span>
+                            </div>
                             <LossChart points={losses} iters={selected.iters} />
                             {losses.length > 0 && (
                                 <div className="run-meta">{losses.length} loss point{losses.length === 1 ? "" : "s"} replayed from train.log</div>

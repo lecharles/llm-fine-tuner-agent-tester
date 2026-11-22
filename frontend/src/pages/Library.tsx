@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Box, Database, Library as LibraryIcon } from "lucide-react";
+import { Box, Database, HelpCircle, Library as LibraryIcon } from "lucide-react";
 import { apiFetch } from "../api";
 import { displayStatus } from "../statusText";
 import VuMeter from "../components/VuMeter";
@@ -54,6 +54,14 @@ export default function Library() {
                 <section className="library-section" aria-labelledby="library-datasets">
                     <h2 className="section-title" id="library-datasets">
                         <Database size={15} style={{ color: "var(--info)" }} /> Shared datasets
+                        {/* S65 (#38): contextual help, reusing the S30 hint pattern. */}
+                        <span className="hint" tabIndex={0} aria-label="About shared datasets">
+                            <HelpCircle size={13} />
+                            <span className="hint-bubble">
+                                Open a card for a read-only detail view: its description, use-case prompt and a
+                                preview of the Q&amp;A pairs. Editing, importing and generating stay with the owner.
+                            </span>
+                        </span>
                     </h2>
                     <div className="card-grid">
                         {lib.datasets.map((d) => (
@@ -87,6 +95,15 @@ export default function Library() {
                 <section className="library-section" aria-labelledby="library-models">
                     <h2 className="section-title" id="library-models">
                         <Box size={15} style={{ color: "var(--success)" }} /> Shared models
+                        {/* S65 (#38): contextual help, reusing the S30 hint pattern. */}
+                        <span className="hint" tabIndex={0} aria-label="About shared models">
+                            <HelpCircle size={13} />
+                            <span className="hint-bubble">
+                                These are metadata cards — name, base model, size, owner. Talking to or serving
+                                someone else&rsquo;s weights is deliberately not a public action; train your own
+                                model from the Train page.
+                            </span>
+                        </span>
                     </h2>
                     <div className="card-grid">
                         {lib.models.map((m) => (

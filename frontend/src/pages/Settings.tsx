@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-    Cable, Clock3, KeyRound, Save, Settings as SettingsIcon, ShieldCheck,
+    Cable, Clock3, HelpCircle, KeyRound, Save, Settings as SettingsIcon, ShieldCheck,
 } from "lucide-react";
 import { apiFetch } from "../api";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -171,7 +171,17 @@ export default function Settings() {
             <form className="card train-config" onSubmit={saveName}>
                 <div className="section-title">Account</div>
                 <div className="field">
-                    <label className="label" htmlFor="settings-name">Display name</label>
+                    <label className="label" htmlFor="settings-name">
+                        Display name
+                        {/* S65 (#38): contextual help, reusing the S30 hint pattern. */}
+                        <span className="hint" tabIndex={0} aria-label="About the display name">
+                            <HelpCircle size={13} />
+                            <span className="hint-bubble">
+                                This is how your shared datasets and models are credited in the Library — including
+                                the owner line on their detail pages. 1–60 characters.
+                            </span>
+                        </span>
+                    </label>
                     <input
                         id="settings-name"
                         className="input"
@@ -182,7 +192,17 @@ export default function Settings() {
                     />
                 </div>
                 <div className="field">
-                    <span className="label">Email</span>
+                    <span className="label">
+                        Email
+                        {/* S65 (#38): contextual help, reusing the S30 hint pattern. */}
+                        <span className="hint" tabIndex={0} aria-label="About the email field">
+                            <HelpCircle size={13} />
+                            <span className="hint-bubble">
+                                The email is your login key, so it is deliberately read-only here. Lane and local
+                                identities are synthetic — signing in another way shows that address instead.
+                            </span>
+                        </span>
+                    </span>
                     <input className="input" value={me?.email ?? "…"} readOnly aria-readonly="true" />
                 </div>
                 {me && (
@@ -249,7 +269,18 @@ export default function Settings() {
 
             {/* 3 — session: the server's own decode of the token making this call. */}
             <div className="card train-config" style={{ marginTop: 12 }}>
-                <div className="section-title">Session</div>
+                <div className="section-title">
+                    Session
+                    {/* S65 (#38): contextual help, reusing the S30 hint pattern. */}
+                    <span className="hint" tabIndex={0} aria-label="About the session card">
+                        <HelpCircle size={13} />
+                        <span className="hint-bubble">
+                            The server decodes the token making this very request — nothing is stored or guessed.
+                            Password changes do not sign other devices out on the spot; their tokens expire on
+                            their own inside this window.
+                        </span>
+                    </span>
+                </div>
                 {session && modeMeta ? (
                     <>
                         <div className="run-head">
@@ -289,6 +320,15 @@ export default function Settings() {
             <div className="card train-config" style={{ marginTop: 12 }}>
                 <div className="section-title">
                     <Cable size={14} style={{ verticalAlign: -2 }} /> Bridge permissions
+                    {/* S65 (#38): contextual help, reusing the S30 hint pattern. */}
+                    <span className="hint" tabIndex={0} aria-label="About bridge permissions">
+                        <HelpCircle size={13} />
+                        <span className="hint-bubble">
+                            Grants let a paired Mac answer this account&rsquo;s bridge requests. Revoke is
+                            instant: the live connection dies on the spot and the pairing token stops working —
+                            the Mac needs a fresh grant to come back.
+                        </span>
+                    </span>
                 </div>
                 {perms.length === 0 && (
                     <div className="run-meta">
