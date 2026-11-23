@@ -27,6 +27,9 @@ jobs:
         # Pipfile packages minus mlx-lm (Mac-only; the S9 suite fakes
         # mlx_lm.server, so nothing here imports it), plus pytest and httpx
         # (TestClient) which S9's tests README says S10 wires in.
+        # S66 (follows S54): passlib[bcrypt] is retired and bcrypt is unpinned,
+        # matching the Pipfile — core/security.py calls bcrypt directly now,
+        # and CI must not keep proving a stack production no longer runs.
         run: |
           python -m pip install --upgrade pip
           pip install \
@@ -37,8 +40,7 @@ jobs:
             "alembic" \
             "pydantic-settings" \
             "python-dotenv" \
-            "passlib[bcrypt]" \
-            "bcrypt==4.0.1" \
+            "bcrypt" \
             "python-jose[cryptography]" \
             "pydantic[email]" \
             "python-multipart" \
@@ -54,8 +56,48 @@ jobs:
       - name: Import smoke (fresh interpreter, backend/)
         run: cd backend && python -c "import main"
 
-      - name: Pytest suite
-        run: python -m pytest tests -q
+      - name: Pytest suite under the issue-#12 timing budget
+        # S66: issue #12 originally asked for a <10 s suite; 232 tests later the
+        # honest number is ~30 s wall on the lane VPS (S63 flagged the drift).
+        # Rather than pretend, pin an explicit regression budget: total wall
+        # time under PYTEST_BUDGET_SECONDS and no single test over
+        # PYTEST_MAX_TEST_SECONDS (--durations gate). Raise either number only
+        # deliberately, in the PR that slows the train down.
+        env:
+          PYTEST_BUDGET_SECONDS: "120"
+          PYTEST_MAX_TEST_SECONDS: "10"
+        run: |
+          set +e  # the budget logic below owns the exit code
+          start=$SECONDS
+          python -m pytest tests -q --durations=10 | tee pytest.log
+          rc=${PIPESTATUS[0]}
+          elapsed=$((SECONDS - start))
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::pytest failed (exit $rc)"
+            exit "$rc"
+          fi
+          echo "pytest wall: ${elapsed}s (budget ${PYTEST_BUDGET_SECONDS}s, issue #12 / S66)"
+          if [ "$elapsed" -gt "$PYTEST_BUDGET_SECONDS" ]; then
+            echo "::error::suite took ${elapsed}s, over the pinned ${PYTEST_BUDGET_SECONDS}s budget — fix the slow tests or raise the budget on purpose"
+            exit 1
+          fi
+          slowest=$(sed -n 's/^\([0-9.]*\)s \{1,\}\(call\|setup\|teardown\) .*$/\1/p' pytest.log | sort -rn | head -1)
+          slowest=${slowest:-0}
+          over=$(awk -v t="$slowest" -v b="$PYTEST_MAX_TEST_SECONDS" 'BEGIN{print (t+0 > b+0) ? 1 : 0}')
+          echo "slowest phase: ${slowest}s (per-test cap ${PYTEST_MAX_TEST_SECONDS}s)"
+          if [ "$over" = "1" ]; then
+            echo "::error::a single test phase took ${slowest}s, over the ${PYTEST_MAX_TEST_SECONDS}s per-test cap — see --durations=10 above"
+            exit 1
+          fi
+
+      - name: Upload pytest timing report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pytest-timing
+          path: pytest.log
+          if-no-files-found: ignore
+          retention-days: 14
 
   frontend:
     runs-on: ubuntu-latest
@@ -75,3 +117,14 @@ jobs:
         run: |
           npm ci
           npm run build
+
+      - name: Upload frontend build artifact
+        # S66: keep the dist that the badge turns green on — downloadable per
+        # run (e.g. to rsync to the :8090 shell or diff against production),
+        # no deploy, no publish, just the bytes that tsc + vite produced.
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+          if-no-files-found: error
+          retention-days: 14
