@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from routers import auth, dataset, qa_pair, training_run, generation, chat, fine_tuned_model, status, bridge, library
+from routers import auth, dataset, qa_pair, training_run, generation, chat, fine_tuned_model, status, bridge, library, search
 from static_serve import mount_spa
 from core import bind_guard
 from core import security_headers
