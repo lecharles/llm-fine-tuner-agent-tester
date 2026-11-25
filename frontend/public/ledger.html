@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LLM Tuner — Roadmap Ledger</title>
+<title>LLM Fine Tuner — Roadmap Ledger</title>
 <style>
   :root { --bg:#0b0b10; --surface:#12121a; --border:#2a2a38; --text:#e8e8f0;
           --dim:#9a9ab0; --accent:#7c6cf0; --ok:#4ade80; }
@@ -22,7 +22,6 @@
   .entry .date { color:var(--accent); font-weight:600; margin-right:8px; }
   .entry a { color:var(--ok); text-decoration:none; }
   .entry a:hover { text-decoration:underline; }
-  .repo { color:var(--dim); font-size:11px; margin-left:6px; }
   ul.now { list-style:none; padding:0; margin:0; }
   ul.now li { padding:6px 0; border-bottom:1px solid var(--border); font-size:13px; }
   ul.now li::before { content:"▸ "; color:var(--accent); }
@@ -31,38 +30,53 @@
 </head>
 <body>
 <div class="wrap">
-  <h1><span class="dot">●</span> LLM Tuner — Roadmap Ledger</h1>
+  <h1><span class="dot">●</span> LLM Fine Tuner — Roadmap Ledger</h1>
   <div class="sub">
-    Running ship journal for the Hermes lane. Telegram stays telegraphic; detail lives here.
-    Repos: <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester">llm-fine-tuner-agent-tester</a> ·
-    <a href="https://github.com/lecharles/openos-bench">openos-bench</a>
+    Ship journal for the LLM Fine Tuner &amp; Agent Tester project. Telegram stays telegraphic; detail lives here.
+    Repo: <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester">lecharles/llm-fine-tuner-agent-tester</a> ·
+    Plan: <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/blob/main/ROADMAP.md">ROADMAP.md</a>
   </div>
 
   <h2>Now</h2>
   <ul class="now">
-    <li>OpenOS Bench: 3 crons (07:05 / 16:05 PT daily, Sun 12:00 PT roster scan) deliver to the OpenOS Bench topic.</li>
-    <li>Baselines: K3 on :3080, run-02 GLM on :3081, run-03 DS on :3082.</li>
-    <li>Roster exhausted as of Nov 23 — revalidation sweeps only, no new runs queued.</li>
-    <li>Comm protocol (from Nov 25): ≤5 telegraphic bullets on Telegram; full detail = a ledger entry + commit link.</li>
+    <li>Goal: shippable v0.1.x — one-click local fine-tuning on Apple Silicon + team instance on the VPS.</li>
+    <li>VPS team instance: this app, on :8090 (signup/login, datasets, train queue, compare, library, search).</li>
+    <li>Active slice train: S46 → S68 through Nov 25 (backup/restore → companion bridge → settings → FTS5 search).</li>
+    <li>Open threads: Mac-verify checkpoints for the desktop app asks; S66+ CI keeps regressions pinned.</li>
+    <li>Comm protocol (Nov 25): ≤5 telegraphic bullets on Telegram; each ship = ledger entry + commit link here.</li>
   </ul>
 
   <h2>Ledger</h2>
 
-  <div class="entry"><span class="date">Nov 25</span> Comms norm set: short Telegram bullets, this ledger becomes the detail-of-record. <span class="repo">this page</span></div>
+  <div class="entry"><span class="date">Nov 25</span> S68: Search 2 — Datasets full-text search UI + Command-K palette in the shell. <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/commit/fdd46b4">fdd46b4</a> · This ledger page added as detail-of-record. <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/commit/a239d66">a239d66</a></div>
 
-  <div class="entry"><span class="date">Nov 23</span> run-03 revalidation sweep — harness 7/8 + clickpath struct 72 re-confirmed on fresh boot (4.8s, nodes 870); spotlight instrument gap + no-Launchpad loss stand; evidence frames refreshed. <a href="https://github.com/lecharles/openos-bench/commit/d45cf19">d45cf19</a><span class="repo">openos-bench</span></div>
+  <div class="entry"><span class="date">Nov 24</span> S67: Search 1 — FTS5 full-text search over datasets + QA pairs (migration + endpoint). <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/commit/c5f496e">c5f496e</a></div>
 
-  <div class="entry"><span class="date">Nov 22</span> Revalidation sweep (roster exhausted) on fresh boot; <a href="https://github.com/lecharles/openos-bench/commit/2b9430f">roster scan</a>; <a href="https://github.com/lecharles/openos-bench/commit/4630e4f">auto-score run-03-qwen3.8-max</a>; <a href="https://github.com/lecharles/openos-bench/commit/d00daef">auto-score run-00-longcat-25</a>. <span class="repo">openos-bench</span></div>
+  <div class="entry"><span class="date">Nov 23</span> S66: CI polish — pinned pytest timing budget, build artifacts, no badge inflation. <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/commit/75ec128">75ec128</a></div>
 
-  <div class="entry"><span class="date">Nov 21</span> Revalidation sweep — nodes 876→873 state drift noted, spotlight gap stands, host paths re-scrubbed. <a href="https://github.com/lecharles/openos-bench/commit/f890a60">f890a60</a><span class="repo">openos-bench</span></div>
+  <div class="entry"><span class="date">Nov 22</span> S65: Guides 2 — contextual hints on Library / History / Settings. <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/commit/8b01821">8b01821</a></div>
 
-  <div class="entry"><span class="date">Nov 20</span> Revalidation sweep on fresh boot capture; <a href="https://github.com/lecharles/openos-bench/commit/687cd96">auto-score run-00-hy4-flash</a>. <span class="repo">openos-bench</span></div>
+  <div class="entry"><span class="date">Nov 21</span> S64: Settings page — account editing, session view, bridge grants in one seat. <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/commit/5ed7a0c">5ed7a0c</a></div>
 
-  <div class="entry"><span class="date">Nov 19</span> run-03 publish: Qwen3.8-Max — struct 72 (tie with GLM, opposite reasons), harness 7/8, spotlight adjudicated as instrument gap; rolling leaderboard + full build committed. <a href="https://github.com/lecharles/openos-bench/commit/8123605">8123605</a> · <a href="https://github.com/lecharles/openos-bench/commit/00ebd47">numbering-collision note</a> · <a href="https://github.com/lecharles/openos-bench/commit/c8580fe">weekly roster scanner pointer</a><span class="repo">openos-bench</span></div>
+  <div class="entry"><span class="date">Nov 20</span> S63: Week wrap 1 — Mac-verify checkpoint #2, board rebuilt to 14 slices. <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/commit/24dd7ff">24dd7ff</a> · S62: Model serving 1 — <code>llmtuner serve</code> + Ollama Modelfile endpoint. <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/commit/eae9f6e">eae9f6e</a></div>
 
-  <div class="entry"><span class="date">Nov 18–19</span> openos-bench repo published public (lecharles/openos-bench); Hermes lane clone at /home/hermes/openos-work with bench-crosscheck / start-next / score-current / scan-roster scripts + 3 crons. <a href="https://github.com/lecharles/openos-bench">repo</a><span class="repo">openos-bench</span></div>
+  <div class="entry"><span class="date">Nov 18</span> S61: Export 1 — dataset export endpoint (JSONL + ShareGPT shapes) + download buttons. <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/commit/f8a7e23">f8a7e23</a></div>
 
-  <div class="foot">Maintained by Hermes. Newest first. Each entry links its commits; commit history is the source of truth, this page is the index.</div>
+  <div class="entry"><span class="date">Nov 17</span> S60: Tests — auth throttle + CSP regressions extended (XSS payloads, headers on SPA fallback/404/429). <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/commit/cb97976">cb97976</a></div>
+
+  <div class="entry"><span class="date">Nov 16</span> S59: Train queue — serialize concurrent runs per user (409), queue position in status payload. <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/commit/adc20bc">adc20bc</a></div>
+
+  <div class="entry"><span class="date">Nov 15</span> S58: Compare 3 — side-by-side scoring (thumbs per column, persisted session scores, run-card leaderboard). <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/commit/81cebf8">81cebf8</a> · Security mandate adopted in repo AGENTS.md. <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/commit/74d2608">74d2608</a></div>
+
+  <div class="entry"><span class="date">Nov 13–14</span> S57: docs — GITHUB-ISSUES.md reconciliation of #1–#44. <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/commit/ec73419">ec73419</a> · S56: datasets 3 — dedupe + merge QA pairs across datasets. <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/commit/34ad0ae">34ad0ae</a></div>
+
+  <div class="entry"><span class="date">Nov 11–12</span> S55: ops hygiene — :8090 restart runbook + post-restart verification. <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/commit/e9e0f0a">e9e0f0a</a> · S54: passlib retirement, bcrypt unpin. <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/commit/b404c08">b404c08</a></div>
+
+  <div class="entry"><span class="date">Nov 8–10</span> S53: library 2 — public dataset detail view. <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/commit/34a35ef">34a35ef</a> · S75: compare depth — per-column errors persist across reload. <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/commit/a15e1ac">a15e1ac</a> · S52: companion protocol unit tests. <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/commit/a505707">a505707</a> · S51: loss-curve axis labels + tooltips. <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/commit/c9bb98f">c9bb98f</a> · S50: companion bridge 2 — end-to-end train handoff (web → WS hub → Mac). <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/commit/6322a67">6322a67</a></div>
+
+  <div class="entry"><span class="date">Nov 6–7</span> S49: companion bridge 1 — pairing token redemption lane. <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/commit/0505b60">0505b60</a> · S47: HTTPS-at-the-edge decision doc (Caddy). <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/commit/e3a8955">e3a8955</a> · S46: backup + restore recipe. <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester/commit/4232976">4232976</a></div>
+
+  <div class="foot">LLM Fine Tuner project only — sibling projects keep their own ledgers. Newest first; commit history is the source of truth, this page is the index.</div>
 </div>
 </body>
 </html>
