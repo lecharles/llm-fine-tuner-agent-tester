@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLM Tuner — Roadmap Ledger</title>
+<style>
+  :root { --bg:#0b0b10; --surface:#12121a; --border:#2a2a38; --text:#e8e8f0;
+          --dim:#9a9ab0; --accent:#7c6cf0; --ok:#4ade80; }
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); margin:0;
+         font-family:ui-monospace,SFMono-Regular,Menlo,monospace; line-height:1.55; }
+  .wrap { max-width:860px; margin:0 auto; padding:32px 20px 64px; }
+  h1 { font-size:20px; margin:0 0 4px; } h1 .dot { color:var(--accent); }
+  .sub { color:var(--dim); font-size:13px; margin-bottom:28px; }
+  .sub a { color:var(--accent); }
+  h2 { font-size:14px; text-transform:uppercase; letter-spacing:.08em;
+       color:var(--dim); border-bottom:1px solid var(--border);
+       padding-bottom:6px; margin:36px 0 14px; }
+  .entry { background:var(--surface); border:1px solid var(--border);
+           border-radius:10px; padding:12px 14px; margin-bottom:10px; font-size:13px; }
+  .entry .date { color:var(--accent); font-weight:600; margin-right:8px; }
+  .entry a { color:var(--ok); text-decoration:none; }
+  .entry a:hover { text-decoration:underline; }
+  .repo { color:var(--dim); font-size:11px; margin-left:6px; }
+  ul.now { list-style:none; padding:0; margin:0; }
+  ul.now li { padding:6px 0; border-bottom:1px solid var(--border); font-size:13px; }
+  ul.now li::before { content:"▸ "; color:var(--accent); }
+  .foot { color:var(--dim); font-size:11px; margin-top:40px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1><span class="dot">●</span> LLM Tuner — Roadmap Ledger</h1>
+  <div class="sub">
+    Running ship journal for the Hermes lane. Telegram stays telegraphic; detail lives here.
+    Repos: <a href="https://github.com/lecharles/llm-fine-tuner-agent-tester">llm-fine-tuner-agent-tester</a> ·
+    <a href="https://github.com/lecharles/openos-bench">openos-bench</a>
+  </div>
+
+  <h2>Now</h2>
+  <ul class="now">
+    <li>OpenOS Bench: 3 crons (07:05 / 16:05 PT daily, Sun 12:00 PT roster scan) deliver to the OpenOS Bench topic.</li>
+    <li>Baselines: K3 on :3080, run-02 GLM on :3081, run-03 DS on :3082.</li>
+    <li>Roster exhausted as of Nov 23 — revalidation sweeps only, no new runs queued.</li>
+    <li>Comm protocol (from Nov 25): ≤5 telegraphic bullets on Telegram; full detail = a ledger entry + commit link.</li>
+  </ul>
+
+  <h2>Ledger</h2>
+
+  <div class="entry"><span class="date">Nov 25</span> Comms norm set: short Telegram bullets, this ledger becomes the detail-of-record. <span class="repo">this page</span></div>
+
+  <div class="entry"><span class="date">Nov 23</span> run-03 revalidation sweep — harness 7/8 + clickpath struct 72 re-confirmed on fresh boot (4.8s, nodes 870); spotlight instrument gap + no-Launchpad loss stand; evidence frames refreshed. <a href="https://github.com/lecharles/openos-bench/commit/d45cf19">d45cf19</a><span class="repo">openos-bench</span></div>
+
+  <div class="entry"><span class="date">Nov 22</span> Revalidation sweep (roster exhausted) on fresh boot; <a href="https://github.com/lecharles/openos-bench/commit/2b9430f">roster scan</a>; <a href="https://github.com/lecharles/openos-bench/commit/4630e4f">auto-score run-03-qwen3.8-max</a>; <a href="https://github.com/lecharles/openos-bench/commit/d00daef">auto-score run-00-longcat-25</a>. <span class="repo">openos-bench</span></div>
+
+  <div class="entry"><span class="date">Nov 21</span> Revalidation sweep — nodes 876→873 state drift noted, spotlight gap stands, host paths re-scrubbed. <a href="https://github.com/lecharles/openos-bench/commit/f890a60">f890a60</a><span class="repo">openos-bench</span></div>
+
+  <div class="entry"><span class="date">Nov 20</span> Revalidation sweep on fresh boot capture; <a href="https://github.com/lecharles/openos-bench/commit/687cd96">auto-score run-00-hy4-flash</a>. <span class="repo">openos-bench</span></div>
+
+  <div class="entry"><span class="date">Nov 19</span> run-03 publish: Qwen3.8-Max — struct 72 (tie with GLM, opposite reasons), harness 7/8, spotlight adjudicated as instrument gap; rolling leaderboard + full build committed. <a href="https://github.com/lecharles/openos-bench/commit/8123605">8123605</a> · <a href="https://github.com/lecharles/openos-bench/commit/00ebd47">numbering-collision note</a> · <a href="https://github.com/lecharles/openos-bench/commit/c8580fe">weekly roster scanner pointer</a><span class="repo">openos-bench</span></div>
+
+  <div class="entry"><span class="date">Nov 18–19</span> openos-bench repo published public (lecharles/openos-bench); Hermes lane clone at /home/hermes/openos-work with bench-crosscheck / start-next / score-current / scan-roster scripts + 3 crons. <a href="https://github.com/lecharles/openos-bench">repo</a><span class="repo">openos-bench</span></div>
+
+  <div class="foot">Maintained by Hermes. Newest first. Each entry links its commits; commit history is the source of truth, this page is the index.</div>
+</div>
+</body>
+</html>
