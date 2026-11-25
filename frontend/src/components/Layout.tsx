@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
+import CommandPalette from "./CommandPalette";
 
 type Theme = "dark" | "light";
 
 // The app shell. The sidebar renders once here; each page swaps into <main>
 // through the router's Outlet. Collapse and theme are state at this level.
+// S68: the Command-K palette mounts here, once, so the hotkey works on every
+// authenticated page — pages never own it themselves.
 export default function Layout() {
     const [collapsed, setCollapsed] = useState(false);
     const [theme, setTheme] = useState<Theme>(
@@ -32,6 +35,8 @@ export default function Layout() {
             <main className="app-main" id="main-content" tabIndex={-1}>
                 <Outlet />
             </main>
+            {/* S68: shell-wide search palette (⌘K / Ctrl+K). */}
+            <CommandPalette />
         </div>
     );
 }

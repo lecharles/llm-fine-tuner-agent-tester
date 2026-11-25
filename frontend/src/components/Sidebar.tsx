@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom";
 import {
     SlidersHorizontal, Route, Database, Cpu, Box, Columns3, Sparkles, Cable, Library, History, Settings,
-    PanelLeftClose, PanelLeft, Moon, Sun,
+    PanelLeftClose, PanelLeft, Moon, Sun, Search,
 } from "lucide-react";
 import UserMenu from "./UserMenu";
 
@@ -11,6 +11,11 @@ type Props = {
     theme: "dark" | "light";
     onToggleTheme: () => void;
 };
+
+// S68: the sidebar's search trigger. It only dispatches the shell event the
+// CommandPalette listens for — the palette component owns all search state,
+// so button and ⌘K key open exactly the same thing.
+const openPalette = () => window.dispatchEvent(new Event("llmtuner:open-palette"));
 
 // Each destination carries its own accent, so the sidebar reads as a color-coded
 // map. Red and coral are deliberately absent here: they mean delete and hosted.
@@ -45,6 +50,17 @@ export default function Sidebar({ collapsed, onToggleCollapse, theme, onToggleTh
                     {collapsed ? <PanelLeft size={16} /> : <PanelLeftClose size={16} />}
                 </button>
             </div>
+
+            <button
+                className="palette-trigger"
+                onClick={openPalette}
+                aria-label="Search (Ctrl or Command + K)"
+                title={collapsed ? "Search (⌘K)" : undefined}
+            >
+                <Search size={16} style={{ color: "var(--primary)" }} />
+                <span className="nav-label">Search</span>
+                <span className="palette-kbd">⌘K</span>
+            </button>
 
             <nav className="nav">
                 {NAV.map(({ to, label, Icon, color }) => (

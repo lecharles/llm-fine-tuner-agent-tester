@@ -293,3 +293,40 @@ export type PasswordChangeResult = {
     changed: boolean;
     jwt_ttl_minutes: number;
 };
+
+// S68 (Search 2): mirrors of the S67 FTS5 response shapes for GET /api/search.
+// Snippets carry '[' … ']' marks around matched terms — the UI parses them
+// into <mark> spans, never innerHTML. score is BM25 (higher = better) and is
+// ranking-only. is_mine is the ONLY owner fact that ships: never an id/email.
+export type SearchDatasetHit = {
+    id: number;
+    name: string;
+    description: string | null;
+    source: string;
+    visibility: string;
+    is_mine: boolean;
+    name_snippet: string;
+    description_snippet: string;
+    score: number;
+};
+
+export type SearchPairHit = {
+    id: number;
+    dataset_id: number;
+    dataset_name: string;
+    visibility: string;
+    is_mine: boolean;
+    question: string;
+    question_snippet: string;
+    answer_preview: string;
+    answer_snippet: string;
+    score: number;
+};
+
+export type SearchResults = {
+    query: string;
+    fts_query: string;
+    limit: number;
+    datasets: SearchDatasetHit[];
+    pairs: SearchPairHit[];
+};

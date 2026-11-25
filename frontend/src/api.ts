@@ -71,6 +71,13 @@ export async function apiFetch<T>(path: string, options: ApiOptions = {}): Promi
     return response.json() as Promise<T>;
 }
 
+// S68 (Search 2): the full-text search door. Thin wrapper over apiFetch so
+// every screen builds the /api/search query the same way (encodeURIComponent,
+// bounded limit — the server caps at 100 and 400s on queries with no terms).
+export function apiSearch<T>(q: string, limit = 20): Promise<T> {
+    return apiFetch<T>(`/search?q=${encodeURIComponent(q)}&limit=${limit}`);
+}
+
 // Multipart upload (S12, issue #14): file -> backend. The browser sets the
 // multipart Content-Type itself, so we only attach the auth header.
 export async function apiUpload<T>(path: string, file: File): Promise<T> {

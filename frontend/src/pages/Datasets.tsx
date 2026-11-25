@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Database, Plus, Pencil, Trash2 } from "lucide-react";
-import { apiFetch } from "../api";
+import { Database, Plus, Pencil, Trash2, Search, X, HelpCircle } from "lucide-react";
+import { apiFetch, apiSearch } from "../api";
 import { displayStatus } from "../statusText";
-import type { Dataset } from "../types";
+import type { Dataset, SearchResults } from "../types";
 import DatasetFormModal, { type DatasetFormValues } from "../components/DatasetFormModal";
 import ConfirmDialog from "../components/ConfirmDialog";
 import ShareToggle, { type Visibility } from "../components/ShareToggle";
+import Snippet from "../components/Snippet";
 import VuMeter from "../components/VuMeter";
 import EmptyState from "../components/EmptyState";
 
@@ -27,6 +28,46 @@ export default function Datasets() {
 
     // The dataset pending a delete confirmation; null means the dialog is closed.
     const [confirmTarget, setConfirmTarget] = useState<Dataset | null>(null);
+
+    // S68: full-text search mode. A non-empty trimmed query swaps the table
+    // for the S67 endpoint's results (datasets + Q&A pairs, BM25-ordered).
+    // One request in flight; a stale response can never land after a newer
+    // query (seq guard), so fast typing can't reorder the list.
+    const [searchQ, setSearchQ] = useState("");
+    const [searchRes, setSearchRes] = useState<SearchResults | null>(null);
+    const [searchBusy, setSearchBusy] = useState(false);
+    const [searchError, setSearchError] = useState<string | null>(null);
+    const searchSeqRef = useRef(0);
+    const searching = searchQ.trim().length > 0;
+
+    useEffect(() => {
+        const q = searchQ.trim();
+        if (!q) {
+            searchSeqRef.current += 1; // any in-flight response is now stale
+            setSearchRes(null);
+            setSearchError(null);
+            return;
+        }
+        const mine = ++searchSeqRef.current;
+        setSearchBusy(true);
+        setSearchError(null);
+        const t = setTimeout(() => {
+            apiSearch<SearchResults>(q, 50)
+                .then((r) => {
+                    if (searchSeqRef.current !== mine) return; // superseded
+                    setSearchRes(r);
+                })
+                .catch((err) => {
+                    if (searchSeqRef.current !== mine) return;
+                    setSearchRes(null);
+                    setSearchError(err instanceof Error ? err.message : "Search failed");
+                })
+                .finally(() => {
+                    if (searchSeqRef.current === mine) setSearchBusy(false);
+                });
+        }, 250);
+        return () => clearTimeout(t);
+    }, [searchQ]);
 
     // Load once, after first render. The token rides along via apiFetch.
     useEffect(() => {
@@ -79,6 +120,120 @@ export default function Datasets() {
                 </button>
             </div>
 
+            {/* S68: full-text search (S67 endpoint). Typing swaps the table
+                for BM25-ranked dataset + Q&A hits; clearing it swaps back. */}
+            <div className="search-bar">
+                <Search size={14} className="search-bar-icon" />
+                <input
+                    className="input search-bar-input"
+                    type="search"
+                    placeholder="Search dataset names, descriptions and Q&A pairs…"
+                    value={searchQ}
+                    onChange={(e) => setSearchQ(e.target.value)}
+                    aria-label="Search datasets and Q&A pairs"
+                    spellCheck={false}
+                />
+                {searching && (
+                    <button className="btn-icon" onClick={() => setSearchQ("")} aria-label="Clear search">
+                        <X size={14} />
+                    </button>
+                )}
+                <span className="hint" tabIndex={0} aria-label="About search">
+                    <HelpCircle size={13} />
+                    <span className="hint-bubble">
+                        Full-text search over names, descriptions, questions and answers —
+                        stemmed (&ldquo;training&rdquo; finds &ldquo;train&rdquo;), word-prefix
+                        matched, ranked by relevance. It covers your rows plus everyone&rsquo;s
+                        public ones; nobody&rsquo;s private data can appear. Press ⌘K / Ctrl+K
+                        anywhere to search from the shell.
+                    </span>
+                </span>
+            </div>
+
+            {searching ? (
+                <div className="search-results">
+                    {searchBusy && (
+                        <p className="loading">
+                            <VuMeter bars={4} /> Searching…
+                        </p>
+                    )}
+                    {searchError && (
+                        <p className="form-error" role="alert">{searchError}</p>
+                    )}
+                    {!searchBusy && !searchError && searchRes && (
+                        <>
+                            {searchRes.datasets.length === 0 && searchRes.pairs.length === 0 && (
+                                <EmptyState
+                                    icon={Search}
+                                    tint="info"
+                                    title={`Nothing matches “${searchRes.query}”`}
+                                    hint="Search sees dataset names and descriptions plus the Q&A pairs you can see (yours and public ones). Try a shorter word — the index stems endings and matches word prefixes."
+                                />
+                            )}
+                            {searchRes.datasets.length > 0 && (
+                                <section className="search-sec">
+                                    <h2 className="search-sec-title">
+                                        Datasets <span className="search-count">{searchRes.datasets.length}</span>
+                                    </h2>
+                                    {searchRes.datasets.map((d) => (
+                                        <div className="search-hit" key={`d-${d.id}`}>
+                                            <Link
+                                                className="search-hit-title"
+                                                to={d.is_mine ? `/datasets/${d.id}` : `/library/datasets/${d.id}`}
+                                            >
+                                                <Snippet text={d.name_snippet} fallback={d.name} />
+                                            </Link>
+                                            <span
+                                                className={`badge ${d.is_mine ? "badge-neutral" : "badge-info"}`}
+                                                title={d.is_mine ? "Yours" : "Public — read-only view"}
+                                            >
+                                                {d.is_mine ? "yours" : "public"}
+                                            </span>
+                                            <span className="badge badge-neutral">{displayStatus(d.source)}</span>
+                                            <div className="search-hit-sub">
+                                                <Snippet text={d.description_snippet} fallback={d.description ?? ""} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </section>
+                            )}
+                            {searchRes.pairs.length > 0 && (
+                                <section className="search-sec">
+                                    <h2 className="search-sec-title">
+                                        Q&amp;A pairs <span className="search-count">{searchRes.pairs.length}</span>
+                                    </h2>
+                                    {searchRes.pairs.map((p) => (
+                                        <div className="search-hit" key={`p-${p.id}`}>
+                                            <Link
+                                                className="search-hit-title"
+                                                to={p.is_mine ? `/datasets/${p.dataset_id}` : `/library/datasets/${p.dataset_id}`}
+                                            >
+                                                <Snippet text={p.question_snippet} fallback={p.question} />
+                                            </Link>
+                                            <span
+                                                className={`badge ${p.is_mine ? "badge-neutral" : "badge-info"}`}
+                                                title={p.is_mine ? "Yours" : "Public — read-only view"}
+                                            >
+                                                {p.is_mine ? "yours" : "public"}
+                                            </span>
+                                            <div className="search-hit-sub">
+                                                <Snippet text={p.answer_snippet} fallback={p.answer_preview} />
+                                            </div>
+                                            <div className="search-hit-dataset">
+                                                in{" "}
+                                                <Link to={p.is_mine ? `/datasets/${p.dataset_id}` : `/library/datasets/${p.dataset_id}`}>
+                                                    {p.dataset_name}
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </section>
+                            )}
+                        </>
+                    )}
+                </div>
+            ) : (
+                <>
             {loading && (
                 <p className="loading">
                     <VuMeter bars={4} /> Loading…
@@ -152,6 +307,8 @@ export default function Datasets() {
                         </div>
                     ))}
                 </div>
+            )}
+                </>
             )}
 
             <DatasetFormModal
