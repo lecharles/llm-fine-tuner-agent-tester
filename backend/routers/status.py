@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from core import metrics
 from core.security import (
     LANE_PERMISSIONS,
     get_current_user,
@@ -33,4 +34,7 @@ def lane_status(
         "permissions": list(LANE_PERMISSIONS) if is_service_lane(current_user) else ["read", "create", "queue_generation", "delete"],
         "service_lanes_configured": len(parse_service_tokens()),
         "server_time_utc": datetime.now(timezone.utc).isoformat(),
+        # S69: p50/p95 over the in-memory window (last WINDOW_SIZE requests,
+        # restart-clears — same life as the S15 limiters).
+        "latency": metrics.snapshot(),
     }

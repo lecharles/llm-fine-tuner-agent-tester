@@ -5,6 +5,7 @@ from routers import auth, dataset, qa_pair, training_run, generation, chat, fine
 from static_serve import mount_spa
 from core import bind_guard
 from core import security_headers
+from core import metrics
 
 
 @asynccontextmanager
@@ -27,6 +28,11 @@ bind_guard.register(app)
 # S44: CSP + baseline security headers on every http response. Added after
 # bind_guard so it is the OUTER layer and also decorates the guard's 403s.
 security_headers.register(app)
+
+# S69: request-latency log lines + in-memory p50/p95 window feeding
+# /api/status. Registered after security_headers so it is the OUTERMOST
+# layer and times the full stack (guard 403s included).
+metrics.register(app)
 
 app.include_router(auth.router)
 app.include_router(status.router)
