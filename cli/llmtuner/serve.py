@@ -79,6 +79,30 @@ def _ollama_available() -> bool:
     return shutil.which("ollama") is not None
 
 
+def _listed_tag(name: str, list_stdout: str) -> bool:
+    """Did `ollama list` actually show the tag we just created?
+
+    S70 (consuming the S62 serve feedback): real `ollama list` output ALWAYS
+    shows models as `name:tag` — `ollama create ft-foo` lands as
+    `ft-foo:latest` — but the tag we passed may or may not carry an explicit
+    `:tag` part. The S62 fakes used bare-name rows, so VPS tests never saw
+    the mismatch; on a real Mac the confirmation would always fail with
+    "create succeeded but not in `ollama list`" after a perfectly good
+    import. Match the first column of each data row: exact equality, or the
+    implicit `:latest` ollama appends to an untagged create.
+    """
+    for line in list_stdout.splitlines():
+        fields = line.split()
+        if not fields:
+            continue
+        entry = fields[0]
+        if entry == "NAME":  # ollama's own column header
+            continue
+        if entry == name or (":" not in name and entry == f"{name}:latest"):
+            return True
+    return False
+
+
 def serve_command(
     path: str = "",
     run_id: int = 0,
@@ -160,8 +184,7 @@ def serve_command(
         return 1
 
     listing = subprocess.run(["ollama", "list"], capture_output=True, text=True)
-    listed = (listing.stdout or "").split()
-    if ollama_name in listed:
+    if _listed_tag(ollama_name, listing.stdout or ""):
         print(f"✅ Import smoke confirmed: `{ollama_name}` is live in `ollama list`")
         print(f"   Try it:  ollama run {ollama_name}")
         return 0

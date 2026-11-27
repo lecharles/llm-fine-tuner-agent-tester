@@ -89,10 +89,15 @@ fi
 # shellcheck disable=SC1091
 . .venv/bin/activate
 pip install --quiet --upgrade pip
+# S54 retired passlib: core/security.py calls bcrypt directly and the Pipfile
+# pins nothing (`bcrypt = "*"`), so the installer installs the same truth.
+# Truncation/NUL semantics that passlib used to provide are implemented in
+# security.py itself — bcrypt 4.1+ would raise on >72-byte input otherwise.
+# (S70 installer sweep; .github/ci.yml was aligned at S66.)
 pip install --quiet \
     fastapi 'uvicorn[standard]' sqlalchemy alembic pydantic-settings \
-    python-dotenv 'passlib[bcrypt]' 'python-jose[cryptography]' \
-    'pydantic[email]' python-multipart bcrypt==4.0.1 httpx \
+    python-dotenv 'python-jose[cryptography]' \
+    'pydantic[email]' python-multipart bcrypt httpx \
     anthropic openai datasets mlx-lm
 say "Backend + mlx-lm installed"
 

@@ -55,10 +55,11 @@ source .venv/bin/activate
 # Install backend dependencies
 echo "📦 Installing backend dependencies..."
 pip install --quiet --upgrade pip
+# S54 retired passlib (direct bcrypt, unpinned — S70 installer sweep).
 pip install --quiet \
     fastapi 'uvicorn[standard]' sqlalchemy alembic pydantic-settings \
-    python-dotenv 'passlib[bcrypt]' 'python-jose[cryptography]' \
-    'pydantic[email]' python-multipart bcrypt==4.0.1 httpx \
+    python-dotenv 'python-jose[cryptography]' \
+    'pydantic[email]' python-multipart bcrypt httpx \
     anthropic openai datasets mlx-lm
 
 # Prompt for API keys
