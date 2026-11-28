@@ -11,6 +11,7 @@ from models.user import User
 from schemas.user import PasswordChange, UserCreate, UserOut, UserUpdate
 from schemas.token import Token
 from core.rate_limit import signup_limiter, login_limiter
+from core.onboarding import best_effort_seed
 from core.security import (
     hash_password,
     is_service_lane,
@@ -60,6 +61,11 @@ def signup(user_in: UserCreate, request: Request, db: Session = Depends(get_db))
     db.add(user)
     db.commit()
     db.refresh(user)
+    # S71: first-run onboarding. New human accounts get the 10-pair starter
+    # demo dataset so Train is usable from minute one (see core/onboarding).
+    # Best-effort by contract: signup has already committed; a seed failure
+    # logs and rolls back only the seed, never the account.
+    best_effort_seed(db, user)
     return user
 
 

@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from config import settings
 from database import get_db
 from models.user import User
+from core.onboarding import best_effort_seed
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
@@ -182,4 +183,9 @@ def ensure_local_user(db: Session) -> User:
         db.add(user)
         db.commit()
         db.refresh(user)
+        # S71: the Mac app's very first `llmtuner up` lands on this branch —
+        # seed the starter demo here too, so "first run" means first run on
+        # both the VPS (signup) and local mode (provisioning). Idempotent and
+        # best-effort; existing local users never get re-seeded on boot.
+        best_effort_seed(db, user)
     return user

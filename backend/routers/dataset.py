@@ -19,6 +19,7 @@ from schemas.dataset import (
     MergeResult,
 )
 from core.security import get_current_user, is_service_lane
+from core.onboarding import seed_demo_dataset
 from generation.prompt_suggest import suggest_use_case_prompt
 
 router = APIRouter(prefix="/api/datasets", tags=["datasets"])
@@ -57,6 +58,31 @@ def create_dataset(
         use_case_prompt=dataset_in.use_case_prompt,
     )
     db.add(dataset)
+    db.commit()
+    db.refresh(dataset)
+    return dataset
+
+
+@router.post("/seed-demo", response_model=DatasetOut, status_code=status.HTTP_201_CREATED)
+def seed_demo(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """S71: explicit (re)seed of the 10-pair starter demo.
+
+    The signup / local-provisioning path seeds automatically but
+    best-effort; this endpoint is the deliberate user-facing button for
+    accounts that predate S71, deleted their demo, or had the auto-seed
+    fail. Idempotent like the auto-seed: the user's existing demo is simply
+    returned — the payload is the dataset itself, so "created now" vs
+    "already there" is answered by the row count, never by duplicated rows.
+    Reads like a create (S31 semantics), so service
+    lanes may call it — the demo is ordinary private rows owned by whoever
+    asked.
+    """
+    dataset, created = seed_demo_dataset(db, current_user)
+    if not created:
+        return dataset
     db.commit()
     db.refresh(dataset)
     return dataset

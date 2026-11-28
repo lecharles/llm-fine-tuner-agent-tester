@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Database, Plus, Pencil, Trash2, Search, X, HelpCircle } from "lucide-react";
+import { Database, Plus, Pencil, Trash2, Search, X, HelpCircle, Sparkles } from "lucide-react";
 import { apiFetch, apiSearch } from "../api";
 import { displayStatus } from "../statusText";
 import type { Dataset, SearchResults } from "../types";
@@ -80,6 +80,23 @@ export default function Datasets() {
     const openCreate = () => setForm({ open: true, mode: "create", dataset: null });
     const openEdit = (d: Dataset) => setForm({ open: true, mode: "edit", dataset: d });
     const closeForm = () => setForm((f) => ({ ...f, open: false }));
+
+    // S71: the starter demo is auto-seeded on signup; this button covers the
+    // accounts that predate S71 (or deleted theirs). The endpoint is
+    // idempotent, so double-clicks can never produce a second copy.
+    const [seeding, setSeeding] = useState(false);
+    async function loadStarterDemo() {
+        setSeeding(true);
+        setError(null);
+        try {
+            const demo = await apiFetch<Dataset>("/datasets/seed-demo", { method: "POST" });
+            setDatasets((prev) => (prev.some((d) => d.id === demo.id) ? prev : [demo, ...prev]));
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to load the starter demo");
+        } finally {
+            setSeeding(false);
+        }
+    }
 
     // Create prepends; edit swaps in place. Errors bubble to the modal, which shows them.
     async function submitForm(values: DatasetFormValues) {
@@ -245,11 +262,18 @@ export default function Datasets() {
                     icon={Database}
                     tint="info"
                     title="No datasets yet"
-                    hint="A dataset is a set of question/answer pairs the model rehearses on. Create one, then add pairs by hand, generate, or import a file."
+                    hint="A dataset is a set of question/answer pairs the model rehearses on. Load the 10-pair starter demo (refund policy) to try a first run, or create one and add pairs by hand, generate, or import a file."
                     action={
-                        <button className="btn btn-primary" onClick={openCreate}>
-                            <Plus size={16} /> New dataset
-                        </button>
+                        <div className="gs-cta-row" style={{ margin: "6px 0 0", justifyContent: "center" }}>
+                            <button className="btn btn-primary" onClick={openCreate}>
+                                <Plus size={16} /> New dataset
+                            </button>
+                            {/* S71: accounts predating the auto-seed (or that
+                                deleted their demo) restore it with one click. */}
+                            <button className="btn btn-ghost" onClick={loadStarterDemo} disabled={seeding}>
+                                <Sparkles size={16} /> {seeding ? "Loading…" : "Load starter demo"}
+                            </button>
+                        </div>
                     }
                 />
             )}
@@ -272,7 +296,7 @@ export default function Datasets() {
                                 {d.description && <div className="row-sub">{d.description}</div>}
                             </div>
                             <div className="cell cell-source">
-                                <span className={`badge ${d.source === "generated" ? "badge-info" : "badge-neutral"}`}>
+                                <span className={`badge ${d.source === "generated" || d.source === "seed" ? "badge-info" : "badge-neutral"}`}>
                                     {displayStatus(d.source)}
                                 </span>
                             </div>
